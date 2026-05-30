@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: addexstores-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: addexstores_db
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  app:
+    build: .
+    container_name: addexstores-app
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: addexstores_db
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      JWT_SECRET: ${JWT_SECRET:-4a6f686e446f6553656372657456657279566572795365637265744b6579466f724a5754}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
