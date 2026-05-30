@@ -187,13 +187,13 @@ export default function CategoryProducts() {
   }
 
   const FilterContent = () => (
-    <div className="bg-[#232326] rounded-2xl shadow-lg shadow-black/20 border border-[#2D2D30] p-6">
+    <div className="bg-[var(--bg-card)] rounded-2xl shadow-lg shadow-black/5 border border-[var(--border-color)] p-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Filters</h3>
+        <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider">Filters</h3>
         {hasActiveFilters && (
           <button
             onClick={clearAllFilters}
-            className="text-xs text-[#D4AF37] hover:text-[#C9A84C] font-medium transition"
+            className="text-xs text-[#C6A972] hover:text-[#B8965F] font-medium transition"
           >
             Clear All
           </button>
@@ -202,7 +202,7 @@ export default function CategoryProducts() {
 
       <div className="space-y-6">
         <div>
-          <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">Subcategory</h4>
+          <h4 className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-3">Subcategory</h4>
           <div className="space-y-2">
             {sidebarSubcategories.map((sub) => (
               <label key={sub} className="flex items-center gap-2.5 cursor-pointer group">
@@ -216,37 +216,37 @@ export default function CategoryProducts() {
                       toggleSubcategory(sub)
                     }
                   }}
-                  className="w-4 h-4 rounded border-[#2D2D30] text-[#D4AF37] focus:ring-[#D4AF37] bg-[#18181B]"
+                  className="w-4 h-4 rounded border-[var(--border-color)] text-[#C6A972] focus:ring-[#C6A972] bg-[var(--bg-secondary)]"
                 />
-                <span className="text-sm text-[#B8B8C2] group-hover:text-white transition">{sub}</span>
+                <span className="text-sm text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition">{sub}</span>
               </label>
             ))}
           </div>
         </div>
 
-        <div className="border-t border-[#2D2D30] pt-6">
-          <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">Price Range</h4>
+        <div className="border-t border-[var(--border-color)] pt-6">
+          <h4 className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-3">Price Range</h4>
           <div className="flex items-center gap-3">
             <input
               type="number"
               value={priceRange[0]}
               onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
-              className="w-full px-3 py-2 text-sm border border-[#2D2D30] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#D4AF37] bg-[#18181B] text-white placeholder-[#6B7280]"
+              className="w-full px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#C6A972] bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
               placeholder="Min"
             />
-            <span className="text-[#6B7280]">—</span>
+            <span className="text-[var(--text-secondary)]">â€”</span>
             <input
               type="number"
               value={priceRange[1]}
               onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
-              className="w-full px-3 py-2 text-sm border border-[#2D2D30] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#D4AF37] bg-[#18181B] text-white placeholder-[#6B7280]"
+              className="w-full px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#C6A972] bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
               placeholder="Max"
             />
           </div>
         </div>
 
-        <div className="border-t border-[#2D2D30] pt-6">
-          <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">Brand</h4>
+        <div className="border-t border-[var(--border-color)] pt-6">
+          <h4 className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-3">Brand</h4>
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {brands.map((brand) => (
               <label key={brand} className="flex items-center gap-2.5 cursor-pointer group">
@@ -254,22 +254,22 @@ export default function CategoryProducts() {
                   type="checkbox"
                   checked={selectedBrands.includes(brand)}
                   onChange={() => toggleBrand(brand)}
-                  className="w-4 h-4 rounded border-[#2D2D30] text-[#D4AF37] focus:ring-[#D4AF37] bg-[#18181B]"
+                  className="w-4 h-4 rounded border-[var(--border-color)] text-[#C6A972] focus:ring-[#C6A972] bg-[var(--bg-secondary)]"
                 />
-                <span className="text-sm text-[#B8B8C2] group-hover:text-white transition">{brand}</span>
+                <span className="text-sm text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition">{brand}</span>
               </label>
             ))}
           </div>
         </div>
 
-        <div className="border-t border-[#2D2D30] pt-6">
-          <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">Color</h4>
+        <div className="border-t border-[var(--border-color)] pt-6">
+          <h4 className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-3">Color</h4>
           <div className="flex flex-wrap gap-2">
             {COLORS.map((color) => {
               const isSelected = selectedColors.includes(color)
               const colorMap = {
                 Black: '#000', White: '#fff', Navy: '#1e3a5f', Red: '#dc2626',
-                Gold: '#D4AF37', Beige: '#f5f5dc', Brown: '#8b4513', Gray: '#6b7280',
+                Gold: '#C6A972', Beige: '#f5f5dc', Brown: '#8b4513', Gray: '#6b7280',
                 Pink: '#e8a0b4', Blue: '#3b82f6', Green: '#22c55e', Purple: '#7c3aed',
               }
               return (
@@ -277,7 +277,7 @@ export default function CategoryProducts() {
                   key={color}
                   onClick={() => toggleColor(color)}
                   className={`w-7 h-7 rounded-full border-2 transition-all ${
-                    isSelected ? 'border-[#D4AF37] scale-110' : 'border-[#2D2D30] hover:border-[#6B7280]'
+                    isSelected ? 'border-[#C6A972] scale-110' : 'border-[var(--border-color)] hover:border-[#C6A972]'
                   }`}
                   style={{ backgroundColor: colorMap[color] || '#e5e7eb' }}
                   title={color}
@@ -293,8 +293,8 @@ export default function CategoryProducts() {
           </div>
         </div>
 
-        <div className="border-t border-[#2D2D30] pt-6">
-          <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">Size</h4>
+        <div className="border-t border-[var(--border-color)] pt-6">
+          <h4 className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-3">Size</h4>
           <div className="flex flex-wrap gap-2">
             {SIZES.map((size) => (
               <button
@@ -302,8 +302,8 @@ export default function CategoryProducts() {
                 onClick={() => toggleSize(size)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-all ${
                   selectedSizes.includes(size)
-                    ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]'
-                    : 'border-[#2D2D30] text-[#B8B8C2] hover:border-[#6B7280]'
+                    ? 'border-[#C6A972] bg-[#C6A972]/10 text-[#C6A972]'
+                    : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:border-[#C6A972]'
                 }`}
               >
                 {size}
@@ -319,12 +319,12 @@ export default function CategoryProducts() {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
-          <nav className="flex items-center gap-2 text-sm text-[#B8B8C2] mb-4">
-            <Link to="/" className="hover:text-white transition">Home</Link>
+          <nav className="flex items-center gap-2 text-sm text-[var(--text-secondary)] mb-4">
+            <Link to="/" className="hover:text-[var(--text-primary)] transition">Home</Link>
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
-            <span className="text-white font-medium">{category.name}</span>
+            <span className="text-[var(--text-primary)] font-medium">{category.name}</span>
           </nav>
         </div>
 
@@ -336,19 +336,19 @@ export default function CategoryProducts() {
             className="w-full h-48 sm:h-64 object-cover"
           />
           <div className="absolute inset-0 z-20 flex flex-col justify-center px-8 sm:px-12">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-playfair-display text-white font-bold mb-2">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-playfair-display text-[var(--text-primary)] font-bold mb-2">
               {category.name}
             </h1>
-            <p className="text-white/80 text-sm sm:text-base max-w-xl mb-3">
+            <p className="text-[var(--text-primary)]/80 text-sm sm:text-base max-w-xl mb-3">
               {category.description}
             </p>
-            <span className="text-[#D4AF37] text-sm font-medium">
+            <span className="text-[#C6A972] text-sm font-medium">
               {category.productCount} Products
             </span>
           </div>
         </div>
 
-        <h2 className="text-xl font-semibold text-white mb-6">Shop by Category</h2>
+        <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-6">Shop by Category</h2>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {normalizedSubcategories.map((sub) => {
@@ -357,15 +357,15 @@ export default function CategoryProducts() {
               <button
                 key={sub.name}
                 onClick={() => setSearchParams({ sub: sub.name })}
-                className="bg-[#232326] rounded-2xl p-6 border border-[#2D2D30] hover:border-[#D4AF37]/50 hover:-translate-y-1 transition-all duration-300 text-left group"
+                className="bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-color)] hover:border-[#C6A972]/50 hover:-translate-y-1 transition-all duration-300 text-left group"
               >
-                <div className="w-12 h-12 rounded-full bg-[#D4AF37]/10 flex items-center justify-center mb-4 group-hover:bg-[#D4AF37]/20 transition-colors">
-                  <svg className="w-6 h-6 text-[#D4AF37]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                <div className="w-12 h-12 rounded-full bg-[#C6A972]/10 flex items-center justify-center mb-4 group-hover:bg-[#C6A972]/20 transition-colors">
+                  <svg className="w-6 h-6 text-[#C6A972]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
                     <path d={SUBCATEGORY_ICONS[sub.name] || 'M12 8a4 4 0 100 8 4 4 0 000-8zm-8 4h2m14 0h2M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 0l1.41-1.41'} />
                   </svg>
                 </div>
-                <h3 className="text-white font-medium text-base mb-1">{sub.name}</h3>
-                <p className="text-[#B8B8C2] text-sm">{count} {count === 1 ? 'Product' : 'Products'}</p>
+                <h3 className="text-[var(--text-primary)] font-medium text-base mb-1">{sub.name}</h3>
+                <p className="text-[var(--text-secondary)] text-sm">{count} {count === 1 ? 'Product' : 'Products'}</p>
               </button>
             )
           })}
@@ -378,8 +378,8 @@ export default function CategoryProducts() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-6">
         <BackButton />
-        <nav className="flex items-center gap-2 text-sm text-[#B8B8C2] mb-4">
-          <Link to="/" className="hover:text-white transition">Home</Link>
+        <nav className="flex items-center gap-2 text-sm text-[var(--text-secondary)] mb-4">
+          <Link to="/" className="hover:text-[var(--text-primary)] transition">Home</Link>
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
@@ -387,23 +387,23 @@ export default function CategoryProducts() {
             <>
               <button
                 onClick={() => setSearchParams({})}
-                className="hover:text-white transition"
+                className="hover:text-[var(--text-primary)] transition"
               >
                 {category.name}
               </button>
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
-              <span className="text-white font-medium">{selectedSub}</span>
+              <span className="text-[var(--text-primary)] font-medium">{selectedSub}</span>
             </>
           ) : (
-            <span className="text-white font-medium">{category.name}</span>
+            <span className="text-[var(--text-primary)] font-medium">{category.name}</span>
           )}
         </nav>
         {selectedSub && normalizedSubcategories.length > 0 && (
           <button
             onClick={() => setSearchParams({})}
-            className="inline-flex items-center gap-2 text-sm text-[#D4AF37] hover:text-[#C9A84C] transition font-medium mb-4"
+            className="inline-flex items-center gap-2 text-sm text-[#C6A972] hover:text-[#B8965F] transition font-medium mb-4"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -421,13 +421,13 @@ export default function CategoryProducts() {
           className="w-full h-48 sm:h-64 object-cover"
         />
         <div className="absolute inset-0 z-20 flex flex-col justify-center px-8 sm:px-12">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-playfair-display text-white font-bold mb-2">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-playfair-display text-[var(--text-primary)] font-bold mb-2">
             {selectedSub || category.name}
           </h1>
-          <p className="text-white/80 text-sm sm:text-base max-w-xl mb-3">
+          <p className="text-[var(--text-primary)]/80 text-sm sm:text-base max-w-xl mb-3">
             {category.description}
           </p>
-          <span className="text-[#D4AF37] text-sm font-medium">
+          <span className="text-[#C6A972] text-sm font-medium">
             {filteredProducts.length} Products
           </span>
         </div>
@@ -445,24 +445,24 @@ export default function CategoryProducts() {
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <button
                 onClick={() => setFilterDrawerOpen(true)}
-                className="lg:hidden inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-[#2D2D30] rounded-full text-sm font-medium text-[#B8B8C2] hover:bg-[#2A2A2E] transition active:scale-[0.98] min-h-[44px]"
+                className="lg:hidden inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-[var(--border-color)] rounded-full text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition active:scale-[0.98] min-h-[44px]"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                 </svg>
                 Filters
                 {hasActiveFilters && (
-                  <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
+                  <span className="w-2 h-2 rounded-full bg-[#C6A972]" />
                 )}
               </button>
-              <p className="text-sm text-[#B8B8C2] whitespace-nowrap">
-                <span className="font-medium text-white">{filteredProducts.length}</span> products
+              <p className="text-sm text-[var(--text-secondary)] whitespace-nowrap">
+                <span className="font-medium text-[var(--text-primary)]">{filteredProducts.length}</span> products
               </p>
             </div>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full sm:w-auto px-4 py-2.5 border border-[#2D2D30] rounded-full text-sm text-[#B8B8C2] bg-[#232326] focus:outline-none focus:ring-1 focus:ring-[#D4AF37] cursor-pointer min-h-[44px]"
+              className="w-full sm:w-auto px-4 py-2.5 border border-[var(--border-color)] rounded-full text-sm text-[var(--text-secondary)] bg-[var(--bg-card)] focus:outline-none focus:ring-1 focus:ring-[#C6A972] cursor-pointer min-h-[44px]"
             >
               <option value="">Sort by</option>
               {SORT_OPTIONS.map((opt) => (
@@ -491,7 +491,7 @@ export default function CategoryProducts() {
               {hasActiveFilters && (
                 <button
                   onClick={clearAllFilters}
-                  className="px-6 py-2.5 bg-[#D4AF37] text-black text-sm font-medium rounded-full hover:bg-[#C9A84C] transition active:scale-[0.98]"
+                  className="px-6 py-2.5 bg-[#C6A972] text-white text-sm font-medium rounded-full hover:bg-[#B8965F] transition active:scale-[0.98]"
                 >
                   Clear All Filters
                 </button>
@@ -510,7 +510,7 @@ export default function CategoryProducts() {
                   <button
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
-                    className="min-w-[44px] h-11 flex items-center justify-center rounded-full border border-[#2D2D30] text-[#B8B8C2] hover:bg-[#2A2A2E] disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-[0.98] px-3"
+                    className="min-w-[44px] h-11 flex items-center justify-center rounded-full border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-[0.98] px-3"
                   >
                     <svg className="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -525,8 +525,8 @@ export default function CategoryProducts() {
                         onClick={() => setCurrentPage(page)}
                         className={`w-11 h-11 rounded-full text-sm font-medium transition active:scale-[0.98] ${
                           currentPage === page
-                            ? 'bg-[#D4AF37] text-black'
-                            : 'border border-[#2D2D30] text-[#B8B8C2] hover:bg-[#2A2A2E]'
+                            ? 'bg-[#C6A972] text-white'
+                            : 'border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
                         }`}
                       >
                         {page}
@@ -534,14 +534,14 @@ export default function CategoryProducts() {
                     ))}
                   </div>
 
-                  <span className="sm:hidden text-sm text-[#B8B8C2]">
+                  <span className="sm:hidden text-sm text-[var(--text-secondary)]">
                     Page {currentPage} of {totalPages}
                   </span>
 
                   <button
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
-                    className="min-w-[44px] h-11 flex items-center justify-center rounded-full border border-[#2D2D30] text-[#B8B8C2] hover:bg-[#2A2A2E] disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-[0.98] px-3"
+                    className="min-w-[44px] h-11 flex items-center justify-center rounded-full border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-[0.98] px-3"
                   >
                     <span className="hidden sm:inline text-sm">Next</span>
                     <svg className="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -565,18 +565,18 @@ export default function CategoryProducts() {
           onClick={() => setFilterDrawerOpen(false)}
         />
         <div
-          className={`absolute top-0 left-0 h-full w-80 max-w-[85vw] bg-[#0F0F10] border-r border-[#2D2D30] overflow-y-auto transform transition-transform duration-300 ${
+          className={`absolute top-0 left-0 h-full w-80 max-w-[85vw] bg-[var(--bg-card)] border-r border-[var(--border-color)] overflow-y-auto transform transition-transform duration-300 ${
             filterDrawerOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
-          <div className="sticky top-0 bg-[#0F0F10] z-10 flex items-center justify-between p-4 border-b border-[#2D2D30]">
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Filters</h3>
+          <div className="sticky top-0 bg-[var(--bg-card)] z-10 flex items-center justify-between p-4 border-b border-[var(--border-color)]">
+            <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider">Filters</h3>
             <button
               onClick={() => setFilterDrawerOpen(false)}
-              className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-[#2A2A2E] transition active:scale-[0.98]"
+              className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-[var(--bg-hover)] transition active:scale-[0.98]"
               aria-label="Close filters"
             >
-              <svg className="w-5 h-5 text-[#B8B8C2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-[var(--text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>

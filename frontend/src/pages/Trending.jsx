@@ -49,31 +49,31 @@ export default function Trending() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F0F10]">
+    <div className="min-h-screen bg-[var(--bg-page)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <BackButton />
-              <nav className="flex items-center gap-2 text-sm text-[#B8B8C2]">
-                <Link to="/" className="hover:text-white transition">Home</Link>
+              <nav className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                <Link to="/" className="hover:text-[var(--text-primary)] transition">Home</Link>
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
-                <span className="text-white font-medium">Trending</span>
+                <span className="text-[var(--text-primary)] font-medium">Trending</span>
               </nav>
             </div>
-            <h1 className="font-playfair-display text-2xl sm:text-3xl font-bold text-white">
+            <h1 className="font-playfair-display text-2xl sm:text-3xl font-bold text-[var(--text-primary)]">
               Trending Now
             </h1>
-            <p className="text-[#B8B8C2] text-sm mt-1">
+            <p className="text-[var(--text-secondary)] text-sm mt-1">
               Most popular picks loved by our community
             </p>
           </div>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="w-full sm:w-auto px-4 py-2.5 border border-[#2D2D30] rounded-full text-sm text-[#B8B8C2] bg-[#232326] focus:outline-none focus:ring-1 focus:ring-[#D4AF37] cursor-pointer min-h-[44px]"
+            className="w-full sm:w-auto px-4 py-2.5 border border-[var(--border-color)] rounded-full text-sm text-[var(--text-secondary)] bg-[var(--bg-secondary)] focus:outline-none focus:ring-1 focus:ring-[#C6A972] cursor-pointer min-h-[44px]"
           >
             {SORT_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -103,7 +103,7 @@ export default function Trending() {
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="min-w-[44px] min-h-[44px] rounded-xl border border-[#2D2D30] text-[#B8B8C2] hover:bg-[#2A2A2E] disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center justify-center"
+                  className="min-w-[44px] min-h-[44px] rounded-xl border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center justify-center"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -115,8 +115,8 @@ export default function Trending() {
                     onClick={() => handlePageChange(page)}
                     className={`min-w-[44px] min-h-[44px] rounded-xl text-sm font-medium transition ${
                       page === currentPage
-                        ? 'bg-[#D4AF37] text-white'
-                        : 'border border-[#2D2D30] text-[#B8B8C2] hover:bg-[#2A2A2E]'
+                        ? 'bg-[#C6A972] text-[var(--text-primary)]'
+                        : 'border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
                     }`}
                   >
                     {page}
@@ -125,7 +125,7 @@ export default function Trending() {
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="min-w-[44px] min-h-[44px] rounded-xl border border-[#2D2D30] text-[#B8B8C2] hover:bg-[#2A2A2E] disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center justify-center"
+                  className="min-w-[44px] min-h-[44px] rounded-xl border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center justify-center"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

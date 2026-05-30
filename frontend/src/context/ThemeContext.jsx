@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 
 const ThemeContext = createContext(null)
 
@@ -6,8 +6,8 @@ const STORAGE_KEY = 'sifr_theme'
 
 function getInitialTheme() {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved === 'dark' || saved === 'light') return saved
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored === 'dark' || stored === 'light') return stored
   } catch {}
   return 'light'
 }
@@ -16,27 +16,20 @@ export function ThemeProvider({ children }) {
   const [theme, setThemeState] = useState(getInitialTheme)
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, theme)
-    document.documentElement.classList.toggle('dark', theme === 'dark')
+    document.documentElement.setAttribute('data-theme', theme)
+    try { localStorage.setItem(STORAGE_KEY, theme) } catch {}
   }, [theme])
-
-  const setTheme = useCallback((t) => {
-    if (t === 'dark' || t === 'light') {
-      setThemeState(t)
-    }
-  }, [])
 
   const toggleTheme = useCallback(() => {
     setThemeState((prev) => (prev === 'light' ? 'dark' : 'light'))
   }, [])
 
-  const value = useMemo(
-    () => ({ theme, toggleTheme, setTheme }),
-    [theme, toggleTheme, setTheme]
-  )
+  const setTheme = useCallback((t) => {
+    if (t === 'dark' || t === 'light') setThemeState(t)
+  }, [])
 
   return (
-    <ThemeContext.Provider value={value}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   )

@@ -15,15 +15,15 @@ export default function QuantitySelector({ value = 1, onChange, min = 1, max = 9
   const isMax = value >= max
 
   return (
-    <div className="flex items-center border border-[#2D2D30] rounded-full bg-[#232326]">
+    <div className="flex items-center border border-[var(--border-color)] rounded-full bg-[var(--bg-card)]">
       <button
         type="button"
         onClick={handleDecrement}
         disabled={isMin}
         className={`w-9 h-9 flex items-center justify-center rounded-l-full transition ${
           isMin
-            ? 'text-[#6B7280] cursor-not-allowed'
-            : 'text-[#B8B8C2] hover:bg-[#2A2A2E] active:bg-[#2A2A2E]'
+            ? 'text-[var(--text-secondary)] cursor-not-allowed'
+            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] active:bg-[var(--bg-hover)]'
         }`}
         aria-label="Decrease quantity"
       >
@@ -32,7 +32,7 @@ export default function QuantitySelector({ value = 1, onChange, min = 1, max = 9
         </svg>
       </button>
 
-      <span className="w-9 h-9 flex items-center justify-center text-sm font-semibold text-white select-none">
+      <span className="w-9 h-9 flex items-center justify-center text-sm font-semibold text-[var(--text-primary)] select-none">
         {value}
       </span>
 
@@ -42,8 +42,8 @@ export default function QuantitySelector({ value = 1, onChange, min = 1, max = 9
         disabled={isMax}
         className={`w-9 h-9 flex items-center justify-center rounded-r-full transition ${
           isMax
-            ? 'text-[#6B7280] cursor-not-allowed'
-            : 'text-[#B8B8C2] hover:bg-[#2A2A2E] active:bg-[#2A2A2E]'
+            ? 'text-[var(--text-secondary)] cursor-not-allowed'
+            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] active:bg-[var(--bg-hover)]'
         }`}
         aria-label="Increase quantity"
       >

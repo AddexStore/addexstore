@@ -60,28 +60,28 @@ export default function Profile() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#0F0F10] pb-16">
+    <div className="min-h-screen bg-[var(--bg-page)] pb-16">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
         <div className="flex items-center gap-3 mb-8">
           <BackButton />
-          <h1 className="font-playfair-display text-2xl sm:text-3xl font-bold text-white">
+          <h1 className="font-playfair-display text-2xl sm:text-3xl font-bold text-[var(--text-primary)]">
             My Profile
           </h1>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           <div className="flex-1 space-y-6">
-            <div className="bg-[#232326] rounded-xl shadow-lg shadow-black/20 p-6 sm:p-8">
+            <div className="bg-[var(--bg-card)] rounded-xl shadow-lg shadow-black/5 p-6 sm:p-8">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-                  <div className="w-20 h-20 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#C9A84C] flex items-center justify-center text-black text-2xl sm:text-xl font-bold font-playfair-display flex-shrink-0">
+                  <div className="w-20 h-20 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-[#C6A972] to-[#B8965F] flex items-center justify-center text-black text-2xl sm:text-xl font-bold font-playfair-display flex-shrink-0">
                     {user.name?.charAt(0)?.toUpperCase() || 'U'}
                   </div>
                   <div className="text-center sm:text-left">
-                    <h2 className="text-xl sm:text-lg font-semibold text-white">
+                    <h2 className="text-xl sm:text-lg font-semibold text-[var(--text-primary)]">
                       {user.name || 'User'}
                     </h2>
-                    <p className="text-sm text-[#B8B8C2]">
+                    <p className="text-sm text-[var(--text-secondary)]">
                       Member since{' '}
                       {user.joinDate
                         ? formatDate(user.joinDate)
@@ -93,8 +93,8 @@ export default function Profile() {
                   onClick={() => setIsEditing(!isEditing)}
                   className={`min-h-[44px] px-5 py-2 text-xs font-medium rounded-full border transition self-center sm:self-start ${
                     isEditing
-                      ? 'border-[#2D2D30] text-[#B8B8C2] hover:bg-[#2A2A2E]'
-                      : 'border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/10'
+                      ? 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                      : 'border-[#C6A972] text-[#C6A972] hover:bg-[#C6A972]/10'
                   }`}
                 >
                   {isEditing ? 'Cancel' : 'Edit Profile'}
@@ -104,7 +104,7 @@ export default function Profile() {
               {isEditing ? (
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div>
-                    <label className="block text-xs font-medium text-[#B8B8C2] uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">
                       Full Name
                     </label>
                     <input
@@ -113,11 +113,11 @@ export default function Profile() {
                       value={form.name}
                       onChange={handleChange}
                       required
-                      className="w-full min-h-[48px] px-4 py-3 text-sm border border-[#2D2D30] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent transition bg-[#18181B] text-white placeholder-[#6B7280]"
+                      className="w-full min-h-[48px] px-4 py-3 text-sm border border-[var(--border-color)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-[#B8B8C2] uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">
                       Email
                     </label>
                     <input
@@ -126,11 +126,11 @@ export default function Profile() {
                       value={form.email}
                       onChange={handleChange}
                       required
-                      className="w-full min-h-[48px] px-4 py-3 text-sm border border-[#2D2D30] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent transition bg-[#18181B] text-white placeholder-[#6B7280]"
+                      className="w-full min-h-[48px] px-4 py-3 text-sm border border-[var(--border-color)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-[#B8B8C2] uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">
                       Phone
                     </label>
                     <input
@@ -138,14 +138,14 @@ export default function Profile() {
                       name="phone"
                       value={form.phone}
                       onChange={handleChange}
-                      className="w-full min-h-[48px] px-4 py-3 text-sm border border-[#2D2D30] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent transition bg-[#18181B] text-white placeholder-[#6B7280]"
+                      className="w-full min-h-[48px] px-4 py-3 text-sm border border-[var(--border-color)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
                     />
                   </div>
                   <div className="pt-2">
                     <button
                       type="submit"
                       disabled={saving}
-                      className="w-full sm:w-auto min-h-[48px] px-8 py-3 bg-[#D4AF37] text-black text-sm font-medium rounded-full hover:bg-[#C9A84C] transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-black/20"
+                      className="w-full sm:w-auto min-h-[48px] px-8 py-3 bg-[#C6A972] text-white text-sm font-medium rounded-full hover:bg-[#B8965F] transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-black/5"
                     >
                       {saving ? 'Saving...' : 'Save Changes'}
                     </button>
@@ -155,34 +155,34 @@ export default function Profile() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
-                      <p className="text-xs font-medium text-[#B8B8C2] uppercase tracking-wider">
+                      <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
                         Email
                       </p>
-                      <p className="text-sm text-white mt-1">
-                        {user.email || '—'}
+                      <p className="text-sm text-[var(--text-primary)] mt-1">
+                        {user.email || 'â€”'}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-[#B8B8C2] uppercase tracking-wider">
+                      <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
                         Phone
                       </p>
-                      <p className="text-sm text-white mt-1">
-                        {user.phone || '—'}
+                      <p className="text-sm text-[var(--text-primary)] mt-1">
+                        {user.phone || 'â€”'}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-[#B8B8C2] uppercase tracking-wider">
+                      <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
                         Role
                       </p>
-                      <p className="text-sm text-white mt-1 capitalize">
+                      <p className="text-sm text-[var(--text-primary)] mt-1 capitalize">
                         {user.role || 'customer'}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-[#B8B8C2] uppercase tracking-wider">
+                      <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
                         Member Since
                       </p>
-                      <p className="text-sm text-white mt-1">
+                      <p className="text-sm text-[var(--text-primary)] mt-1">
                         {user.joinDate
                           ? formatDate(user.joinDate)
                           : 'Today'}
@@ -194,11 +194,11 @@ export default function Profile() {
             </div>
 
             {user.address && (
-              <div className="bg-[#232326] rounded-xl shadow-lg shadow-black/20 p-6 sm:p-8">
-                <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
+              <div className="bg-[var(--bg-card)] rounded-xl shadow-lg shadow-black/5 p-6 sm:p-8">
+                <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-4">
                   Saved Address
                 </h3>
-                <div className="text-sm text-[#B8B8C2] space-y-1 leading-relaxed">
+                <div className="text-sm text-[var(--text-secondary)] space-y-1 leading-relaxed">
                   <p>{user.address.street}</p>
                   <p>
                     {user.address.city}, {user.address.state}{' '}
@@ -211,7 +211,7 @@ export default function Profile() {
           </div>
 
           <div className="lg:w-80 space-y-3">
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-3">
+            <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-3">
               Quick Links
             </h3>
             <div className="grid grid-cols-2 sm:flex sm:flex-col gap-3">
@@ -219,11 +219,11 @@ export default function Profile() {
                 <Link
                   key={link.label}
                   to={link.path}
-                  className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 p-4 bg-[#232326] rounded-xl shadow-lg shadow-black/20 hover:shadow-lg transition group text-center sm:text-left"
+                  className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 p-4 bg-[var(--bg-card)] rounded-xl shadow-lg shadow-black/5 hover:shadow-lg transition group text-center sm:text-left"
                 >
-                  <div className="w-10 h-10 rounded-full bg-[#18181B] flex items-center justify-center group-hover:bg-[#D4AF37]/10 transition flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-[var(--bg-secondary)] flex items-center justify-center group-hover:bg-[#C6A972]/10 transition flex-shrink-0">
                     <svg
-                      className="w-5 h-5 text-[#6B7280] group-hover:text-[#D4AF37] transition"
+                      className="w-5 h-5 text-[var(--text-secondary)] group-hover:text-[#C6A972] transition"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -236,11 +236,11 @@ export default function Profile() {
                       />
                     </svg>
                   </div>
-                  <span className="text-xs sm:text-sm font-medium text-white group-hover:text-[#D4AF37] transition">
+                  <span className="text-xs sm:text-sm font-medium text-[var(--text-primary)] group-hover:text-[#C6A972] transition">
                     {link.label}
                   </span>
                   <svg
-                    className="w-4 h-4 hidden sm:block ml-auto text-[#6B7280] group-hover:text-[#D4AF37] transition"
+                    className="w-4 h-4 hidden sm:block ml-auto text-[var(--text-secondary)] group-hover:text-[#C6A972] transition"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

@@ -1,4 +1,4 @@
-export const SITE_NAME = 'SIFR';
+export const SITE_NAME = 'AddexStores';
 
 export const NAV_LINKS = [
   { name: 'Home', path: '/' },

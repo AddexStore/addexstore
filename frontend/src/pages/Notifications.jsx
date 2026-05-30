@@ -51,12 +51,12 @@ const NOTIFICATION_ICONS = {
 }
 
 const TYPE_COLORS = {
-  order_confirmation: 'bg-green-500/20 text-green-400',
+  order_confirmation: 'bg-green-500/20 text-[#2F855A]',
   shipping_update: 'bg-blue-500/20 text-blue-400',
   delivery_confirmation: 'bg-emerald-500/20 text-emerald-400',
   processing_update: 'bg-purple-500/20 text-purple-400',
-  cancellation: 'bg-red-500/20 text-red-400',
-  promotion: 'bg-[#D4AF37]/15 text-[#D4AF37]',
+  cancellation: 'bg-red-500/20 text-[#C53030]',
+  promotion: 'bg-[#C6A972]/15 text-[#C6A972]',
   review_request: 'bg-pink-500/20 text-pink-400',
   system: 'bg-gray-500/20 text-gray-400',
 }
@@ -93,20 +93,20 @@ export default function Notifications() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F0F10] pb-16">
+    <div className="min-h-screen bg-[var(--bg-page)] pb-16">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
           <div>
             <div className="flex items-center gap-3">
               <BackButton />
-              <h1 className="text-2xl sm:text-3xl font-playfair-display font-bold text-white">Notifications</h1>
+              <h1 className="text-2xl sm:text-3xl font-playfair-display font-bold text-[var(--text-primary)]">Notifications</h1>
             </div>
-            <p className="text-sm text-[#B8B8C2] mt-1">Stay updated with your orders and promotions.</p>
+            <p className="text-sm text-[var(--text-secondary)] mt-1">Stay updated with your orders and promotions.</p>
           </div>
           {unreadCount > 0 && (
             <button
               onClick={markAllAsRead}
-              className="min-h-[44px] px-5 py-2.5 text-xs font-medium text-[#D4AF37] border border-[#D4AF37]/30 rounded-full hover:bg-[#D4AF37]/10 transition self-start sm:self-auto"
+              className="min-h-[44px] px-5 py-2.5 text-xs font-medium text-[#C6A972] border border-[#C6A972]/30 rounded-full hover:bg-[#C6A972]/10 transition self-start sm:self-auto"
             >
               Mark All as Read
             </button>
@@ -120,8 +120,8 @@ export default function Notifications() {
               onClick={() => setActiveTab(tab)}
               className={`min-h-[44px] px-5 py-2.5 rounded-full text-sm font-medium transition ${
                 activeTab === tab
-                  ? 'bg-[#D4AF37] text-black'
-                  : 'bg-[#232326] text-[#B8B8C2] hover:bg-[#2A2A2E]'
+                  ? 'bg-[#C6A972] text-white'
+                  : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
               }`}
             >
               {tab}
@@ -156,8 +156,8 @@ export default function Notifications() {
                   onClick={() => markAsRead(notif.id)}
                   className={`flex items-start gap-4 p-4 sm:p-5 rounded-xl cursor-pointer transition active:scale-[0.99] ${
                     notif.read
-                      ? 'bg-[#232326] hover:bg-[#2A2A2E]'
-                      : 'bg-[#18181B] border border-[#D4AF37]/10'
+                      ? 'bg-[var(--bg-card)] hover:bg-[var(--bg-hover)]'
+                      : 'bg-[var(--bg-secondary)] border border-[#C6A972]/10'
                   }`}
                 >
                   <div className={`w-11 h-11 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 ${colorClass}`}>
@@ -166,16 +166,16 @@ export default function Notifications() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <h4 className={`text-sm ${notif.read ? 'font-medium text-white' : 'font-semibold text-white'}`}>
+                        <h4 className={`text-sm ${notif.read ? 'font-medium text-[var(--text-primary)]' : 'font-semibold text-[var(--text-primary)]'}`}>
                           {notif.title}
                         </h4>
-                        <p className="text-xs text-[#B8B8C2] mt-0.5 leading-relaxed">{notif.message}</p>
+                        <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-relaxed">{notif.message}</p>
                       </div>
                       {!notif.read && (
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37] flex-shrink-0 mt-1.5" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#C6A972] flex-shrink-0 mt-1.5" />
                       )}
                     </div>
-                    <p className="text-[10px] text-[#6B7280] mt-2">{formatDate(notif.createdAt)}</p>
+                    <p className="text-[10px] text-[var(--text-secondary)] mt-2">{formatDate(notif.createdAt)}</p>
                   </div>
                 </div>
               )

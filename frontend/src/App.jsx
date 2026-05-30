@@ -5,6 +5,7 @@ import { WishlistProvider } from './context/WishlistContext'
 import { ToastProvider } from './context/ToastContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { NotificationProvider } from './context/NotificationContext'
+import { CelebrationProvider } from './context/CelebrationContext'
 import AppRoutes from './routes/AppRoutes'
 
 function App() {
@@ -13,13 +14,15 @@ function App() {
       <ToastProvider>
         <AuthProvider>
           <ThemeProvider>
-            <CartProvider>
-              <WishlistProvider>
-                <NotificationProvider>
-                  <AppRoutes />
-                </NotificationProvider>
-              </WishlistProvider>
-            </CartProvider>
+            <CelebrationProvider>
+              <CartProvider>
+                <WishlistProvider>
+                  <NotificationProvider>
+                    <AppRoutes />
+                  </NotificationProvider>
+                </WishlistProvider>
+              </CartProvider>
+            </CelebrationProvider>
           </ThemeProvider>
         </AuthProvider>
       </ToastProvider>

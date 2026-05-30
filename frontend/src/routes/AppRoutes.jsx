@@ -37,6 +37,7 @@ const NewArrivals = React.lazy(() => import('../pages/NewArrivals'))
 const Trending = React.lazy(() => import('../pages/Trending'))
 const Checkout = React.lazy(() => import('../pages/Checkout'))
 const OrderConfirmation = React.lazy(() => import('../pages/OrderConfirmation'))
+const About = React.lazy(() => import('../pages/About'))
 const Contact = React.lazy(() => import('../pages/Contact'))
 const NotFound = React.lazy(() => import('../pages/NotFound'))
 
@@ -73,6 +74,7 @@ export default function AppRoutes() {
           <Route path="notifications" element={<SuspenseWrapper><Notifications /></SuspenseWrapper>} />
           <Route path="settings" element={<SuspenseWrapper><Settings /></SuspenseWrapper>} />
         </Route>
+        <Route path="about" element={<SuspenseWrapper><About /></SuspenseWrapper>} />
         <Route path="contact" element={<SuspenseWrapper><Contact /></SuspenseWrapper>} />
       </Route>
 

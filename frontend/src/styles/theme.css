@@ -1,0 +1,69 @@
+:root {
+  /* Luxury Brand Colors (theme-invariant) */
+  --color-primary: #C6A972;
+  --color-primary-hover: #B8965F;
+  --color-primary-dark: #8A6A3D;
+  --color-secondary: #2E2E2E;
+
+  /* Background Colors — Light Theme */
+  --bg-page: #FAF9F7;
+  --bg-card: #FFFFFF;
+  --bg-elevated: #FFFFFF;
+  --bg-hover: #EDE8E1;
+  --bg-input: #FFFFFF;
+  --bg-secondary: #F5F2ED;
+
+  /* Text Colors — Light Theme */
+  --text-primary: #1A1A1A;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+
+  /* Border & Divider — Light Theme */
+  --border-color: #E7E2DA;
+  --divider-color: #EFEAE4;
+  --border-subtle: #EFEAE4;
+
+  /* Semantic Colors (theme-invariant) */
+  --success: #2F855A;
+  --error: #C53030;
+  --warning: #D69E2E;
+  --info: #4A5568;
+
+  /* Overlay Colors — Light Theme */
+  --overlay-dark: rgba(0, 0, 0, 0.35);
+  --overlay-light: rgba(0, 0, 0, 0.04);
+  --overlay-gold: rgba(198, 169, 114, 0.15);
+
+  /* Shadows — Light Theme */
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 8px 30px rgba(0, 0, 0, 0.1);
+  --shadow-gold: 0 4px 20px rgba(198, 169, 114, 0.2);
+}
+
+[data-theme="dark"] {
+  /* Background Colors — Dark Theme */
+  --bg-page: #111111;
+  --bg-card: #1F1F1F;
+  --bg-elevated: #1F1F1F;
+  --bg-hover: #2A2A2A;
+  --bg-input: #171717;
+  --bg-secondary: #171717;
+
+  /* Text Colors — Dark Theme */
+  --text-primary: #FFFFFF;
+  --text-secondary: #B5B5B5;
+  --text-muted: #6B6B6B;
+
+  /* Border & Divider — Dark Theme */
+  --border-color: #2A2A2A;
+  --divider-color: #2A2A2A;
+  --border-subtle: #2A2A2A;
+
+  /* Overlay Colors — Dark Theme */
+  --overlay-dark: rgba(0, 0, 0, 0.5);
+  --overlay-light: rgba(255, 255, 255, 0.05);
+
+  /* Shadows — Dark Theme */
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 8px 30px rgba(0, 0, 0, 0.4);
+}

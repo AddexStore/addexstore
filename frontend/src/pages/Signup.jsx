@@ -1,5 +1,5 @@
-﻿import { useState } from 'react'
-import { Link, useNavigate, Navigate } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useNavigate, Navigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 
@@ -7,6 +7,8 @@ export default function Signup() {
   const { signup, isAuthenticated } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirect = searchParams.get('redirect') || '/'
 
   const [form, setForm] = useState({
     name: '',
@@ -18,7 +20,7 @@ export default function Signup() {
   const [loading, setLoading] = useState(false)
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />
+    return <Navigate to={redirect} replace />
   }
 
   const validate = () => {
@@ -63,7 +65,7 @@ export default function Signup() {
     try {
       await signup(form.name, form.email, form.password)
       showToast('Account created successfully!', 'success')
-      navigate('/')
+      navigate(redirect)
     } catch {
       showToast('Signup failed. Please try again.', 'error')
     } finally {
@@ -72,19 +74,19 @@ export default function Signup() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F0F10] flex items-center justify-center py-12 px-4">
+    <div className="min-h-screen bg-[var(--bg-page)] flex items-center justify-center py-12 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link to="/" className="font-playfair-display text-3xl font-bold text-white">
-            SIFR
+          <Link to="/" className="font-playfair-display text-3xl font-bold text-[var(--text-primary)]">
+            AddexStores
           </Link>
-          <p className="text-sm text-[#B8B8C2] mt-2">Create your account</p>
+          <p className="text-sm text-[var(--text-secondary)] mt-2">Create your account</p>
         </div>
 
-        <div className="bg-[#232326] rounded-2xl shadow-lg shadow-black/20 p-6 sm:p-8">
+        <div className="bg-[var(--bg-card)] rounded-2xl shadow-lg shadow-black/5 p-6 sm:p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-xs font-medium text-[#B8B8C2] uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">
                 Full Name
               </label>
               <input
@@ -93,17 +95,17 @@ export default function Signup() {
                 value={form.name}
                 onChange={handleChange}
                 placeholder="John Doe"
-                className={`w-full min-h-[48px] px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent transition bg-[#18181B] text-white placeholder-[#6B7280] ${
-                  errors.name ? 'border-[#EF4444] bg-[#EF4444]/10' : 'border-[#2D2D30]'
+                className={`w-full min-h-[48px] px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] ${
+                  errors.name ? 'border-[#C53030] bg-[#C53030]/10' : 'border-[var(--border-color)]'
                 }`}
               />
               {errors.name && (
-                <p className="text-xs text-[#EF4444] mt-1.5">{errors.name}</p>
+                <p className="text-xs text-[#C53030] mt-1.5">{errors.name}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#B8B8C2] uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">
                 Email
               </label>
               <input
@@ -112,17 +114,17 @@ export default function Signup() {
                 value={form.email}
                 onChange={handleChange}
                 placeholder="you@example.com"
-                className={`w-full min-h-[48px] px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent transition bg-[#18181B] text-white placeholder-[#6B7280] ${
-                  errors.email ? 'border-[#EF4444] bg-[#EF4444]/10' : 'border-[#2D2D30]'
+                className={`w-full min-h-[48px] px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] ${
+                  errors.email ? 'border-[#C53030] bg-[#C53030]/10' : 'border-[var(--border-color)]'
                 }`}
               />
               {errors.email && (
-                <p className="text-xs text-[#EF4444] mt-1.5">{errors.email}</p>
+                <p className="text-xs text-[#C53030] mt-1.5">{errors.email}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#B8B8C2] uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">
                 Password
               </label>
               <input
@@ -130,18 +132,18 @@ export default function Signup() {
                 name="password"
                 value={form.password}
                 onChange={handleChange}
-                placeholder="••••••••"
-                className={`w-full min-h-[48px] px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent transition bg-[#18181B] text-white placeholder-[#6B7280] ${
-                  errors.password ? 'border-[#EF4444] bg-[#EF4444]/10' : 'border-[#2D2D30]'
+                placeholder="Create a password"
+                className={`w-full min-h-[48px] px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] ${
+                  errors.password ? 'border-[#C53030] bg-[#C53030]/10' : 'border-[var(--border-color)]'
                 }`}
               />
               {errors.password && (
-                <p className="text-xs text-[#EF4444] mt-1.5">{errors.password}</p>
+                <p className="text-xs text-[#C53030] mt-1.5">{errors.password}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#B8B8C2] uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">
                 Confirm Password
               </label>
               <input
@@ -149,15 +151,15 @@ export default function Signup() {
                 name="confirmPassword"
                 value={form.confirmPassword}
                 onChange={handleChange}
-                placeholder="••••••••"
-                className={`w-full min-h-[48px] px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent transition bg-[#18181B] text-white placeholder-[#6B7280] ${
+                placeholder="Confirm your password"
+                className={`w-full min-h-[48px] px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] ${
                   errors.confirmPassword
-                    ? 'border-[#EF4444] bg-[#EF4444]/10'
-                    : 'border-[#2D2D30]'
+                    ? 'border-[#C53030] bg-[#C53030]/10'
+                    : 'border-[var(--border-color)]'
                 }`}
               />
               {errors.confirmPassword && (
-                <p className="text-xs text-[#EF4444] mt-1.5">
+                <p className="text-xs text-[#C53030] mt-1.5">
                   {errors.confirmPassword}
                 </p>
               )}
@@ -166,18 +168,18 @@ export default function Signup() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full min-h-[48px] py-3 bg-[#D4AF37] text-black text-sm font-medium rounded-xl hover:bg-[#C9A84C] transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full min-h-[48px] py-3 bg-[#C6A972] text-white text-sm font-medium rounded-xl hover:bg-[#B8965F] transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-[#B8B8C2]">
+            <p className="text-sm text-[var(--text-secondary)]">
               Already have an account?{' '}
               <Link
-                to="/login"
-                className="text-[#D4AF37] hover:text-[#C9A84C] font-medium transition"
+                to={redirect !== '/' ? `/login?redirect=${redirect}` : '/login'}
+                className="text-[#C6A972] hover:text-[#B8965F] font-medium transition"
               >
                 Sign In
               </Link>

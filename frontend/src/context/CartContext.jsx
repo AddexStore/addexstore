@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react'
 import { useToast } from './ToastContext'
+import { useCelebration } from './CelebrationContext'
 
 const CartContext = createContext(null)
 
@@ -31,6 +32,7 @@ function loadCart() {
 export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState(loadCart)
   const toast = useToast()
+  const { triggerCelebration } = useCelebration()
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cartItems))
@@ -51,7 +53,7 @@ export function CartProvider({ children }) {
           return prev
         }
         updated[existingIndex] = { ...existing, quantity: newQty }
-        toast.showToast(`${product.name} quantity updated in cart`, 'success')
+        triggerCelebration('Cart Updated')
         return updated
       }
 
@@ -64,15 +66,15 @@ export function CartProvider({ children }) {
         quantity,
         size: size || product.sizes?.[0] || 'One Size',
         color: color || product.colors?.[0] || 'Default',
-        brand: product.brand || 'SIFR',
+        brand: product.brand || 'AddexStores',
         stock: product.stock ?? 99,
         _cartKey: `${product.id}-${size || product.sizes?.[0] || 'One Size'}-${color || product.colors?.[0] || 'Default'}-${Date.now()}-${Math.random()}`,
       }
 
-      toast.showToast(`${product.name} added to cart`, 'success')
+      triggerCelebration('Added to Cart')
       return [...prev, newItem]
     })
-  }, [toast])
+  }, [triggerCelebration])
 
   const removeFromCart = useCallback((id, size, color) => {
     setCartItems((prev) => {

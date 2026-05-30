@@ -63,12 +63,12 @@ function CountdownTimer() {
         { label: 'Seconds', value: pad(timeLeft.seconds) },
       ].map(({ label, value }) => (
         <div key={label} className="text-center">
-          <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-[#232326] rounded-xl shadow-lg shadow-black/20 flex items-center justify-center">
-            <span className="text-lg sm:text-xl lg:text-2xl font-bold text-white font-inter">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-[var(--bg-card)] rounded-xl shadow-lg shadow-black/5 flex items-center justify-center">
+            <span className="text-lg sm:text-xl lg:text-2xl font-bold text-[var(--text-primary)] font-inter">
               {value}
             </span>
           </div>
-          <span className="text-[10px] uppercase tracking-wider text-white/70 mt-1 block">
+          <span className="text-[10px] uppercase tracking-wider text-[var(--text-primary)]/70 mt-1 block">
             {label}
           </span>
         </div>
@@ -80,13 +80,13 @@ function CountdownTimer() {
 function SectionHeader({ title, linkTo, linkText }) {
   return (
     <div className="flex items-end justify-between mb-6 sm:mb-8">
-      <h2 className="font-playfair-display text-xl sm:text-2xl lg:text-3xl font-bold text-white">
+      <h2 className="font-playfair-display text-xl sm:text-2xl lg:text-3xl font-bold text-[var(--text-primary)]">
         {title}
       </h2>
       {linkTo && linkText && (
         <Link
           to={linkTo}
-          className="hidden sm:inline-flex items-center gap-1 text-sm font-medium text-[#D4AF37] hover:text-[#C9A84C] transition"
+          className="hidden sm:inline-flex items-center gap-1 text-sm font-medium text-[#C6A972] hover:text-[#B8965F] transition"
         >
           {linkText}
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -116,7 +116,7 @@ export default function Home() {
   )
 
   return (
-    <div className="min-h-screen bg-[#0F0F10]">
+    <div className="min-h-screen bg-[var(--bg-page)]">
       <HeroBanner />
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 lg:py-20">
@@ -156,15 +156,15 @@ export default function Home() {
       </section>
 
       {flashSaleProducts.length > 0 && (
-        <section className="bg-gradient-to-r from-[#0F0F10] via-[#18181B] to-[#0F0F10] py-10 sm:py-14 lg:py-20">
+        <section className="bg-gradient-to-r from-[var(--bg-secondary)] via-[var(--bg-hover)] to-[var(--bg-secondary)] py-10 sm:py-14 lg:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 sm:gap-6 mb-6 sm:mb-10">
               <div>
-                <h2 className="font-playfair-display text-xl sm:text-2xl lg:text-3xl font-bold text-white">
+                <h2 className="font-playfair-display text-xl sm:text-2xl lg:text-3xl font-bold text-[var(--text-primary)]">
                   Flash Sale
                 </h2>
-                <p className="text-[#B8B8C2] text-xs sm:text-sm mt-1">
-                  Limited time offers — grab them before they're gone
+                <p className="text-[var(--text-secondary)] text-xs sm:text-sm mt-1">
+                  Limited time offers Ã¢â‚¬â€ grab them before they're gone
                 </p>
               </div>
               <CountdownTimer />
@@ -199,12 +199,12 @@ export default function Home() {
         </section>
       )}
 
-      <section className="bg-[#18181B] py-10 sm:py-14 lg:py-20">
+      <section className="bg-[var(--bg-secondary)] py-10 sm:py-14 lg:py-20">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="font-playfair-display text-xl sm:text-2xl lg:text-3xl font-bold text-white">
+          <h2 className="font-playfair-display text-xl sm:text-2xl lg:text-3xl font-bold text-[var(--text-primary)]">
             Stay in the Loop
           </h2>
-          <p className="text-[#B8B8C2] text-xs sm:text-sm mt-3 mb-6 sm:mb-8 max-w-md mx-auto">
+          <p className="text-[var(--text-secondary)] text-xs sm:text-sm mt-3 mb-6 sm:mb-8 max-w-md mx-auto">
             Subscribe for exclusive access to new drops, private sales, and member-only perks.
           </p>
           <form
@@ -214,11 +214,11 @@ export default function Home() {
             <input
               type="email"
               placeholder="Enter your email"
-              className="flex-1 px-5 py-3 rounded-xl sm:rounded-l-full border border-[#2D2D30] bg-[#232326] text-sm text-white placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#D4AF37] focus:border-transparent transition"
+              className="flex-1 px-5 py-3 rounded-xl sm:rounded-l-full border border-[var(--border-color)] bg-[var(--bg-card)] text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition"
             />
             <button
               type="submit"
-              className="w-full sm:w-auto px-8 py-3 bg-[#D4AF37] text-black text-sm font-medium rounded-xl sm:rounded-r-full hover:bg-[#C9A84C] transition active:scale-[0.98] shadow-lg shadow-black/20"
+              className="w-full sm:w-auto px-8 py-3 bg-[#C6A972] text-white text-sm font-medium rounded-xl sm:rounded-r-full hover:bg-[#B8965F] transition active:scale-[0.98] shadow-lg shadow-black/5"
             >
               Subscribe
             </button>

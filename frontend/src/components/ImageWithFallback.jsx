@@ -19,7 +19,7 @@ export default function ImageWithFallback({ src, alt, fallback, className }) {
     <div className={`relative overflow-hidden ${className || ''}`}>
       {/* Loading skeleton */}
       {isLoading && (
-        <div className="absolute inset-0 bg-[#232326] animate-pulse" />
+        <div className="absolute inset-0 bg-[var(--bg-hover)] animate-pulse" />
       )}
 
       {/* Hidden image for loading/error tracking */}

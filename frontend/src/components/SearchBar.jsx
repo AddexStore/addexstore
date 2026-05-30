@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-export default function SearchBar({ placeholder = 'Search SIFR...', onSearch }) {
+export default function SearchBar({ placeholder = 'Search AddexStores...', onSearch }) {
   const [query, setQuery] = useState('')
   const navigate = useNavigate()
 
@@ -25,7 +25,7 @@ export default function SearchBar({ placeholder = 'Search SIFR...', onSearch }) 
     <form onSubmit={handleSubmit} className="relative w-full">
       <div className="relative">
         <svg
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280] pointer-events-none"
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)] pointer-events-none"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -38,14 +38,14 @@ export default function SearchBar({ placeholder = 'Search SIFR...', onSearch }) 
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder}
-          className="w-full h-10 pl-10 pr-10 bg-[#18181B] border border-[#2D2D30] rounded-full text-sm text-white placeholder-[#6B7280] focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/30 transition"
+          className="w-full h-10 pl-10 pr-10 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-full text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[#C6A972] focus:ring-1 focus:ring-[#C6A972]/30 transition"
         />
 
         {query && (
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#B8B8C2] transition"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-secondary)] transition"
             aria-label="Clear search"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -86,12 +86,12 @@ export default function AdminSidebar({ isOpen, onClose }) {
   return (
     <>
       <aside
-        className={`fixed top-16 left-0 z-40 h-[calc(100vh-64px)] w-64 bg-[#0F0F10] text-white transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-auto ${
+        className={`fixed top-16 left-0 z-40 h-[calc(100vh-64px)] w-64 bg-[var(--bg-card)] text-[var(--text-primary)] transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-auto ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         } flex flex-col`}
       >
-        <div className="flex items-center gap-3 px-6 py-5 border-b border-[#2D2D30]">
-          <div className="w-8 h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-black font-bold font-['Playfair_Display'] text-sm">
+        <div className="flex items-center gap-3 px-6 py-5 border-b border-[var(--border-color)]">
+          <div className="w-8 h-8 rounded-full bg-[#C6A972] flex items-center justify-center text-black font-bold font-['Playfair_Display'] text-sm">
             S
           </div>
           <span className="font-['Playfair_Display'] text-lg tracking-wider">
@@ -109,8 +109,8 @@ export default function AdminSidebar({ isOpen, onClose }) {
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                   isActive
-                    ? 'bg-[#232326] text-white border-l-[3px] border-[#D4AF37] pl-[13px]'
-                    : 'text-[#B8B8C2] hover:text-white hover:bg-[#2A2A2E]'
+                    ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border-l-[3px] border-[#C6A972] pl-[13px]'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
                 }`
               }
             >
@@ -120,13 +120,13 @@ export default function AdminSidebar({ isOpen, onClose }) {
           ))}
         </nav>
 
-        <div className="p-3 border-t border-[#2D2D30]">
+        <div className="p-3 border-t border-[var(--border-color)]">
           <button
             onClick={() => {
               localStorage.removeItem('sifr_user')
               window.location.href = '/admin/login'
             }}
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-[#B8B8C2] hover:text-white hover:bg-[#2A2A2E] transition-colors"
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />

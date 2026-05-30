@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { useToast } from '../context/ToastContext'
 import { formatPrice } from '../utils/helpers'
@@ -8,8 +9,15 @@ const STEPS = ['Shipping', 'Payment', 'Review']
 
 export default function Checkout() {
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
   const { cartItems, getCartTotal, clearCart } = useCart()
   const { showToast } = useToast()
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login?redirect=/checkout', { replace: true })
+    }
+  }, [isAuthenticated, navigate])
   const [step, setStep] = useState(0)
   const [submitting, setSubmitting] = useState(false)
 
@@ -93,18 +101,18 @@ export default function Checkout() {
 
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen bg-[#0F0F10] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[var(--bg-page)] flex items-center justify-center px-4">
         <div className="text-center max-w-md">
-          <div className="w-20 h-20 rounded-full bg-[#232326] flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-[#6B7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-20 h-20 rounded-full bg-[var(--bg-card)] flex items-center justify-center mx-auto mb-6">
+            <svg className="w-10 h-10 text-[var(--text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
             </svg>
           </div>
-          <h2 className="text-xl font-semibold text-white mb-2">Your cart is empty</h2>
-          <p className="text-[#B8B8C2] text-sm mb-6">Add some items before checking out.</p>
+          <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Your cart is empty</h2>
+          <p className="text-[var(--text-secondary)] text-sm mb-6">Add some items before checking out.</p>
           <Link
             to="/cart"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#D4AF37] text-black text-sm font-medium rounded-full hover:bg-[#C9A84C] transition"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#C6A972] text-white text-sm font-medium rounded-full hover:bg-[#B8965F] transition"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -117,14 +125,14 @@ export default function Checkout() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F0F10] pb-28 lg:pb-12">
+    <div className="min-h-screen bg-[var(--bg-page)] pb-28 lg:pb-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <nav className="flex items-center gap-2 text-sm text-[#B8B8C2] mb-6">
-          <Link to="/cart" className="hover:text-white transition">Cart</Link>
+        <nav className="flex items-center gap-2 text-sm text-[var(--text-secondary)] mb-6">
+          <Link to="/cart" className="hover:text-[var(--text-primary)] transition">Cart</Link>
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
-          <span className="text-white font-medium">Checkout</span>
+          <span className="text-[var(--text-primary)] font-medium">Checkout</span>
         </nav>
 
         <div className="flex items-center justify-between mb-8">
@@ -133,10 +141,10 @@ export default function Checkout() {
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition ${
                   i < step
-                    ? 'bg-[#D4AF37] text-black'
+                    ? 'bg-[#C6A972] text-white'
                     : i === step
-                    ? 'bg-[#D4AF37] text-black'
-                    : 'bg-[#232326] text-[#6B7280] border border-[#2D2D30]'
+                    ? 'bg-[#C6A972] text-white'
+                    : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-color)]'
                 }`}
               >
                 {i < step ? (
@@ -147,11 +155,11 @@ export default function Checkout() {
                   i + 1
                 )}
               </div>
-              <span className={`text-sm font-medium hidden sm:inline ${i <= step ? 'text-white' : 'text-[#6B7280]'}`}>
+              <span className={`text-sm font-medium hidden sm:inline ${i <= step ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
                 {label}
               </span>
               {i < STEPS.length - 1 && (
-                <div className={`hidden sm:block w-12 h-px mx-2 ${i < step ? 'bg-[#D4AF37]' : 'bg-[#2D2D30]'}`} />
+                <div className={`hidden sm:block w-12 h-px mx-2 ${i < step ? 'bg-[#C6A972]' : 'bg-[#EFEAE4]'}`} />
               )}
             </div>
           ))}
@@ -160,95 +168,95 @@ export default function Checkout() {
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-1">
             {step === 0 && (
-              <div className="bg-[#232326] rounded-xl shadow-lg shadow-black/20 p-6 border border-[#2D2D30]">
-                <h2 className="text-lg font-semibold text-white mb-6">Shipping Information</h2>
+              <div className="bg-[var(--bg-card)] rounded-xl shadow-lg shadow-black/5 p-6 border border-[var(--border-color)]">
+                <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-6">Shipping Information</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-[#B8B8C2] mb-1.5">First Name</label>
+                    <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">First Name</label>
                     <input
                       type="text"
                       value={shipping.firstName}
                       onChange={(e) => updateShipping('firstName', e.target.value)}
-                      className="w-full px-4 py-2.5 text-sm border border-[#2D2D30] rounded-lg bg-[#18181B] text-white placeholder-[#6B7280] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
+                      className="w-full px-4 py-2.5 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[#C6A972]"
                       placeholder="John"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-[#B8B8C2] mb-1.5">Last Name</label>
+                    <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Last Name</label>
                     <input
                       type="text"
                       value={shipping.lastName}
                       onChange={(e) => updateShipping('lastName', e.target.value)}
-                      className="w-full px-4 py-2.5 text-sm border border-[#2D2D30] rounded-lg bg-[#18181B] text-white placeholder-[#6B7280] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
+                      className="w-full px-4 py-2.5 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[#C6A972]"
                       placeholder="Doe"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-[#B8B8C2] mb-1.5">Email</label>
+                    <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Email</label>
                     <input
                       type="email"
                       value={shipping.email}
                       onChange={(e) => updateShipping('email', e.target.value)}
-                      className="w-full px-4 py-2.5 text-sm border border-[#2D2D30] rounded-lg bg-[#18181B] text-white placeholder-[#6B7280] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
+                      className="w-full px-4 py-2.5 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[#C6A972]"
                       placeholder="john@example.com"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-[#B8B8C2] mb-1.5">Phone</label>
+                    <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Phone</label>
                     <input
                       type="tel"
                       value={shipping.phone}
                       onChange={(e) => updateShipping('phone', e.target.value)}
-                      className="w-full px-4 py-2.5 text-sm border border-[#2D2D30] rounded-lg bg-[#18181B] text-white placeholder-[#6B7280] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
+                      className="w-full px-4 py-2.5 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[#C6A972]"
                       placeholder="+1 (555) 000-0000"
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-medium text-[#B8B8C2] mb-1.5">Street Address</label>
+                    <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Street Address</label>
                     <input
                       type="text"
                       value={shipping.street}
                       onChange={(e) => updateShipping('street', e.target.value)}
-                      className="w-full px-4 py-2.5 text-sm border border-[#2D2D30] rounded-lg bg-[#18181B] text-white placeholder-[#6B7280] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
+                      className="w-full px-4 py-2.5 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[#C6A972]"
                       placeholder="123 Main Street"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-[#B8B8C2] mb-1.5">City</label>
+                    <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">City</label>
                     <input
                       type="text"
                       value={shipping.city}
                       onChange={(e) => updateShipping('city', e.target.value)}
-                      className="w-full px-4 py-2.5 text-sm border border-[#2D2D30] rounded-lg bg-[#18181B] text-white placeholder-[#6B7280] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
+                      className="w-full px-4 py-2.5 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[#C6A972]"
                       placeholder="New York"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-[#B8B8C2] mb-1.5">State</label>
+                    <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">State</label>
                     <input
                       type="text"
                       value={shipping.state}
                       onChange={(e) => updateShipping('state', e.target.value)}
-                      className="w-full px-4 py-2.5 text-sm border border-[#2D2D30] rounded-lg bg-[#18181B] text-white placeholder-[#6B7280] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
+                      className="w-full px-4 py-2.5 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[#C6A972]"
                       placeholder="NY"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-[#B8B8C2] mb-1.5">ZIP Code</label>
+                    <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">ZIP Code</label>
                     <input
                       type="text"
                       value={shipping.zip}
                       onChange={(e) => updateShipping('zip', e.target.value)}
-                      className="w-full px-4 py-2.5 text-sm border border-[#2D2D30] rounded-lg bg-[#18181B] text-white placeholder-[#6B7280] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
+                      className="w-full px-4 py-2.5 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[#C6A972]"
                       placeholder="10001"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-[#B8B8C2] mb-1.5">Country</label>
+                    <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Country</label>
                     <select
                       value={shipping.country}
                       onChange={(e) => updateShipping('country', e.target.value)}
-                      className="w-full px-4 py-2.5 text-sm border border-[#2D2D30] rounded-lg bg-[#18181B] text-white focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
+                      className="w-full px-4 py-2.5 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#C6A972]"
                     >
                       <option value="US">United States</option>
                       <option value="UK">United Kingdom</option>
@@ -263,49 +271,49 @@ export default function Checkout() {
             )}
 
             {step === 1 && (
-              <div className="bg-[#232326] rounded-xl shadow-lg shadow-black/20 p-6 border border-[#2D2D30]">
-                <h2 className="text-lg font-semibold text-white mb-6">Payment Information</h2>
+              <div className="bg-[var(--bg-card)] rounded-xl shadow-lg shadow-black/5 p-6 border border-[var(--border-color)]">
+                <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-6">Payment Information</h2>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-medium text-[#B8B8C2] mb-1.5">Card Number</label>
+                    <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Card Number</label>
                     <input
                       type="text"
                       value={payment.cardNumber}
                       onChange={(e) => updatePayment('cardNumber', e.target.value)}
-                      className="w-full px-4 py-2.5 text-sm border border-[#2D2D30] rounded-lg bg-[#18181B] text-white placeholder-[#6B7280] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
+                      className="w-full px-4 py-2.5 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[#C6A972]"
                       placeholder="4242 4242 4242 4242"
                       maxLength={19}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-[#B8B8C2] mb-1.5">Cardholder Name</label>
+                    <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Cardholder Name</label>
                     <input
                       type="text"
                       value={payment.cardName}
                       onChange={(e) => updatePayment('cardName', e.target.value)}
-                      className="w-full px-4 py-2.5 text-sm border border-[#2D2D30] rounded-lg bg-[#18181B] text-white placeholder-[#6B7280] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
+                      className="w-full px-4 py-2.5 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[#C6A972]"
                       placeholder="John Doe"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-[#B8B8C2] mb-1.5">Expiry Date</label>
+                      <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Expiry Date</label>
                       <input
                         type="text"
                         value={payment.expiry}
                         onChange={(e) => updatePayment('expiry', e.target.value)}
-                        className="w-full px-4 py-2.5 text-sm border border-[#2D2D30] rounded-lg bg-[#18181B] text-white placeholder-[#6B7280] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
+                        className="w-full px-4 py-2.5 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[#C6A972]"
                         placeholder="MM/YY"
                         maxLength={5}
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-[#B8B8C2] mb-1.5">CVV</label>
+                      <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">CVV</label>
                       <input
                         type="text"
                         value={payment.cvv}
                         onChange={(e) => updatePayment('cvv', e.target.value)}
-                        className="w-full px-4 py-2.5 text-sm border border-[#2D2D30] rounded-lg bg-[#18181B] text-white placeholder-[#6B7280] focus:outline-none focus:ring-1 focus:ring-[#D4AF37]"
+                        className="w-full px-4 py-2.5 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[#C6A972]"
                         placeholder="123"
                         maxLength={4}
                       />
@@ -316,13 +324,13 @@ export default function Checkout() {
             )}
 
             {step === 2 && (
-              <div className="bg-[#232326] rounded-xl shadow-lg shadow-black/20 p-6 border border-[#2D2D30]">
-                <h2 className="text-lg font-semibold text-white mb-6">Review Your Order</h2>
+              <div className="bg-[var(--bg-card)] rounded-xl shadow-lg shadow-black/5 p-6 border border-[var(--border-color)]">
+                <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-6">Review Your Order</h2>
 
                 <div className="mb-6">
-                  <h3 className="text-sm font-medium text-[#D4AF37] uppercase tracking-wider mb-3">Shipping To</h3>
-                  <div className="text-sm text-[#B8B8C2] space-y-1 bg-[#18181B] rounded-lg p-4">
-                    <p className="text-white font-medium">{shipping.firstName} {shipping.lastName}</p>
+                  <h3 className="text-sm font-medium text-[#C6A972] uppercase tracking-wider mb-3">Shipping To</h3>
+                  <div className="text-sm text-[var(--text-secondary)] space-y-1 bg-[var(--bg-secondary)] rounded-lg p-4">
+                    <p className="text-[var(--text-primary)] font-medium">{shipping.firstName} {shipping.lastName}</p>
                     <p>{shipping.street}</p>
                     <p>{shipping.city}, {shipping.state} {shipping.zip}</p>
                     <p>{shipping.country}</p>
@@ -332,16 +340,16 @@ export default function Checkout() {
                 </div>
 
                 <div className="mb-6">
-                  <h3 className="text-sm font-medium text-[#D4AF37] uppercase tracking-wider mb-3">Items</h3>
+                  <h3 className="text-sm font-medium text-[#C6A972] uppercase tracking-wider mb-3">Items</h3>
                   <div className="space-y-3">
                     {cartItems.map((item) => (
-                      <div key={`${item.id}-${item.size}-${item.color}`} className="flex items-center gap-3 bg-[#18181B] rounded-lg p-3">
-                        <img src={item.image} alt={item.name} className="w-14 h-14 rounded-lg object-cover bg-[#0F0F10]" />
+                      <div key={`${item.id}-${item.size}-${item.color}`} className="flex items-center gap-3 bg-[var(--bg-secondary)] rounded-lg p-3">
+                        <img src={item.image} alt={item.name} className="w-14 h-14 rounded-lg object-cover bg-[var(--bg-card)]" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-white truncate">{item.name}</p>
-                          <p className="text-xs text-[#B8B8C2]">Qty: {item.quantity} {item.size && `| ${item.size}`} {item.color && item.color !== 'Default' && `| ${item.color}`}</p>
+                          <p className="text-sm font-medium text-[var(--text-primary)] truncate">{item.name}</p>
+                          <p className="text-xs text-[var(--text-secondary)]">Qty: {item.quantity} {item.size && `| ${item.size}`} {item.color && item.color !== 'Default' && `| ${item.color}`}</p>
                         </div>
-                        <span className="text-sm font-medium text-white">{formatPrice(item.price * item.quantity)}</span>
+                        <span className="text-sm font-medium text-[var(--text-primary)]">{formatPrice(item.price * item.quantity)}</span>
                       </div>
                     ))}
                   </div>
@@ -351,22 +359,22 @@ export default function Checkout() {
           </div>
 
           <div className="lg:w-80">
-            <div className="bg-[#232326] rounded-xl shadow-lg shadow-black/20 p-6 border border-[#2D2D30] sticky top-24">
-              <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Order Summary</h3>
+            <div className="bg-[var(--bg-card)] rounded-xl shadow-lg shadow-black/5 p-6 border border-[var(--border-color)] sticky top-24">
+              <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-4">Order Summary</h3>
               <div className="space-y-3 text-sm">
-                <div className="flex justify-between text-[#B8B8C2]">
+                <div className="flex justify-between text-[var(--text-secondary)]">
                   <span>Subtotal ({cartItems.length} items)</span>
                   <span>{formatPrice(subtotal)}</span>
                 </div>
-                <div className="flex justify-between text-[#B8B8C2]">
+                <div className="flex justify-between text-[var(--text-secondary)]">
                   <span>Shipping</span>
-                  <span>{shippingCost === 0 ? <span className="text-[#22C55E] font-medium">Free</span> : formatPrice(shippingCost)}</span>
+                  <span>{shippingCost === 0 ? <span className="text-[#2F855A] font-medium">Free</span> : formatPrice(shippingCost)}</span>
                 </div>
-                <div className="flex justify-between text-[#B8B8C2]">
+                <div className="flex justify-between text-[var(--text-secondary)]">
                   <span>Tax</span>
                   <span>{formatPrice(tax)}</span>
                 </div>
-                <div className="border-t border-[#2D2D30] pt-3 flex justify-between font-semibold text-white">
+                <div className="border-t border-[var(--border-color)] pt-3 flex justify-between font-semibold text-[var(--text-primary)]">
                   <span>Total</span>
                   <span>{formatPrice(total)}</span>
                 </div>
@@ -376,19 +384,19 @@ export default function Checkout() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-50 lg:static lg:mt-8 bg-[#18181B] lg:bg-transparent border-t lg:border-t-0 border-[#2D2D30] px-4 py-3 lg:px-0 lg:py-0">
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:static lg:mt-8 bg-[var(--bg-secondary)] lg:bg-transparent border-t lg:border-t-0 border-[var(--border-color)] px-4 py-3 lg:px-0 lg:py-0">
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
           {step > 0 ? (
             <button
               onClick={() => setStep(step - 1)}
-              className="px-6 py-3 text-sm font-medium text-[#B8B8C2] rounded-full border border-[#2D2D30] hover:bg-[#2A2A2E] hover:text-white transition min-h-[48px]"
+              className="px-6 py-3 text-sm font-medium text-[var(--text-secondary)] rounded-full border border-[var(--border-color)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition min-h-[48px]"
             >
               Back
             </button>
           ) : (
             <Link
               to="/cart"
-              className="px-6 py-3 text-sm font-medium text-[#B8B8C2] rounded-full border border-[#2D2D30] hover:bg-[#2A2A2E] hover:text-white transition text-center min-h-[48px] inline-flex items-center"
+              className="px-6 py-3 text-sm font-medium text-[var(--text-secondary)] rounded-full border border-[var(--border-color)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition text-center min-h-[48px] inline-flex items-center"
             >
               Back to Cart
             </Link>
@@ -398,7 +406,7 @@ export default function Checkout() {
             <button
               onClick={() => setStep(step + 1)}
               disabled={step === 0 ? !isShippingValid() : !isPaymentValid()}
-              className="px-8 py-3 bg-[#D4AF37] text-black text-sm font-semibold rounded-full hover:bg-[#C9A84C] transition active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed min-h-[48px]"
+              className="px-8 py-3 bg-[#C6A972] text-white text-sm font-semibold rounded-full hover:bg-[#B8965F] transition active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed min-h-[48px]"
             >
               Continue
             </button>
@@ -406,7 +414,7 @@ export default function Checkout() {
             <button
               onClick={handlePlaceOrder}
               disabled={submitting}
-              className="px-8 py-3 bg-[#D4AF37] text-black text-sm font-semibold rounded-full hover:bg-[#C9A84C] transition active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed min-h-[48px] inline-flex items-center gap-2"
+              className="px-8 py-3 bg-[#C6A972] text-white text-sm font-semibold rounded-full hover:bg-[#B8965F] transition active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed min-h-[48px] inline-flex items-center gap-2"
             >
               {submitting ? (
                 <>
@@ -417,7 +425,7 @@ export default function Checkout() {
                   Placing Order...
                 </>
               ) : (
-                `Place Order — ${formatPrice(total)}`
+                `Place Order â€” ${formatPrice(total)}`
               )}
             </button>
           )}

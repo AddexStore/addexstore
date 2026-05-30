@@ -37,13 +37,13 @@ export default function AdminUsers() {
       <div className="flex items-center justify-between flex-shrink-0 flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <BackButton />
-          <h1 className="text-lg font-bold text-white font-['Playfair_Display']">Users</h1>
+          <h1 className="text-lg font-bold text-[var(--text-primary)] font-['Playfair_Display']">Users</h1>
         </div>
         <div className="flex gap-2">
           <input type="text" placeholder="Search by name or email..." value={search} onChange={(e) => setSearch(e.target.value)}
-            className="w-48 bg-[#232326] border border-[#2D2D30] rounded-lg px-3 py-1.5 text-xs text-white placeholder-[#6B7280] focus:outline-none focus:border-[#D4AF37]" />
+            className="w-48 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[#C6A972]" />
           <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}
-            className="bg-[#232326] border border-[#2D2D30] rounded-lg px-3 py-1.5 text-xs text-[#B8B8C2] focus:outline-none focus:border-[#D4AF37]">
+            className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-secondary)] focus:outline-none focus:border-[#C6A972]">
             <option value="">All</option>
             <option value="admin">Admins</option>
             <option value="user">Users</option>
@@ -51,41 +51,41 @@ export default function AdminUsers() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 bg-[#232326] rounded-lg border border-[#2D2D30]/50 overflow-hidden">
+      <div className="flex-1 min-h-0 bg-[var(--bg-card)] rounded-lg border border-[var(--border-color)]/50 overflow-hidden">
         <div className="overflow-auto h-full">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-[#2D2D30] sticky top-0 bg-[#232326]">
-                <th className="text-left py-2 px-2 text-[#6B7280] font-medium">User</th>
-                <th className="text-left py-2 px-2 text-[#6B7280] font-medium hidden sm:table-cell">Email</th>
-                <th className="text-left py-2 px-2 text-[#6B7280] font-medium">Role</th>
-                <th className="text-left py-2 px-2 text-[#6B7280] font-medium">Status</th>
-                <th className="text-right py-2 px-2 text-[#6B7280] font-medium w-16">Actions</th>
+              <tr className="border-b border-[var(--border-color)] sticky top-0 bg-[var(--bg-card)]">
+                <th className="text-left py-2 px-2 text-[var(--text-secondary)] font-medium">User</th>
+                <th className="text-left py-2 px-2 text-[var(--text-secondary)] font-medium hidden sm:table-cell">Email</th>
+                <th className="text-left py-2 px-2 text-[var(--text-secondary)] font-medium">Role</th>
+                <th className="text-left py-2 px-2 text-[var(--text-secondary)] font-medium">Status</th>
+                <th className="text-right py-2 px-2 text-[var(--text-secondary)] font-medium w-16">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((user) => (
-                <tr key={user.id} className="border-b border-[#2D2D30]/30 hover:bg-[#2A2A2E] transition-colors">
+                <tr key={user.id} className="border-b border-[var(--border-color)]/30 hover:bg-[var(--bg-hover)] transition-colors">
                   <td className="py-1.5 px-2">
                     <div className="flex items-center gap-2">
-                      <img src={user.avatar} alt={user.name} className="w-7 h-7 rounded-full bg-[#232326]" />
-                      <span className="text-white font-medium">{user.name}</span>
+                      <img src={user.avatar} alt={user.name} className="w-7 h-7 rounded-full bg-[var(--bg-card)]" />
+                      <span className="text-[var(--text-primary)] font-medium">{user.name}</span>
                     </div>
                   </td>
-                  <td className="py-1.5 px-2 text-[#B8B8C2] hidden sm:table-cell">{user.email}</td>
+                  <td className="py-1.5 px-2 text-[var(--text-secondary)] hidden sm:table-cell">{user.email}</td>
                   <td className="py-1.5 px-2">
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${user.role === 'admin' ? 'bg-[#D4AF37]/20 text-[#D4AF37]' : 'bg-blue-500/20 text-blue-400'}`}>{user.role}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${user.role === 'admin' ? 'bg-[#C6A972]/20 text-[#C6A972]' : 'bg-blue-500/20 text-blue-400'}`}>{user.role}</span>
                   </td>
                   <td className="py-1.5 px-2">
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${user.isBlocked ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>{user.isBlocked ? 'Blocked' : 'Active'}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${user.isBlocked ? 'bg-red-500/20 text-red-600' : 'bg-green-500/20 text-green-600'}`}>{user.isBlocked ? 'Blocked' : 'Active'}</span>
                   </td>
                   <td className="py-1.5 px-2 text-right">
                     <div className="flex items-center justify-end gap-0.5">
-                      <button onClick={() => setViewingUser(user)} className="p-1 rounded text-[#6B7280] hover:text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-colors" title="Details">
+                      <button onClick={() => setViewingUser(user)} className="p-1 rounded text-[var(--text-secondary)] hover:text-[#C6A972] hover:bg-[#C6A972]/10 transition-colors" title="Details">
                         <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                       </button>
                       <button onClick={() => toggleBlock(user.id)}
-                        className={`p-1 rounded transition-colors ${user.isBlocked ? 'text-green-400 hover:bg-green-500/10' : 'text-[#6B7280] hover:text-red-400 hover:bg-red-500/10'}`} title={user.isBlocked ? 'Unblock' : 'Block'}>
+                        className={`p-1 rounded transition-colors ${user.isBlocked ? 'text-green-600 hover:bg-green-500/10' : 'text-[var(--text-secondary)] hover:text-red-600 hover:bg-red-500/10'}`} title={user.isBlocked ? 'Unblock' : 'Block'}>
                         {user.isBlocked ? (
                           <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
                         ) : (
@@ -99,31 +99,31 @@ export default function AdminUsers() {
             </tbody>
           </table>
         </div>
-        {filtered.length === 0 && <div className="text-center py-6 text-[#6B7280] text-xs">No users found</div>}
+        {filtered.length === 0 && <div className="text-center py-6 text-[var(--text-secondary)] text-xs">No users found</div>}
       </div>
 
       {viewingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setViewingUser(null)}>
-          <div className="bg-[#232326] rounded-xl border border-[#2D2D30] w-full max-w-lg mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-[#2D2D30]">
+          <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] w-full max-w-lg mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-[var(--border-color)]">
               <div className="flex items-center gap-3">
-                <img src={viewingUser.avatar} alt={viewingUser.name} className="w-10 h-10 rounded-full bg-[#232326]" />
-                <div><h2 className="text-base font-semibold text-white">{viewingUser.name}</h2><p className="text-xs text-[#B8B8C2]">{viewingUser.email}</p></div>
+                <img src={viewingUser.avatar} alt={viewingUser.name} className="w-10 h-10 rounded-full bg-[var(--bg-card)]" />
+                <div><h2 className="text-base font-semibold text-[var(--text-primary)]">{viewingUser.name}</h2><p className="text-xs text-[var(--text-secondary)]">{viewingUser.email}</p></div>
               </div>
-              <button onClick={() => setViewingUser(null)} className="text-[#6B7280] hover:text-white"><svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+              <button onClick={() => setViewingUser(null)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
             </div>
             <div className="p-4 space-y-3">
               <div className="grid grid-cols-2 gap-2">
-                <div className="bg-[#0F0F10] rounded-lg p-3"><p className="text-[#6B7280] text-[10px] uppercase tracking-wider">Role</p><p className="text-white text-sm mt-0.5 capitalize">{viewingUser.role}</p></div>
-                <div className="bg-[#0F0F10] rounded-lg p-3"><p className="text-[#6B7280] text-[10px] uppercase tracking-wider">Status</p><p className={`text-sm mt-0.5 ${viewingUser.isBlocked ? 'text-red-400' : 'text-green-400'}`}>{viewingUser.isBlocked ? 'Blocked' : 'Active'}</p></div>
-                <div className="bg-[#0F0F10] rounded-lg p-3"><p className="text-[#6B7280] text-[10px] uppercase tracking-wider">Phone</p><p className="text-white text-sm mt-0.5">{viewingUser.phone || '-'}</p></div>
-                <div className="bg-[#0F0F10] rounded-lg p-3"><p className="text-[#6B7280] text-[10px] uppercase tracking-wider">Joined</p><p className="text-white text-sm mt-0.5">{formatDate(viewingUser.joinDate)}</p></div>
+                <div className="bg-[var(--bg-input)] rounded-lg p-3"><p className="text-[var(--text-secondary)] text-[10px] uppercase tracking-wider">Role</p><p className="text-[var(--text-primary)] text-sm mt-0.5 capitalize">{viewingUser.role}</p></div>
+                <div className="bg-[var(--bg-input)] rounded-lg p-3"><p className="text-[var(--text-secondary)] text-[10px] uppercase tracking-wider">Status</p><p className={`text-sm mt-0.5 ${viewingUser.isBlocked ? 'text-red-600' : 'text-green-600'}`}>{viewingUser.isBlocked ? 'Blocked' : 'Active'}</p></div>
+                <div className="bg-[var(--bg-input)] rounded-lg p-3"><p className="text-[var(--text-secondary)] text-[10px] uppercase tracking-wider">Phone</p><p className="text-[var(--text-primary)] text-sm mt-0.5">{viewingUser.phone || '-'}</p></div>
+                <div className="bg-[var(--bg-input)] rounded-lg p-3"><p className="text-[var(--text-secondary)] text-[10px] uppercase tracking-wider">Joined</p><p className="text-[var(--text-primary)] text-sm mt-0.5">{formatDate(viewingUser.joinDate)}</p></div>
               </div>
-              <div className="bg-[#0F0F10] rounded-lg p-3"><p className="text-[#6B7280] text-[10px] uppercase tracking-wider">Address</p><p className="text-white text-xs mt-0.5">{viewingUser.address.street}, {viewingUser.address.city}, {viewingUser.address.state} {viewingUser.address.zip}</p></div>
-              <div><h3 className="text-white text-xs font-semibold mb-2">Orders ({userOrders.length})</h3>
-                {userOrders.length === 0 && <p className="text-[#6B7280] text-xs">No orders yet</p>}
+              <div className="bg-[var(--bg-input)] rounded-lg p-3"><p className="text-[var(--text-secondary)] text-[10px] uppercase tracking-wider">Address</p><p className="text-[var(--text-primary)] text-xs mt-0.5">{viewingUser.address.street}, {viewingUser.address.city}, {viewingUser.address.state} {viewingUser.address.zip}</p></div>
+              <div><h3 className="text-[var(--text-primary)] text-xs font-semibold mb-2">Orders ({userOrders.length})</h3>
+                {userOrders.length === 0 && <p className="text-[var(--text-secondary)] text-xs">No orders yet</p>}
                 {userOrders.map((order) => (
-                  <div key={order.id} className="bg-[#0F0F10] rounded-lg p-2 flex items-center justify-between mb-1"><div><p className="text-white text-xs font-medium">{order.id}</p><p className="text-[#6B7280] text-[10px]">{order.items.length} item(s)</p></div><div className="text-right"><p className="text-white text-xs">{formatPrice(order.totalAmount)}</p><span className={`text-[10px] font-medium ${order.status === 'Delivered' ? 'text-green-400' : order.status === 'Cancelled' ? 'text-red-400' : 'text-yellow-400'}`}>{order.status}</span></div></div>
+                  <div key={order.id} className="bg-[var(--bg-input)] rounded-lg p-2 flex items-center justify-between mb-1"><div><p className="text-[var(--text-primary)] text-xs font-medium">{order.id}</p><p className="text-[var(--text-secondary)] text-[10px]">{order.items.length} item(s)</p></div><div className="text-right"><p className="text-[var(--text-primary)] text-xs">{formatPrice(order.totalAmount)}</p><span className={`text-[10px] font-medium ${order.status === 'Delivered' ? 'text-green-600' : order.status === 'Cancelled' ? 'text-red-600' : 'text-yellow-600'}`}>{order.status}</span></div></div>
                 ))}
               </div>
             </div>

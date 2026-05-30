@@ -6,10 +6,10 @@ const STORAGE_KEY = 'sifr_banners'
 const fallbackSlides = [
   {
     title: 'New Arrivals',
-    subtitle: 'Discover premium styles only at SIFR',
+    subtitle: 'Discover premium styles only at AddexStores',
     cta: 'Shop Now',
     ctaLink: '/new-arrivals',
-    bgColor: '#0F0F10',
+    bgColor: '#F5F2ED',
     image: '/assets/placeholders/banner.svg',
   },
   {
@@ -17,7 +17,7 @@ const fallbackSlides = [
     subtitle: 'Elevate your lifestyle',
     cta: 'Explore',
     ctaLink: '/products',
-    bgColor: '#18181B',
+    bgColor: '#F5F2ED',
     image: '/assets/placeholders/banner.svg',
   },
   {
@@ -25,7 +25,7 @@ const fallbackSlides = [
     subtitle: 'Handpicked for you',
     cta: 'View All',
     ctaLink: '/trending',
-    bgColor: '#18181B',
+    bgColor: '#F5F2ED',
     image: '/assets/placeholders/banner.svg',
   },
 ]
@@ -111,7 +111,7 @@ export default function HeroBanner({ slides: propSlides }) {
 
   return (
     <div
-      className="relative w-full h-[45vh] sm:h-screen overflow-hidden bg-[#0F0F10]"
+      className="relative w-full h-[45vh] sm:h-screen overflow-hidden bg-[var(--bg-page)]"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
@@ -121,7 +121,7 @@ export default function HeroBanner({ slides: propSlides }) {
           className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${
             index === current ? 'opacity-100 z-10' : 'opacity-0 z-0'
           }`}
-          style={{ backgroundColor: s.bgColor || '#0F0F10' }}
+          style={{ backgroundColor: s.bgColor || '#F5F2ED' }}
         >
           <div className="absolute inset-0">
             <img
@@ -130,7 +130,7 @@ export default function HeroBanner({ slides: propSlides }) {
               className="w-full h-full object-cover opacity-40"
               loading={index === 0 ? 'eager' : 'lazy'}
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/20 to-transparent" />
           </div>
 
           <div className="relative z-10 h-full flex items-center">
@@ -142,16 +142,16 @@ export default function HeroBanner({ slides: propSlides }) {
                     : 'translate-y-8 opacity-0'
                 }`}
               >
-                <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight">
+                <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-[var(--text-primary)] leading-tight">
                   {s.title}
                 </h1>
-                <p className="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg text-white/80 max-w-md mx-auto sm:mx-0">
+                <p className="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg text-[var(--text-primary)]/80 max-w-md mx-auto sm:mx-0">
                   {s.subtitle}
                 </p>
                 <div className="mt-5 sm:mt-8 flex justify-center sm:justify-start">
                   <Link
                     to={s.ctaLink || '/'}
-                    className="w-full max-w-xs sm:w-auto inline-flex items-center justify-center px-8 py-4 sm:py-3 bg-[#D4AF37] text-black text-sm font-medium rounded-full hover:bg-[#C9A84C] transition active:scale-[0.98] shadow-lg shadow-[#D4AF37]/20"
+                    className="w-full max-w-xs sm:w-auto inline-flex items-center justify-center px-8 py-4 sm:py-3 bg-[#C6A972] text-white text-sm font-medium rounded-full hover:bg-[#B8965F] transition active:scale-[0.98] shadow-lg shadow-[#C6A972]/20"
                   >
                     {s.cta || 'Shop Now'}
                   </Link>
@@ -167,7 +167,7 @@ export default function HeroBanner({ slides: propSlides }) {
         className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm items-center justify-center hover:bg-black/50 transition"
         aria-label="Previous slide"
       >
-        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-5 h-5 text-[var(--text-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
       </button>
@@ -176,7 +176,7 @@ export default function HeroBanner({ slides: propSlides }) {
         className="hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm items-center justify-center hover:bg-black/50 transition"
         aria-label="Next slide"
       >
-        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-5 h-5 text-[var(--text-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       </button>
@@ -188,8 +188,8 @@ export default function HeroBanner({ slides: propSlides }) {
             onClick={() => goTo(index)}
             className={`rounded-full transition-all duration-300 ${
               index === current
-                ? 'bg-[#D4AF37] w-3 h-3 sm:w-8 sm:h-2.5'
-                : 'bg-[#B8B8C2]/50 hover:bg-[#B8B8C2]/80 w-3 h-3 sm:w-2.5 sm:h-2.5'
+                ? 'bg-[#C6A972] w-3 h-3 sm:w-8 sm:h-2.5'
+                : 'bg-[#E7E2DA]/80 hover:bg-[#C6A972] w-3 h-3 sm:w-2.5 sm:h-2.5'
             }`}
             aria-label={`Go to slide ${index + 1}`}
           />
