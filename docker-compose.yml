@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   mysql:
     image: mysql:8.0
@@ -18,8 +16,8 @@ services:
       retries: 5
     restart: unless-stopped
 
-  app:
-    build: .
+  backend:
+    build: ./backend
     container_name: addexstores-app
     ports:
       - "8080:8080"
@@ -33,6 +31,15 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: addexstores-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
     restart: unless-stopped
 
 volumes:

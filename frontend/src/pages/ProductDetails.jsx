@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { products } from '../data/products'
-import { categories } from '../data/categories'
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
 import { useToast } from '../context/ToastContext'
 import { useRecentlyViewed } from '../hooks/useRecentlyViewed'
+import { productService } from '../services/productService'
+import { categoryService } from '../services/categoryService'
+import { mapProduct, mapCategory } from '../services/mappers'
 import { formatPrice, getDiscountPrice, formatDate } from '../utils/helpers'
 import ImageWithFallback from '../components/ImageWithFallback'
 import StarRating from '../components/StarRating'
@@ -27,7 +28,25 @@ export default function ProductDetails() {
   const toast = useToast()
   const { addRecentlyViewed } = useRecentlyViewed()
 
-  const product = products.find((p) => p.id === Number(id) || p._id === id)
+  const [product, setProduct] = useState(null)
+  const [categories, setCategories] = useState([])
+  const [allProducts, setAllProducts] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    setLoading(true)
+    const numId = Number(id)
+    Promise.all([
+      productService.getProducts({ page: 0, size: 50 }).then((r) => (r.content || r.data?.content || r.data || []).map(mapProduct)),
+      categoryService.getAll().then((r) => (r.data || []).map(mapCategory)),
+    ]).then(([prods, cats]) => {
+      setAllProducts(prods)
+      setCategories(cats)
+      const found = prods.find((p) => p.id === numId || p._id === id) || null
+      setProduct(found)
+    }).catch(() => {}).finally(() => setLoading(false))
+  }, [id])
+
   const category = categories.find((c) => c.name === product?.category)
 
   const [selectedImage, setSelectedImage] = useState(0)
@@ -49,6 +68,8 @@ export default function ProductDetails() {
     }
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [id, product, addRecentlyViewed])
+
+  if (loading) return null
 
   if (!product) {
     return (
@@ -106,7 +127,7 @@ export default function ProductDetails() {
     setZoomPosition({ x, y })
   }
 
-  const relatedProducts = products.filter(
+  const relatedProducts = allProducts.filter(
     (p) => p.subCategory === product.subCategory && p.id !== product.id
   ).slice(0, 4)
 

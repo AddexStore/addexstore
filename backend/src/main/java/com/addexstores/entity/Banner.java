@@ -25,9 +25,10 @@ public class Banner {
 
     private String subtitle;
 
-    @Column(nullable = false)
+    @Column(name = "image", nullable = false)
     private String imageUrl;
 
+    @Column(name = "cta_link")
     private String linkUrl;
 
     @Column(nullable = false)

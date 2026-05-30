@@ -26,9 +26,21 @@ public class OrderResponse {
     private BigDecimal shippingCost;
     private BigDecimal totalAmount;
     private OrderStatus status;
-    private String shippingAddress;
+    private ShippingAddress shippingAddress;
     private String paymentMethod;
     private String notes;
     private List<OrderItemResponse> items;
     private LocalDateTime createdAt;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ShippingAddress {
+        private String street;
+        private String city;
+        private String state;
+        private String zip;
+        private String country;
+    }
 }

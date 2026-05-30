@@ -31,6 +31,7 @@ public class CategoryServiceImpl implements CategoryService {
     private final SubCategoryRepository subCategoryRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<CategoryResponse> getAllCategories() {
         List<Category> categories = categoryRepository.findAll();
         return CategoryMapper.toCategoryResponseList(categories);

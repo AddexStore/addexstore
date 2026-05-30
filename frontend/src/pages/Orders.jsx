@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react'
-import { orders as staticOrders } from '../data/orders'
+import { useState, useMemo, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { orderService } from '../services/orderService'
+import { mapOrder } from '../services/mappers'
 import { formatPrice, formatDate } from '../utils/helpers'
 import { ORDER_STATUS } from '../constants'
 import ImageWithFallback from '../components/ImageWithFallback'
@@ -26,17 +27,27 @@ const TABS = ['All', ORDER_STATUS.PENDING, ORDER_STATUS.PROCESSING, ORDER_STATUS
 
 export default function Orders() {
   const { user } = useAuth()
+  const [orders, setOrders] = useState([])
+  const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('All')
   const [expandedOrder, setExpandedOrder] = useState(null)
 
-  const allOrders = useMemo(() => {
-    const local = JSON.parse(localStorage.getItem('sifr_orders') || '[]')
-    const combined = [...local, ...staticOrders.filter((o) => o.userId === user?.id)]
-    combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    return combined
-  }, [user?.id])
+  useEffect(() => {
+    if (user) {
+      setLoading(true)
+      orderService.getMyOrders(0, 50)
+        .then((res) => {
+          const list = ((res.data?.content || res.content || res.data || [])).map(mapOrder)
+          setOrders(list)
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false))
+    } else {
+      setLoading(false)
+    }
+  }, [user])
 
-  const userOrders = allOrders
+  const userOrders = orders
 
   const filteredOrders = useMemo(() => {
     if (activeTab === 'All') return userOrders

@@ -104,6 +104,7 @@ CREATE TABLE IF NOT EXISTS cart_items (
     cart_id BIGINT NOT NULL,
     product_id BIGINT NOT NULL,
     quantity INT NOT NULL DEFAULT 1,
+    price DECIMAL(10,2) NOT NULL,
     size VARCHAR(20),
     color VARCHAR(50),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

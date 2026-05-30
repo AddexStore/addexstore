@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { useToast } from '../context/ToastContext'
+import { orderService } from '../services/orderService'
 import { formatPrice } from '../utils/helpers'
 
 const STEPS = ['Shipping', 'Payment', 'Review']
@@ -57,46 +58,26 @@ export default function Checkout() {
   const isPaymentValid = () =>
     Object.values(payment).every((v) => v.trim().length > 0)
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     setSubmitting(true)
-
-    const order = {
-      id: `ORD-${Date.now().toString(36).toUpperCase()}`,
-      items: cartItems.map((item) => ({
-        productId: item.id,
-        name: item.name,
-        image: item.image,
-        price: item.price,
-        quantity: item.quantity,
-        size: item.size,
-        color: item.color,
-      })),
-      totalAmount: total,
-      status: 'Processing',
-      shippingAddress: {
+    try {
+      const res = await orderService.create({
         street: shipping.street,
         city: shipping.city,
         state: shipping.state,
-        zip: shipping.zip,
+        zipCode: shipping.zip,
         country: shipping.country,
-      },
-      paymentMethod: 'Credit Card',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-
-    const existing = JSON.parse(localStorage.getItem('sifr_orders') || '[]')
-    existing.unshift(order)
-    localStorage.setItem('sifr_orders', JSON.stringify(existing))
-    localStorage.setItem('sifr_last_order', JSON.stringify(order))
-
-    clearCart()
-    showToast('Order placed successfully!', 'success')
-
-    setTimeout(() => {
+        paymentMethod: 'Credit Card',
+      })
+      clearCart()
+      showToast('Order placed successfully!', 'success')
+      const orderNumber = res.data?.orderNumber || res.orderNumber || `ORD-${Date.now()}`
+      navigate(`/order-confirmation/${orderNumber}`)
+    } catch {
+      showToast('Failed to place order. Please try again.', 'error')
+    } finally {
       setSubmitting(false)
-      navigate(`/order-confirmation/${order.id}`)
-    }, 800)
+    }
   }
 
   if (cartItems.length === 0) {

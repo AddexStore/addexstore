@@ -1,103 +1,93 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
-import { users } from '../data/users'
+import { authService } from '../services/authService'
 
 const AuthContext = createContext(null)
 
-const STORAGE_KEY = 'sifr_user'
+const TOKEN_KEY = 'sifr_token'
+const USER_KEY = 'sifr_user'
+
+function mapUser(user) {
+  if (!user) return null
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone || '',
+    avatar: user.avatar || '',
+    role: user.role === 'ADMIN' ? 'admin' : (user.role === 'CUSTOMER' ? 'customer' : (user.role || 'customer')),
+    joinDate: user.createdAt || user.joinDate || new Date().toISOString(),
+  }
+}
+
+function loadToken() {
+  try { return localStorage.getItem(TOKEN_KEY) } catch { return null }
+}
 
 function loadUser() {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (!saved) return null
-    const parsed = JSON.parse(saved)
-    if (typeof parsed.id === 'string' && parsed.id.startsWith('usr_')) {
-      localStorage.removeItem(STORAGE_KEY)
-      return null
-    }
-    return parsed
-  } catch {
-    return null
-  }
+    const saved = localStorage.getItem(USER_KEY)
+    return saved ? JSON.parse(saved) : null
+  } catch { return null }
 }
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(loadUser)
+  const [token, setToken] = useState(loadToken)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setLoading(false)
+    if (token && !user) {
+      authService.getMe()
+        .then((res) => { setUser(mapUser(res.data)) })
+        .catch(() => { localStorage.removeItem(TOKEN_KEY); setToken(null) })
+        .finally(() => setLoading(false))
+    } else {
+      setLoading(false)
+    }
   }, [])
 
-  const isAuthenticated = user !== null
+  const saveAuth = useCallback((tokenVal, userData) => {
+    localStorage.setItem(TOKEN_KEY, tokenVal)
+    localStorage.setItem(USER_KEY, JSON.stringify(mapUser(userData)))
+    setToken(tokenVal)
+    setUser(mapUser(userData))
+  }, [])
+
+  const clearAuth = useCallback(() => {
+    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(USER_KEY)
+    setToken(null)
+    setUser(null)
+  }, [])
+
+  const isAuthenticated = !!token && !!user
   const isAdmin = user?.role === 'admin'
 
-  const saveUser = useCallback((userData) => {
-    setUser(userData)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(userData))
-  }, [])
-
-  const clearUser = useCallback(() => {
-    setUser(null)
-    localStorage.removeItem(STORAGE_KEY)
-  }, [])
-
   const login = useCallback(async (email, password) => {
-    await new Promise((r) => setTimeout(r, 600))
-
-    const matched = users.find((u) => u.email.toLowerCase() === email.toLowerCase())
-
-    const userData = matched
-      ? { ...matched, password: undefined }
-      : {
-          id: 'usr_' + Date.now().toString(36),
-          email,
-          name: email.split('@')[0],
-          role: email.includes('admin') ? 'admin' : 'customer',
-          createdAt: new Date().toISOString(),
-        }
-
-    saveUser(userData)
-    return userData
-  }, [saveUser])
+    const res = await authService.login(email, password)
+    saveAuth(res.token, res.user)
+    return mapUser(res.user)
+  }, [saveAuth])
 
   const signup = useCallback(async (name, email, password) => {
-    await new Promise((r) => setTimeout(r, 600))
-
-    const userData = {
-      id: 'usr_' + Date.now().toString(36),
-      email,
-      name,
-      role: 'customer',
-      createdAt: new Date().toISOString(),
-    }
-
-    saveUser(userData)
-    return userData
-  }, [saveUser])
+    const res = await authService.signup(name, email, password)
+    saveAuth(res.token, res.user)
+    return mapUser(res.user)
+  }, [saveAuth])
 
   const logout = useCallback(async () => {
-    await new Promise((r) => setTimeout(r, 300))
-    clearUser()
-  }, [clearUser])
+    clearAuth()
+  }, [clearAuth])
 
   const updateProfile = useCallback(async (data) => {
-    await new Promise((r) => setTimeout(r, 400))
+    const res = await authService.updateProfile(data)
+    const mapped = mapUser(res.data)
+    localStorage.setItem(USER_KEY, JSON.stringify(mapped))
+    setUser(mapped)
+    return mapped
+  }, [])
 
-    const updated = { ...user, ...data }
-    saveUser(updated)
-    return updated
-  }, [user, saveUser])
-
-  const value = {
-    user,
-    isAuthenticated,
-    isAdmin,
-    loading,
-    login,
-    logout,
-    signup,
-    updateProfile,
-  }
+  const value = { user, isAuthenticated, isAdmin, loading, login, logout, signup, updateProfile }
 
   return (
     <AuthContext.Provider value={value}>
@@ -108,8 +98,6 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider')
   return context
 }

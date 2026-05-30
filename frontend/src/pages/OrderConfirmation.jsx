@@ -1,27 +1,21 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
-import { formatPrice, formatDate } from '../utils/helpers'
+import { useParams, Link } from 'react-router-dom'
+import { orderService } from '../services/orderService'
+import { mapOrder } from '../services/mappers'
+import { formatPrice } from '../utils/helpers'
 import BackButton from '../components/BackButton'
 
 export default function OrderConfirmation() {
   const { orderId } = useParams()
-  const navigate = useNavigate()
   const [order, setOrder] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const last = localStorage.getItem('sifr_last_order')
-    if (last) {
-      const parsed = JSON.parse(last)
-      if (parsed.id === orderId) {
-        setOrder(parsed)
-        return
-      }
-    }
-    const all = JSON.parse(localStorage.getItem('sifr_orders') || '[]')
-    const found = all.find((o) => o.id === orderId)
-    if (found) {
-      setOrder(found)
-    }
+    setLoading(true)
+    orderService.getByOrderNumber(orderId)
+      .then((res) => { setOrder(mapOrder(res.data || res)) })
+      .catch(() => {})
+      .finally(() => setLoading(false))
   }, [orderId])
 
   if (!order) {
@@ -67,7 +61,7 @@ export default function OrderConfirmation() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6 pb-6 border-b border-[var(--border-color)]">
             <div>
               <p className="text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-1">Order Number</p>
-              <p className="text-lg font-semibold text-[var(--text-primary)] font-mono">{order.id}</p>
+              <p className="text-lg font-semibold text-[var(--text-primary)] font-mono">{order.orderNumber || order.id}</p>
             </div>
             <div className="text-right">
               <p className="text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-1">Status</p>

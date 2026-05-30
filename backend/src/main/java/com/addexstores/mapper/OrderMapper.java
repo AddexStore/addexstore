@@ -11,6 +11,19 @@ import java.util.stream.Collectors;
 
 public class OrderMapper {
 
+    private static class ShippingAddressMapper {
+        static OrderResponse.ShippingAddress toShippingAddress(Order order) {
+            if (order == null) return null;
+            return OrderResponse.ShippingAddress.builder()
+                    .street(order.getStreet())
+                    .city(order.getCity())
+                    .state(order.getState())
+                    .zip(order.getZipCode())
+                    .country(order.getCountry())
+                    .build();
+        }
+    }
+
     public static OrderResponse toOrderResponse(Order order) {
         if (order == null) return null;
 
@@ -25,7 +38,7 @@ public class OrderMapper {
                 .shippingCost(order.getShippingCost())
                 .totalAmount(order.getTotalAmount())
                 .status(order.getStatus())
-                .shippingAddress(order.getShippingAddress())
+                .shippingAddress(ShippingAddressMapper.toShippingAddress(order))
                 .paymentMethod(order.getPaymentMethod())
                 .notes(order.getNotes())
                 .items(order.getItems() != null

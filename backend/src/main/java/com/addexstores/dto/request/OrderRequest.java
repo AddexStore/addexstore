@@ -7,7 +7,19 @@ import lombok.Data;
 public class OrderRequest {
 
     @NotBlank
-    private String shippingAddress;
+    private String street;
+
+    @NotBlank
+    private String city;
+
+    @NotBlank
+    private String state;
+
+    @NotBlank
+    private String zipCode;
+
+    @NotBlank
+    private String country;
 
     @NotBlank
     private String paymentMethod;

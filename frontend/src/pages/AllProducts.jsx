@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react'
-import { products } from '../data/products'
-import { categories } from '../data/categories'
+import { useState, useMemo, useEffect } from 'react'
 import { SORT_OPTIONS } from '../constants'
+import { productService } from '../services/productService'
+import { categoryService } from '../services/categoryService'
+import { mapProduct, mapCategory } from '../services/mappers'
 import ProductCard from '../components/ProductCard'
 import SkeletonLoader from '../components/SkeletonLoader'
 import EmptyState from '../components/EmptyState'
@@ -10,13 +11,25 @@ import BackButton from '../components/BackButton'
 const ITEMS_PER_PAGE = 12
 
 export default function AllProducts() {
+  const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState([])
   const [selectedCategory, setSelectedCategory] = useState('')
   const [selectedSubCategory, setSelectedSubCategory] = useState('')
   const [sortBy, setSortBy] = useState('newest')
   const [priceRange, setPriceRange] = useState({ min: '', max: '' })
   const [currentPage, setCurrentPage] = useState(1)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false)
+
+  useEffect(() => {
+    Promise.all([
+      productService.getProducts({ page: 0, size: 100 }).then((r) => (r.content || r.data?.content || r.data || []).map(mapProduct)),
+      categoryService.getAll().then((r) => (r.data || []).map(mapCategory)),
+    ]).then(([prods, cats]) => {
+      setProducts(prods)
+      setCategories(cats)
+    }).catch(() => {}).finally(() => setLoading(false))
+  }, [])
 
   const filtered = useMemo(() => {
     let result = [...products]
@@ -47,7 +60,7 @@ export default function AllProducts() {
         result.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
     }
     return result
-  }, [selectedCategory, selectedSubCategory, sortBy, priceRange])
+  }, [products, selectedCategory, selectedSubCategory, sortBy, priceRange])
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
   const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)

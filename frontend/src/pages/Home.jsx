@@ -1,32 +1,12 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { products } from '../data/products'
-import { categories } from '../data/categories'
 import { useRecentlyViewed } from '../hooks/useRecentlyViewed'
+import { productService } from '../services/productService'
+import { categoryService } from '../services/categoryService'
+import { mapProduct, mapCategory } from '../services/mappers'
 import HeroBanner from '../components/HeroBanner'
 import CategoryCard from '../components/CategoryCard'
 import ProductCard from '../components/ProductCard'
-
-const normalizeProduct = (p) => ({
-  ...p,
-  discount: p.discountPercentage,
-  numReviews: p.totalReviews,
-  images: p.image ? [p.image] : [],
-})
-
-const flashSaleProducts = products
-  .filter((p) => p.discountPercentage > 0)
-  .map(normalizeProduct)
-
-const trendingProducts = products
-  .filter((p) => p.trending)
-  .map(normalizeProduct)
-
-const featuredProducts = products
-  .filter((p) => p.featured)
-  .map(normalizeProduct)
-
-const allNormalized = products.map(normalizeProduct)
 
 function getRandomProducts(arr, count) {
   const shuffled = [...arr].sort(() => Math.random() - 0.5)
@@ -101,19 +81,35 @@ function SectionHeader({ title, linkTo, linkText }) {
 export default function Home() {
   const { getRecentlyViewed } = useRecentlyViewed()
   const recentlyViewed = getRecentlyViewed()
+  const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const recommended = useMemo(
-    () => getRandomProducts(allNormalized, 4),
-    []
-  )
+  useEffect(() => {
+    Promise.all([
+      productService.getProducts({ page: 0, size: 50 }).then((r) => (r.content || r.data?.content || r.data || []).map(mapProduct)),
+      categoryService.getAll().then((r) => (r.data || []).map(mapCategory)),
+    ]).then(([prods, cats]) => {
+      setProducts(prods)
+      setCategories(cats)
+    }).catch(() => {}).finally(() => setLoading(false))
+  }, [])
+
+  const flashSaleProducts = useMemo(() => products.filter((p) => p.discountPercentage > 0), [products])
+  const trendingProducts = useMemo(() => products.filter((p) => p.trending), [products])
+  const featuredProducts = useMemo(() => products.filter((p) => p.featured), [products])
+
+  const recommended = useMemo(() => getRandomProducts(products, 4), [products])
 
   const recentlyViewedProducts = useMemo(
     () =>
       recentlyViewed
-        .map((rv) => allNormalized.find((p) => p.id === rv.id))
+        .map((rv) => products.find((p) => p.id === rv.id))
         .filter(Boolean),
-    [recentlyViewed]
+    [recentlyViewed, products]
   )
+
+  if (loading) return null
 
   return (
     <div className="min-h-screen bg-[var(--bg-page)]">
@@ -122,7 +118,7 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 lg:py-20">
         <SectionHeader title="Shop by Category" linkTo="/categories" linkText="View All" />
         <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent -mx-4 px-4 sm:mx-0 sm:px-0">
-          {categories.map((cat) => (
+          {(categories || []).map((cat) => (
             <div key={cat.id} className="flex-shrink-0 w-[130px] sm:w-[160px]">
               <CategoryCard
                 icon={
