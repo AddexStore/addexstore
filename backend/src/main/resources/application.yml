@@ -50,5 +50,14 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
+payment:
+  paypal:
+    client-id: ${PAYPAL_CLIENT_ID:}
+    client-secret: ${PAYPAL_CLIENT_SECRET:}
+    mode: ${PAYPAL_MODE:sandbox}
+  razorpay:
+    key-id: ${RAZORPAY_KEY_ID:}
+    key-secret: ${RAZORPAY_KEY_SECRET:}
+
 cors:
   allowed-origins: http://localhost:5173,http://localhost:3000

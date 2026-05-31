@@ -1,5 +1,6 @@
 package com.addexstores.security;
 
+import com.addexstores.entity.User;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,8 +25,13 @@ public class CurrentUserResolver implements HandlerMethodArgumentResolver {
                                   NativeWebRequest webRequest,
                                   WebDataBinderFactory binderFactory) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof Long) {
-            return authentication.getPrincipal();
+        if (authentication != null) {
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof User) {
+                return ((User) principal).getId();
+            } else if (principal instanceof Long) {
+                return principal;
+            }
         }
         return null;
     }

@@ -18,6 +18,12 @@ export default function OrderConfirmation() {
       .finally(() => setLoading(false))
   }, [orderId])
 
+  const paymentLabels = {
+    COD: 'Cash on Delivery',
+    PAYPAL: 'PayPal',
+    RAZORPAY: 'Razorpay',
+  }
+
   if (!order) {
     return (
       <div className="min-h-screen bg-[var(--bg-page)] flex items-center justify-center px-4">
@@ -43,18 +49,18 @@ export default function OrderConfirmation() {
         <div className="mb-10">
           <div className="mb-6"><BackButton /></div>
           <div className="text-center">
-          <div className="w-20 h-20 rounded-full bg-[#2F855A]/10 flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-[#2F855A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <div className="w-20 h-20 rounded-full bg-[#2F855A]/10 flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-[#2F855A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h1 className="font-playfair-display text-2xl sm:text-3xl font-bold text-[var(--text-primary)] mb-2">
+              Order Confirmed!
+            </h1>
+            <p className="text-[var(--text-secondary)] text-sm">
+              Thank you for your purchase. Your order has been placed successfully.
+            </p>
           </div>
-          <h1 className="font-playfair-display text-2xl sm:text-3xl font-bold text-[var(--text-primary)] mb-2">
-            Order Confirmed!
-          </h1>
-          <p className="text-[var(--text-secondary)] text-sm">
-            Thank you for your purchase. Your order has been placed successfully.
-          </p>
-        </div>
         </div>
 
         <div className="bg-[var(--bg-card)] rounded-xl shadow-lg shadow-black/5 border border-[var(--border-color)] p-6 mb-6">
@@ -63,12 +69,20 @@ export default function OrderConfirmation() {
               <p className="text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-1">Order Number</p>
               <p className="text-lg font-semibold text-[var(--text-primary)] font-mono">{order.orderNumber || order.id}</p>
             </div>
-            <div className="text-right">
-              <p className="text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-1">Status</p>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#C6A972]/10 text-[#C6A972] text-sm font-medium rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#C6A972]" />
-                {order.status}
-              </span>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <p className="text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-1">Status</p>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#C6A972]/10 text-[#C6A972] text-sm font-medium rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#C6A972]" />
+                  {order.status}
+                </span>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-1">Payment</p>
+                <span className="text-sm font-medium text-[var(--text-primary)]">
+                  {paymentLabels[order.paymentMethod] || order.paymentMethod}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -111,16 +125,10 @@ export default function OrderConfirmation() {
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Link
-            to="/orders"
-            className="w-full sm:w-auto px-8 py-3 bg-[#C6A972] text-white text-sm font-medium rounded-full hover:bg-[#B8965F] transition text-center active:scale-[0.98]"
-          >
+          <Link to="/orders" className="w-full sm:w-auto px-8 py-3 bg-[#C6A972] text-white text-sm font-medium rounded-full hover:bg-[#B8965F] transition text-center active:scale-[0.98]">
             View My Orders
           </Link>
-          <Link
-            to="/products"
-            className="w-full sm:w-auto px-8 py-3 text-sm font-medium text-[var(--text-secondary)] rounded-full border border-[var(--border-color)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition text-center active:scale-[0.98]"
-          >
+          <Link to="/products" className="w-full sm:w-auto px-8 py-3 text-sm font-medium text-[var(--text-secondary)] rounded-full border border-[var(--border-color)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition text-center active:scale-[0.98]">
             Continue Shopping
           </Link>
         </div>
