@@ -2,6 +2,7 @@ package com.addexstores.service;
 
 import com.addexstores.dto.request.CartItemRequest;
 import com.addexstores.dto.response.CartResponse;
+import java.util.List;
 
 public interface CartService {
 
@@ -14,4 +15,6 @@ public interface CartService {
     void removeFromCart(Long userId, Long itemId);
 
     void clearCart(Long userId);
+
+    CartResponse syncCart(Long userId, List<CartItemRequest> requests);
 }

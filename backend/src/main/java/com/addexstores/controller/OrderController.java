@@ -50,7 +50,8 @@ public class OrderController {
 
     @GetMapping("/number/{orderNumber}")
     @Operation(summary = "Get order by order number")
-    public ApiResponse<OrderResponse> getOrderByOrderNumber(@PathVariable String orderNumber) {
-        return ApiResponse.success(orderService.getOrderByOrderNumber(orderNumber));
+    public ApiResponse<OrderResponse> getOrderByOrderNumber(@CurrentUser Long userId,
+                                                             @PathVariable String orderNumber) {
+        return ApiResponse.success(orderService.getOrderByOrderNumber(userId, orderNumber));
     }
 }

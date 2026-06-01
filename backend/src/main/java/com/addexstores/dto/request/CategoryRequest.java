@@ -8,7 +8,6 @@ public class CategoryRequest {
     @NotBlank
     private String name;
 
-    @NotBlank
     private String slug;
 
     private String description;

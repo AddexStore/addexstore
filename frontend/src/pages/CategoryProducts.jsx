@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { products } from '../data/products'
-import { categories } from '../data/categories'
 import { SORT_OPTIONS, COLORS, SIZES } from '../constants'
 import { formatPrice, getDiscountPrice } from '../utils/helpers'
+import { categoryService } from '../services/categoryService'
+import { mapCategory } from '../services/mappers'
+import { getAssetUrl } from '../services/api'
 import ProductCard from '../components/ProductCard'
 import SkeletonLoader from '../components/SkeletonLoader'
 import EmptyState from '../components/EmptyState'
@@ -29,10 +31,16 @@ export default function CategoryProducts() {
   const [searchParams, setSearchParams] = useSearchParams()
   const selectedSub = searchParams.get('sub')
 
-  const category = useMemo(
-    () => categories.find((c) => c.slug === categoryName),
-    [categoryName]
-  )
+  const [category, setCategory] = useState(null)
+  const [categoryLoading, setCategoryLoading] = useState(true)
+
+  useEffect(() => {
+    setCategoryLoading(true)
+    categoryService.getBySlug(categoryName)
+      .then((res) => setCategory(mapCategory(res.data)))
+      .catch(() => setCategory(null))
+      .finally(() => setCategoryLoading(false))
+  }, [categoryName])
 
   const normalizedSubcategories = useMemo(() => {
     if (!category?.subcategories) return []
@@ -172,6 +180,14 @@ export default function CategoryProducts() {
     selectedSizes.length > 0 ||
     priceRange[0] > 0 ||
     priceRange[1] < 50000
+
+  if (categoryLoading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#C6A972] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   if (!category) {
     return (
@@ -359,10 +375,16 @@ export default function CategoryProducts() {
                 onClick={() => setSearchParams({ sub: sub.name })}
                 className="bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-color)] hover:border-[#C6A972]/50 hover:-translate-y-1 transition-all duration-300 text-left group"
               >
-                <div className="w-12 h-12 rounded-full bg-[#C6A972]/10 flex items-center justify-center mb-4 group-hover:bg-[#C6A972]/20 transition-colors">
-                  <svg className="w-6 h-6 text-[#C6A972]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-                    <path d={SUBCATEGORY_ICONS[sub.name] || 'M12 8a4 4 0 100 8 4 4 0 000-8zm-8 4h2m14 0h2M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 0l1.41-1.41'} />
-                  </svg>
+                <div className="w-12 h-12 rounded-full bg-[#C6A972]/10 flex items-center justify-center mb-4 group-hover:bg-[#C6A972]/20 transition-colors overflow-hidden">
+                  {sub.icon && sub.icon.trim().startsWith('<') ? (
+                    <span className="w-6 h-6 text-[#C6A972]" dangerouslySetInnerHTML={{ __html: sub.icon }} />
+                  ) : sub.icon ? (
+                    <img src={getAssetUrl(sub.icon)} alt={sub.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <svg className="w-6 h-6 text-[#C6A972]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                      <path d={SUBCATEGORY_ICONS[sub.name] || 'M12 8a4 4 0 100 8 4 4 0 000-8zm-8 4h2m14 0h2M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 0l1.41-1.41'} />
+                    </svg>
+                  )}
                 </div>
                 <h3 className="text-[var(--text-primary)] font-medium text-base mb-1">{sub.name}</h3>
                 <p className="text-[var(--text-secondary)] text-sm">{count} {count === 1 ? 'Product' : 'Products'}</p>

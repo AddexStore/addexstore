@@ -139,6 +139,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PagedResponse<OrderResponse> getUserOrders(Long userId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Order> orders = orderRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
@@ -156,6 +157,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public OrderResponse getOrderById(Long userId, Long id) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", id));
@@ -166,13 +168,18 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public OrderResponse getOrderByOrderNumber(String orderNumber) {
+    @Transactional(readOnly = true)
+    public OrderResponse getOrderByOrderNumber(Long userId, String orderNumber) {
         Order order = orderRepository.findByOrderNumber(orderNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "orderNumber", orderNumber));
+        if (userId != null && !order.getUser().getId().equals(userId)) {
+            throw new com.addexstores.exception.UnauthorizedException("Order does not belong to this user");
+        }
         return OrderMapper.toOrderResponse(order);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PagedResponse<OrderResponse> getAllOrders(int page, int size, String status) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 

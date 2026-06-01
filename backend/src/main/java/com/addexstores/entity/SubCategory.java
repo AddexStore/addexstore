@@ -30,6 +30,8 @@ public class SubCategory {
     @Builder.Default
     private int productCount = 0;
 
+    private String icon;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;

@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "wishlist")
+@Table(name = "wishlists")
 public class Wishlist {
 
     @Id

@@ -6,4 +6,5 @@ export const cartService = {
   updateItem: (itemId, data) => api.put(`/cart/${itemId}`, data),
   removeItem: (itemId) => api.delete(`/cart/${itemId}`),
   clearCart: () => api.delete('/cart'),
+  syncCart: (items) => api.put('/cart/sync', items),
 };

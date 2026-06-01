@@ -121,9 +121,7 @@ export default function Home() {
           {(categories || []).map((cat) => (
             <div key={cat.id} className="flex-shrink-0 w-[130px] sm:w-[160px]">
               <CategoryCard
-                icon={
-                  <span dangerouslySetInnerHTML={{ __html: cat.icon }} />
-                }
+                icon={cat.icon}
                 name={cat.name}
                 productCount={cat.productCount}
                 slug={cat.slug}

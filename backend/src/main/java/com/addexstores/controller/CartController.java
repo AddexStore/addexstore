@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/cart")
@@ -60,5 +61,12 @@ public class CartController {
     public ApiResponse<String> clearCart(@CurrentUser Long userId) {
         cartService.clearCart(userId);
         return ApiResponse.success("Cart cleared");
+    }
+
+    @PutMapping("/sync")
+    @Operation(summary = "Sync entire cart (replace all items)")
+    public ApiResponse<CartResponse> syncCart(@CurrentUser Long userId,
+                                               @RequestBody List<@Valid CartItemRequest> requests) {
+        return ApiResponse.success(cartService.syncCart(userId, requests));
     }
 }

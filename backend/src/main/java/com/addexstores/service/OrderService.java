@@ -12,7 +12,7 @@ public interface OrderService {
 
     OrderResponse getOrderById(Long userId, Long id);
 
-    OrderResponse getOrderByOrderNumber(String orderNumber);
+    OrderResponse getOrderByOrderNumber(Long userId, String orderNumber);
 
     PagedResponse<OrderResponse> getAllOrders(int page, int size, String status);
 

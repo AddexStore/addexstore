@@ -1,6 +1,7 @@
 package com.addexstores.service.impl;
 
 import com.addexstores.dto.request.CategoryRequest;
+import com.addexstores.dto.request.SubCategoryRequest;
 import com.addexstores.dto.response.CategoryResponse;
 import com.addexstores.dto.response.SubCategoryResponse;
 import com.addexstores.entity.Category;
@@ -84,7 +85,7 @@ public class CategoryServiceImpl implements CategoryService {
         if (request.getDescription() != null) {
             category.setDescription(request.getDescription());
         }
-        if (request.getIcon() != null) {
+        if (request.getIcon() != null && !request.getIcon().isEmpty()) {
             category.setIcon(request.getIcon());
         }
         if (request.getImage() != null) {
@@ -108,18 +109,39 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
-    public SubCategoryResponse addSubCategory(Long categoryId, String name) {
+    public SubCategoryResponse addSubCategory(Long categoryId, SubCategoryRequest request) {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category", categoryId));
 
         SubCategory subCategory = SubCategory.builder()
-                .name(name)
-                .slug(generateSlug(name))
+                .name(request.getName())
+                .slug(generateSlug(request.getName()))
+                .icon(request.getIcon())
                 .category(category)
                 .build();
 
         subCategory = subCategoryRepository.save(subCategory);
-        log.info("SubCategory created: {} for category: {}", name, category.getName());
+        log.info("SubCategory created: {} for category: {}", request.getName(), category.getName());
+
+        return CategoryMapper.toSubCategoryResponse(subCategory);
+    }
+
+    @Override
+    @Transactional
+    public SubCategoryResponse updateSubCategory(Long subCategoryId, SubCategoryRequest request) {
+        SubCategory subCategory = subCategoryRepository.findById(subCategoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("SubCategory", subCategoryId));
+
+        if (request.getName() != null) {
+            subCategory.setName(request.getName());
+            subCategory.setSlug(generateSlug(request.getName()));
+        }
+        if (request.getIcon() != null && !request.getIcon().isEmpty()) {
+            subCategory.setIcon(request.getIcon());
+        }
+
+        subCategory = subCategoryRepository.save(subCategory);
+        log.info("SubCategory updated: {}", subCategory.getName());
 
         return CategoryMapper.toSubCategoryResponse(subCategory);
     }

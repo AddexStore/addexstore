@@ -57,10 +57,10 @@ export default function Checkout() {
     Object.values(shipping).every((v) => v.trim().length > 0)
 
   const syncCartWithBackend = async () => {
-    try { await cartService.clearCart() } catch {}
-    for (const item of cartItems) {
-      await cartService.addItem({ productId: item.id, quantity: item.quantity })
-    }
+    await cartService.syncCart(cartItems.map(item => ({
+      productId: item.id,
+      quantity: item.quantity
+    })))
   }
 
   const handlePaymentSuccess = (paymentData) => {

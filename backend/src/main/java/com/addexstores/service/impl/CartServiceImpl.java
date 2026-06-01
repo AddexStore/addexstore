@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -112,6 +113,32 @@ public class CartServiceImpl implements CartService {
         cart.getItems().clear();
         cartRepository.save(cart);
         log.info("Cart cleared for user {}", userId);
+    }
+
+    @Override
+    @Transactional
+    public CartResponse syncCart(Long userId, List<CartItemRequest> requests) {
+        Cart cart = getOrCreateCart(userId);
+        cart.getItems().clear();
+        cartRepository.save(cart);
+
+        for (CartItemRequest request : requests) {
+            Product product = productRepository.findById(request.getProductId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product", request.getProductId()));
+
+            CartItem item = CartItem.builder()
+                    .cart(cart)
+                    .product(product)
+                    .quantity(request.getQuantity())
+                    .price(product.getPrice())
+                    .build();
+
+            cart.getItems().add(item);
+        }
+
+        cart = cartRepository.save(cart);
+        log.info("Cart synced for user {} with {} items", userId, requests.size());
+        return CartMapper.toCartResponse(cart);
     }
 
     private Cart getOrCreateCart(Long userId) {

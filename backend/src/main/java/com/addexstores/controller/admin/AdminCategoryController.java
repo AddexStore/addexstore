@@ -1,10 +1,12 @@
 package com.addexstores.controller.admin;
 
 import com.addexstores.dto.request.CategoryRequest;
+import com.addexstores.dto.request.SubCategoryRequest;
 import com.addexstores.dto.response.ApiResponse;
 import com.addexstores.dto.response.CategoryResponse;
 import com.addexstores.dto.response.SubCategoryResponse;
 import com.addexstores.service.CategoryService;
+import com.addexstores.service.FileUploadService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -15,9 +17,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.Map;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/admin/categories")
@@ -26,6 +28,7 @@ import java.util.Map;
 public class AdminCategoryController {
 
     private final CategoryService categoryService;
+    private final FileUploadService fileUploadService;
 
     @PostMapping
     @Operation(summary = "Create new category")
@@ -50,8 +53,15 @@ public class AdminCategoryController {
     @PostMapping("/{categoryId}/subcategories")
     @Operation(summary = "Add subcategory to category")
     public ApiResponse<SubCategoryResponse> addSubCategory(@PathVariable Long categoryId,
-                                                          @RequestBody Map<String, String> body) {
-        return ApiResponse.success(categoryService.addSubCategory(categoryId, body.get("name")));
+                                                           @Valid @RequestBody SubCategoryRequest request) {
+        return ApiResponse.success(categoryService.addSubCategory(categoryId, request));
+    }
+
+    @PutMapping("/subcategories/{subCategoryId}")
+    @Operation(summary = "Update subcategory")
+    public ApiResponse<SubCategoryResponse> updateSubCategory(@PathVariable Long subCategoryId,
+                                                               @Valid @RequestBody SubCategoryRequest request) {
+        return ApiResponse.success(categoryService.updateSubCategory(subCategoryId, request));
     }
 
     @DeleteMapping("/subcategories/{subCategoryId}")
@@ -59,5 +69,31 @@ public class AdminCategoryController {
     public ApiResponse<String> deleteSubCategory(@PathVariable Long subCategoryId) {
         categoryService.deleteSubCategory(subCategoryId);
         return ApiResponse.success("Subcategory deleted successfully");
+    }
+
+    @PostMapping("/upload-icon")
+    @Operation(summary = "Upload category icon image")
+    public ApiResponse<String> uploadIcon(@RequestParam("file") MultipartFile file) {
+        return ApiResponse.success(fileUploadService.uploadFile(file, "categories"));
+    }
+
+    @PostMapping("/{categoryId}/upload-icon")
+    @Operation(summary = "Upload and set category icon")
+    public ApiResponse<CategoryResponse> uploadCategoryIcon(@PathVariable Long categoryId,
+                                                             @RequestParam("file") MultipartFile file) {
+        String path = fileUploadService.uploadFile(file, "categories");
+        CategoryRequest request = new CategoryRequest();
+        request.setIcon(path);
+        return ApiResponse.success(categoryService.updateCategory(categoryId, request));
+    }
+
+    @PostMapping("/subcategories/{subCategoryId}/upload-icon")
+    @Operation(summary = "Upload and set subcategory icon")
+    public ApiResponse<SubCategoryResponse> uploadSubCategoryIcon(@PathVariable Long subCategoryId,
+                                                                   @RequestParam("file") MultipartFile file) {
+        String path = fileUploadService.uploadFile(file, "categories");
+        SubCategoryRequest request = new SubCategoryRequest();
+        request.setIcon(path);
+        return ApiResponse.success(categoryService.updateSubCategory(subCategoryId, request));
     }
 }

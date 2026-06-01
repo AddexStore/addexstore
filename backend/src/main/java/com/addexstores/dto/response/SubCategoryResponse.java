@@ -15,4 +15,5 @@ public class SubCategoryResponse {
     private String name;
     private String slug;
     private int productCount;
+    private String icon;
 }

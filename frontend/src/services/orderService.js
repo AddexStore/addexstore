@@ -5,6 +5,12 @@ export const orderService = {
   getMyOrders: (page = 0, size = 10) => api.get(`/orders?page=${page}&size=${size}`),
   getByOrderNumber: (orderNumber) => api.get(`/orders/number/${orderNumber}`),
   getById: (id) => api.get(`/orders/${id}`),
+  getAdminOrders: ({ page = 0, size = 100, status } = {}) => {
+    const params = new URLSearchParams({ page: String(page), size: String(size) });
+    if (status) params.set('status', status);
+    return api.get(`/admin/orders?${params.toString()}`);
+  },
+  updateAdminOrderStatus: (id, status) => api.put(`/admin/orders/${id}/status`, { status }),
 };
 
 export const paymentService = {

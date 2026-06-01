@@ -36,6 +36,7 @@ public class CategoryMapper {
                 .name(subCategory.getName())
                 .slug(subCategory.getSlug())
                 .productCount(subCategory.getProductCount())
+                .icon(subCategory.getIcon())
                 .build();
     }
 

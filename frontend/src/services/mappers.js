@@ -85,12 +85,13 @@ export function mapCategory(c) {
     image: c.image || '',
     description: c.description || '',
     productCount: c.productCount || 0,
-    icon: c.icon || '',
+    icon: c.icon,
     subcategories: (c.subCategories || []).map((s) => ({
       id: s.id,
       name: s.name,
       slug: s.slug,
       productCount: s.productCount || 0,
+      icon: s.icon,
     })),
   }
 }
