@@ -28,6 +28,9 @@ services:
       DB_USERNAME: root
       DB_PASSWORD: root
       JWT_SECRET: ${JWT_SECRET:-4a6f686e446f6553656372657456657279566572795365637265744b6579466f724a5754}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
     volumes:
       - uploads_data:/app/uploads
     depends_on:
@@ -36,7 +39,12 @@ services:
     restart: unless-stopped
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+    environment:
+      VITE_STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
     container_name: addexstores-frontend
     ports:
       - "5173:80"

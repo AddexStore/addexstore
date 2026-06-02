@@ -38,6 +38,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/banners/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/payments/**").permitAll()
+                        .requestMatchers("/api/payments/stripe/webhook").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

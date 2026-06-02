@@ -33,10 +33,13 @@ const AdminReviews = React.lazy(() => import('../pages/admin/AdminReviews'))
 const AdminNotifications = React.lazy(() => import('../pages/admin/AdminNotifications'))
 const AdminBanners = React.lazy(() => import('../pages/admin/AdminBanners'))
 const AdminSettings = React.lazy(() => import('../pages/admin/AdminSettings'))
+const AdminPayments = React.lazy(() => import('../pages/admin/AdminPayments'))
+const AdminPaymentDetails = React.lazy(() => import('../pages/admin/AdminPaymentDetails'))
 const NewArrivals = React.lazy(() => import('../pages/NewArrivals'))
 const Trending = React.lazy(() => import('../pages/Trending'))
 const Checkout = React.lazy(() => import('../pages/Checkout'))
 const OrderConfirmation = React.lazy(() => import('../pages/OrderConfirmation'))
+const PaymentStatus = React.lazy(() => import('../pages/PaymentStatus'))
 const About = React.lazy(() => import('../pages/About'))
 const Contact = React.lazy(() => import('../pages/Contact'))
 const NotFound = React.lazy(() => import('../pages/NotFound'))
@@ -63,6 +66,7 @@ export default function AppRoutes() {
         <Route path="trending" element={<SuspenseWrapper><Trending /></SuspenseWrapper>} />
         <Route path="checkout" element={<SuspenseWrapper><Checkout /></SuspenseWrapper>} />
         <Route path="order-confirmation/:orderId" element={<SuspenseWrapper><OrderConfirmation /></SuspenseWrapper>} />
+        <Route path="payment/status" element={<SuspenseWrapper><PaymentStatus /></SuspenseWrapper>} />
         <Route path="cart" element={<SuspenseWrapper><Cart /></SuspenseWrapper>} />
         <Route path="wishlist" element={<SuspenseWrapper><Wishlist /></SuspenseWrapper>} />
         <Route path="login" element={<SuspenseWrapper><PublicRoute><Login /></PublicRoute></SuspenseWrapper>} />
@@ -94,6 +98,8 @@ export default function AppRoutes() {
           <Route path="notifications" element={<SuspenseWrapper><AdminNotifications /></SuspenseWrapper>} />
           <Route path="banners" element={<SuspenseWrapper><AdminBanners /></SuspenseWrapper>} />
           <Route path="settings" element={<SuspenseWrapper><AdminSettings /></SuspenseWrapper>} />
+          <Route path="payments" element={<SuspenseWrapper><AdminPayments /></SuspenseWrapper>} />
+          <Route path="payments/:id" element={<SuspenseWrapper><AdminPaymentDetails /></SuspenseWrapper>} />
         </Route>
       </Route>
 

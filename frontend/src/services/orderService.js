@@ -14,9 +14,8 @@ export const orderService = {
 };
 
 export const paymentService = {
-  createPayPalOrder: (data) => api.post('/payments/paypal/create', data),
-  capturePayPalOrder: (data) => api.post('/payments/paypal/capture', data),
-  createRazorpayOrder: (data) => api.post('/payments/razorpay/create', data),
-  verifyRazorpayPayment: (data) => api.post('/payments/razorpay/verify', data),
   getPaymentByOrderId: (orderId) => api.get(`/payments/order/${orderId}`),
+  createStripePaymentIntent: (data) => api.post('/payments/stripe/create-intent', data),
+  getStripePaymentStatus: (paymentIntentId) => api.get(`/payments/stripe/status/${paymentIntentId}`),
+  cancelStripePayment: (paymentIntentId) => api.post(`/payments/stripe/cancel/${paymentIntentId}`),
 };

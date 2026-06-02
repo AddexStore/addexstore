@@ -36,6 +36,7 @@ export const ADMIN_SIDEBAR_LINKS = [
   { name: 'Analytics', path: '/admin/analytics', icon: 'BarChart3' },
   { name: 'Reviews', path: '/admin/reviews', icon: 'Star' },
   { name: 'Banners', path: '/admin/banners', icon: 'Image' },
+  { name: 'Payments', path: '/admin/payments', icon: 'CreditCard' },
   { name: 'Notifications', path: '/admin/notifications', icon: 'Bell' },
   { name: 'Settings', path: '/admin/settings', icon: 'Settings' },
 ];

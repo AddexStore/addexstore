@@ -33,6 +33,7 @@ public class CartServiceImpl implements CartService {
     private final ProductRepository productRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public CartResponse getCart(Long userId) {
         Cart cart = getOrCreateCart(userId);
         return CartMapper.toCartResponse(cart);

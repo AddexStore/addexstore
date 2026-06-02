@@ -1,6 +1,7 @@
-export const formatPrice = (price) => {
-  if (price === null || price === undefined) return '₹0.00';
-  return '₹' + price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+export const formatPrice = (price, symbol) => {
+  if (price === null || price === undefined) return '$0.00';
+  const sym = symbol || '$';
+  return sym + Number(price).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
 export const getDiscountPrice = (price, discount) => {

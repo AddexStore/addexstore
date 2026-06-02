@@ -67,7 +67,7 @@ public class OrderServiceImpl implements OrderService {
 
         BigDecimal totalAmount = subtotal.add(tax).add(shippingCost);
 
-        String orderNumber = "ORD-" + System.currentTimeMillis();
+        String orderNumber = "ORD-" + System.currentTimeMillis() + (int)(Math.random() * 90 + 10);
 
         Order order = Order.builder()
                 .orderNumber(orderNumber)

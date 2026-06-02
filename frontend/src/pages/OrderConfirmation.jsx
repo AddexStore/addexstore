@@ -19,6 +19,7 @@ export default function OrderConfirmation() {
   }, [orderId])
 
   const paymentLabels = {
+    STRIPE: 'Credit/Debit Card',
     COD: 'Cash on Delivery',
     PAYPAL: 'PayPal',
     RAZORPAY: 'Razorpay',
@@ -102,11 +103,15 @@ export default function OrderConfirmation() {
           <div className="border-t border-[var(--border-color)] pt-4 space-y-2 text-sm">
             <div className="flex justify-between text-[var(--text-secondary)]">
               <span>Subtotal</span>
-              <span>{formatPrice(order.items.reduce((s, i) => s + i.price * i.quantity, 0))}</span>
+              <span>{formatPrice(order.subtotal)}</span>
             </div>
             <div className="flex justify-between text-[var(--text-secondary)]">
               <span>Shipping</span>
-              <span className="text-[#2F855A] font-medium">Free</span>
+              <span>{order.shippingCost === 0 ? <span className="text-[#2F855A] font-medium">Free</span> : formatPrice(order.shippingCost)}</span>
+            </div>
+            <div className="flex justify-between text-[var(--text-secondary)]">
+              <span>Tax</span>
+              <span>{formatPrice(order.tax)}</span>
             </div>
             <div className="flex justify-between text-lg font-bold text-[var(--text-primary)] border-t border-[var(--border-color)] pt-3">
               <span>Total</span>

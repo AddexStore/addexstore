@@ -1,20 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { useToast } from '../context/ToastContext'
-import { orderService } from '../services/orderService'
 import { cartService } from '../services/cartService'
+import { checkoutService } from '../services/checkoutService'
 import { formatPrice } from '../utils/helpers'
-import PayPalButton from '../components/PayPalButton'
-import RazorpayButton from '../components/RazorpayButton'
+import StripeCheckout from '../components/StripeCheckout'
 
-const STEPS = ['Shipping', 'Payment', 'Review']
+const STEPS = ['Shipping', 'Payment']
 
 const PAYMENT_METHODS = [
-  { id: 'COD', label: 'Cash on Delivery', description: 'Pay when you receive your order', icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z' },
-  { id: 'PAYPAL', label: 'PayPal', description: 'Secure payment via PayPal', icon: 'M7 11.5V14m0-2.5v-6a1.5 1.5 0 013 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11' },
-  { id: 'RAZORPAY', label: 'Razorpay', description: 'Pay via UPI, cards, or net banking', icon: 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z' },
+  { id: 'STRIPE', label: 'Credit/Debit Card', description: 'Pay with card, Apple Pay, or Google Pay', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
 ]
 
 export default function Checkout() {
@@ -22,6 +19,7 @@ export default function Checkout() {
   const { isAuthenticated } = useAuth()
   const { cartItems, getCartTotal, clearCart } = useCart()
   const { showToast } = useToast()
+  const paymentMethod = 'STRIPE'
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -30,8 +28,6 @@ export default function Checkout() {
   }, [isAuthenticated, navigate])
 
   const [step, setStep] = useState(0)
-  const [submitting, setSubmitting] = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState('')
 
   const [shipping, setShipping] = useState({
     firstName: '',
@@ -45,16 +41,55 @@ export default function Checkout() {
     country: 'US',
   })
 
-  const subtotal = getCartTotal()
-  const shippingCost = subtotal >= 100 || subtotal === 0 ? 0 : 15
-  const tax = subtotal * 0.08
-  const total = subtotal + shippingCost + tax
+  const [quote, setQuote] = useState(null)
+  const [quoteLoading, setQuoteLoading] = useState(false)
+  const cs = quote?.currencySymbol || '$'
+
+  const getCurrencyForCountry = (country) => {
+    const currencyMap = {
+      US: 'USD', UK: 'GBP', GB: 'GBP', CA: 'USD',
+      AE: 'AED', FR: 'EUR', IT: 'EUR', IN: 'INR',
+    }
+    return currencyMap[country] || 'USD'
+  }
+
+  const subtotal = quote ? Number(quote.subtotal) : getCartTotal()
+  const shippingCost = quote ? Number(quote.shippingCost) : (getCartTotal() >= 100 ? 0 : 15)
+  const tax = quote ? Number(quote.tax) : getCartTotal() * 0.08
+  const total = quote ? Number(quote.total) : subtotal + shippingCost + tax
 
   const updateShipping = (field, value) =>
     setShipping((prev) => ({ ...prev, [field]: value }))
 
   const isShippingValid = () =>
     Object.values(shipping).every((v) => v.trim().length > 0)
+
+  const fetchQuote = useCallback(async () => {
+    if (cartItems.length === 0) return
+    setQuoteLoading(true)
+    try {
+      const items = cartItems.map(item => ({
+        productId: item.id,
+        quantity: item.quantity,
+        price: item.price,
+      }))
+      const res = await checkoutService.getQuote({
+        country: shipping.country,
+        state: shipping.state,
+        currency: getCurrencyForCountry(shipping.country),
+        items,
+      })
+      setQuote(res.data || res)
+    } catch (err) {
+      showToast(err.message || 'Failed to load pricing', 'error')
+    } finally {
+      setQuoteLoading(false)
+    }
+  }, [shipping.country, shipping.state, cartItems])
+
+  useEffect(() => {
+    fetchQuote()
+  }, [fetchQuote])
 
   const syncCartWithBackend = async () => {
     await cartService.syncCart(cartItems.map(item => ({
@@ -68,29 +103,6 @@ export default function Checkout() {
     showToast('Order placed successfully!', 'success')
     const orderNumber = paymentData?.orderNumber || `ORD-${Date.now()}`
     navigate(`/order-confirmation/${orderNumber}`)
-  }
-
-  const handlePlaceOrderCOD = async () => {
-    setSubmitting(true)
-    try {
-      await syncCartWithBackend()
-      const res = await orderService.create({
-        street: shipping.street,
-        city: shipping.city,
-        state: shipping.state,
-        zipCode: shipping.zip,
-        country: shipping.country,
-        paymentMethod: 'COD',
-      })
-      clearCart()
-      showToast('Order placed successfully!', 'success')
-      const orderNumber = res.data?.orderNumber || res.orderNumber || `ORD-${Date.now()}`
-      navigate(`/order-confirmation/${orderNumber}`)
-    } catch {
-      showToast('Failed to place order. Please try again.', 'error')
-    } finally {
-      setSubmitting(false)
-    }
   }
 
   if (cartItems.length === 0) {
@@ -215,11 +227,7 @@ export default function Checkout() {
                 <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-6">Payment Method</h2>
                 <div className="space-y-3 mb-6">
                   {PAYMENT_METHODS.map((method) => (
-                    <label key={method.id} className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition ${
-                      paymentMethod === method.id ? 'border-[#C6A972] bg-[#C6A972]/5' : 'border-[var(--border-color)] hover:border-[var(--text-muted)]'
-                    }`}>
-                      <input type="radio" name="payment" value={method.id} checked={paymentMethod === method.id}
-                        onChange={() => setPaymentMethod(method.id)} className="mt-1 accent-[#C6A972]" />
+                    <div key={method.id} className="flex items-start gap-4 p-4 rounded-xl border-2 border-[#C6A972] bg-[#C6A972]/5">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <svg className="w-5 h-5 text-[#C6A972]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -229,29 +237,12 @@ export default function Checkout() {
                         </div>
                         <p className="text-xs text-[var(--text-secondary)] mt-1 ml-7">{method.description}</p>
                       </div>
-                    </label>
+                    </div>
                   ))}
                 </div>
 
-                {paymentMethod === 'COD' && (
-                  <div className="bg-[var(--bg-secondary)] rounded-lg p-4 text-sm text-[var(--text-secondary)]">
-                    <p className="font-medium text-[var(--text-primary)] mb-1">Pay with Cash</p>
-                    <p>Pay when your order is delivered. No additional fees.</p>
-                  </div>
-                )}
-
-                {paymentMethod === 'PAYPAL' && (
-                  <PayPalButton
-                    shipping={shipping}
-                    onSuccess={handlePaymentSuccess}
-                    onError={() => {}}
-                    disabled={!isShippingValid()}
-                    onSyncCart={syncCartWithBackend}
-                  />
-                )}
-
-                {paymentMethod === 'RAZORPAY' && (
-                  <RazorpayButton
+                {paymentMethod === 'STRIPE' && (
+                  <StripeCheckout
                     shipping={shipping}
                     onSuccess={handlePaymentSuccess}
                     onError={() => {}}
@@ -261,43 +252,7 @@ export default function Checkout() {
               </div>
             )}
 
-            {step === 2 && (
-              <div className="bg-[var(--bg-card)] rounded-xl shadow-lg shadow-black/5 p-6 border border-[var(--border-color)]">
-                <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-6">Review Your Order</h2>
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-[#C6A972] uppercase tracking-wider mb-3">Shipping To</h3>
-                  <div className="text-sm text-[var(--text-secondary)] space-y-1 bg-[var(--bg-secondary)] rounded-lg p-4">
-                    <p className="text-[var(--text-primary)] font-medium">{shipping.firstName} {shipping.lastName}</p>
-                    <p>{shipping.street}</p>
-                    <p>{shipping.city}, {shipping.state} {shipping.zip}</p>
-                    <p>{shipping.country}</p>
-                    <p className="pt-2">{shipping.email}</p>
-                    <p>{shipping.phone}</p>
-                  </div>
-                </div>
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-[#C6A972] uppercase tracking-wider mb-3">Payment Method</h3>
-                  <div className="text-sm text-[var(--text-primary)] font-medium bg-[var(--bg-secondary)] rounded-lg p-4">
-                    Cash on Delivery
-                  </div>
-                </div>
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-[#C6A972] uppercase tracking-wider mb-3">Items</h3>
-                  <div className="space-y-3">
-                    {cartItems.map((item) => (
-                      <div key={`${item.id}-${item.size}-${item.color}`} className="flex items-center gap-3 bg-[var(--bg-secondary)] rounded-lg p-3">
-                        <img src={item.image} alt={item.name} className="w-14 h-14 rounded-lg object-cover bg-[var(--bg-card)]" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-[var(--text-primary)] truncate">{item.name}</p>
-                          <p className="text-xs text-[var(--text-secondary)]">Qty: {item.quantity} {item.size && `| ${item.size}`} {item.color && item.color !== 'Default' && `| ${item.color}`}</p>
-                        </div>
-                        <span className="text-sm font-medium text-[var(--text-primary)]">{formatPrice(item.price * item.quantity)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+
           </div>
 
           <div className="lg:w-80">
@@ -306,19 +261,19 @@ export default function Checkout() {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between text-[var(--text-secondary)]">
                   <span>Subtotal ({cartItems.length} items)</span>
-                  <span>{formatPrice(subtotal)}</span>
+                  <span>{formatPrice(subtotal, cs)}</span>
                 </div>
                 <div className="flex justify-between text-[var(--text-secondary)]">
                   <span>Shipping</span>
-                  <span>{shippingCost === 0 ? <span className="text-[#2F855A] font-medium">Free</span> : formatPrice(shippingCost)}</span>
+                  <span>{shippingCost === 0 ? <span className="text-[#2F855A] font-medium">Free</span> : formatPrice(shippingCost, cs)}</span>
                 </div>
                 <div className="flex justify-between text-[var(--text-secondary)]">
                   <span>Tax</span>
-                  <span>{formatPrice(tax)}</span>
+                  <span>{formatPrice(tax, cs)}</span>
                 </div>
                 <div className="border-t border-[var(--border-color)] pt-3 flex justify-between font-semibold text-[var(--text-primary)]">
                   <span>Total</span>
-                  <span>{formatPrice(total)}</span>
+                  <span>{formatPrice(total, cs)}</span>
                 </div>
               </div>
             </div>
@@ -347,21 +302,7 @@ export default function Checkout() {
             </button>
           )}
 
-          {step === 1 && paymentMethod === 'COD' && (
-            <button onClick={() => setStep(2)}
-              className="px-8 py-3 bg-[#C6A972] text-white text-sm font-semibold rounded-full hover:bg-[#B8965F] transition active:scale-[0.98] min-h-[48px]">
-              Continue to Review
-            </button>
-          )}
 
-          {step === 2 && (
-            <button onClick={handlePlaceOrderCOD} disabled={submitting}
-              className="px-8 py-3 bg-[#C6A972] text-white text-sm font-semibold rounded-full hover:bg-[#B8965F] transition active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed min-h-[48px] inline-flex items-center gap-2">
-              {submitting ? (
-                <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Placing Order...</>
-              ) : `Place Order — ${formatPrice(total)}`}
-            </button>
-          )}
         </div>
       </div>
     </div>

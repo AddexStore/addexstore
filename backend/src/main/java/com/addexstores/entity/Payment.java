@@ -59,6 +59,18 @@ public class Payment {
     @Column(name = "gateway_response", columnDefinition = "TEXT")
     private String gatewayResponse;
 
+    @Column(name = "stripe_payment_intent_id", length = 255)
+    private String stripePaymentIntentId;
+
+    @Column(name = "base_amount", precision = 10, scale = 2)
+    private BigDecimal baseAmount;
+
+    @Column(name = "converted_amount", precision = 10, scale = 2)
+    private BigDecimal convertedAmount;
+
+    @Column(length = 255)
+    private String customerEmail;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
