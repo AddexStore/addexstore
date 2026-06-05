@@ -1,10 +1,10 @@
 package com.addexstores.controller;
 
 import com.addexstores.service.impl.RazorpayPaymentServiceImpl;
-import com.razorpay.Event;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -43,7 +43,7 @@ public class RazorpayWebhookController {
         }
 
         try {
-            Event event = (Event) razorpayPaymentService.verifyWebhook(payload, signatureHeader);
+            JSONObject event = razorpayPaymentService.verifyWebhook(payload, signatureHeader);
             if (event != null) {
                 razorpayPaymentService.processWebhookEvent(event);
             }

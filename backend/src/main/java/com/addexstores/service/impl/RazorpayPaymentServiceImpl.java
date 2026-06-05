@@ -326,14 +326,14 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
         return PaymentMapper.toRefundResponse(refundEntity);
     }
 
-    public com.razorpay.Event verifyWebhook(String payload, String signatureHeader, String webhookSecret) {
+    public JSONObject verifyWebhook(String payload, String signatureHeader, String webhookSecret) {
         try {
             boolean verified = Utils.verifyWebhookSignature(payload, signatureHeader, webhookSecret);
             if (!verified) {
                 log.error("Razorpay webhook signature verification failed");
                 throw new PaymentGatewayException("Invalid webhook signature");
             }
-            com.razorpay.Event event = com.razorpay.Event.parse(payload);
+            JSONObject event = new JSONObject(payload);
             log.info("Razorpay webhook verified: type={}", event.get("event"));
             return event;
         } catch (RazorpayException e) {
@@ -342,14 +342,13 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
         }
     }
 
-    public Object verifyWebhook(String payload, String signatureHeader) {
+    public JSONObject verifyWebhook(String payload, String signatureHeader) {
         return verifyWebhook(payload, signatureHeader, razorpayConfig.getWebhookSecret());
     }
 
     @Transactional
-    public Payment processWebhookEvent(Object eventObj) {
-        com.razorpay.Event event = (com.razorpay.Event) eventObj;
-        String eventType = event.get("event");
+    public Payment processWebhookEvent(JSONObject event) {
+        String eventType = event.getString("event");
 
         return switch (eventType) {
             case "payment.captured" -> handlePaymentCaptured(event);
@@ -362,8 +361,8 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
         };
     }
 
-    private Payment handlePaymentCaptured(com.razorpay.Event event) {
-        JSONObject payload = event.get("payload");
+    private Payment handlePaymentCaptured(JSONObject event) {
+        JSONObject payload = event.getJSONObject("payload");
         JSONObject paymentObj = payload.getJSONObject("payment").getJSONObject("entity");
         String razorpayPaymentId = paymentObj.getString("id");
         String razorpayOrderId = paymentObj.getString("order_id");
@@ -415,8 +414,8 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
         return payment;
     }
 
-    private Payment handlePaymentFailed(com.razorpay.Event event) {
-        JSONObject payload = event.get("payload");
+    private Payment handlePaymentFailed(JSONObject event) {
+        JSONObject payload = event.getJSONObject("payload");
         JSONObject paymentObj = payload.getJSONObject("payment").getJSONObject("entity");
         String razorpayOrderId = paymentObj.optString("order_id", "");
 
@@ -445,8 +444,8 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
         return payment;
     }
 
-    private Payment handleRefundCreated(com.razorpay.Event event) {
-        JSONObject payload = event.get("payload");
+    private Payment handleRefundCreated(JSONObject event) {
+        JSONObject payload = event.getJSONObject("payload");
         JSONObject refundObj = payload.getJSONObject("refund").getJSONObject("entity");
         String razorpayPaymentId = refundObj.optString("payment_id", "");
 
