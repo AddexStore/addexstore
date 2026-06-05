@@ -1,0 +1,56 @@
+# ============================================================
+# Backend .dockerignore
+# ============================================================
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Build output
+target/
+*.jar
+*.war
+
+# Environment & configuration
+.env
+.env.*
+*.local
+application-local.yml
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.factorypath
+.settings/
+.sonarlint/
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Uploads (runtime data, not part of image)
+uploads/
+
+# Environment example files
+.env.example
+
+# Miscellaneous
+*.md
+*.bak
+*.swp
+*.swo

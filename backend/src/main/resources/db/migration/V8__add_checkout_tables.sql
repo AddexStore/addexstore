@@ -1,38 +1,41 @@
 CREATE TABLE IF NOT EXISTS tax_rules (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     country VARCHAR(100) NOT NULL,
-    state VARCHAR(100) DEFAULT NULL,
+    state VARCHAR(100),
     rate DECIMAL(5, 2) NOT NULL,
     name VARCHAR(255) NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_tax_country (country),
-    INDEX idx_tax_active (active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_tax_country ON tax_rules (country);
+CREATE INDEX IF NOT EXISTS idx_tax_active ON tax_rules (active);
 
 CREATE TABLE IF NOT EXISTS shipping_rules (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     country VARCHAR(100) NOT NULL,
-    min_order_amount DECIMAL(10, 2) DEFAULT NULL,
+    min_order_amount DECIMAL(10, 2),
     cost DECIMAL(10, 2) NOT NULL,
-    free_shipping_threshold DECIMAL(10, 2) DEFAULT NULL,
+    free_shipping_threshold DECIMAL(10, 2),
     name VARCHAR(255) NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_shipping_country (country),
-    INDEX idx_shipping_active (active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_shipping_country ON shipping_rules (country);
+CREATE INDEX IF NOT EXISTS idx_shipping_active ON shipping_rules (active);
 
 CREATE TABLE IF NOT EXISTS currency_rates (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     currency_code VARCHAR(3) NOT NULL UNIQUE,
     rate_to_usd DECIMAL(10, 6) NOT NULL,
     symbol VARCHAR(10) NOT NULL DEFAULT '$',
     active BOOLEAN NOT NULL DEFAULT TRUE,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_currency_code (currency_code),
-    INDEX idx_currency_active (active)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_currency_code ON currency_rates (currency_code);
+CREATE INDEX IF NOT EXISTS idx_currency_active ON currency_rates (active);
 
 INSERT INTO tax_rules (country, state, rate, name, active) VALUES
     ('US', NULL, 0.00, 'No Tax (Default)', TRUE),

@@ -2,11 +2,12 @@ server:
   port: ${SERVER_PORT:8080}
 
 spring:
+  profiles:
+    active: ${ACTIVE_PROFILE:dev}
+
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:addexstores_db}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:root}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/addexstores_db?user=postgres&password=postgres}
+    driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
       minimum-idle: 5
@@ -18,7 +19,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.MySQLDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
 
   flyway:
@@ -32,17 +33,37 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
 
+  mail:
+    host: ${EMAIL_HOST:}
+    port: ${EMAIL_PORT:587}
+    username: ${EMAIL_USERNAME:}
+    password: ${EMAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+logging:
+  level:
+    root: ${LOG_LEVEL:INFO}
+
 app:
   jwt:
-    secret: ${JWT_SECRET:4a6f686e446f6553656372657456657279566572795365637265744b6579466f724a5754}
+    secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970337336763979244226452948404D635166546A576E5A7234753778214125442A47}
     expiration: ${JWT_EXPIRATION:86400000}
     refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
   upload:
+    dir: ${UPLOAD_DIR:./uploads}
     paths:
-      products: ./uploads/products
-      banners: ./uploads/banners
-      categories: ./uploads/categories
-      avatars: ./uploads/avatars
+      products: ${app.upload.dir}/products
+      banners: ${app.upload.dir}/banners
+      categories: ${app.upload.dir}/categories
+      avatars: ${app.upload.dir}/avatars
+  swagger:
+    server-url: ${SWAGGER_SERVER_URL:http://localhost:8080}
 
 springdoc:
   api-docs:
@@ -57,4 +78,4 @@ payment:
     webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
 
 cors:
-  allowed-origins: http://localhost:5173,http://localhost:3000
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}

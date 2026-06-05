@@ -1,12 +1,12 @@
 -- ============================================================
 -- Fix categories.icon to TEXT (SVGs exceed VARCHAR(255))
 -- ============================================================
-ALTER TABLE categories MODIFY icon TEXT;
+ALTER TABLE categories ALTER COLUMN icon TYPE TEXT;
 
 -- ============================================================
 -- Add icon column to sub_categories
 -- ============================================================
-ALTER TABLE sub_categories ADD COLUMN icon TEXT DEFAULT NULL AFTER product_count;
+ALTER TABLE sub_categories ADD COLUMN IF NOT EXISTS icon TEXT;
 
 -- ============================================================
 -- Seed category icons (matching frontend data/categories.js)
