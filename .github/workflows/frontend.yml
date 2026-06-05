@@ -36,7 +36,7 @@ jobs:
         env:
           VITE_API_BASE_URL: https://addexstore-backend-latest.onrender.com/api
           VITE_API_ORIGIN: https://addexstore-backend-latest.onrender.com
-          VITE_FRONTEND_URL: https://addexstore.netlify.app
+          VITE_FRONTEND_URL: https://kaleidoscopic-croissant-353e10.netlify.app
           VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
           VITE_APP_NAME: AddexStores
           VITE_ENVIRONMENT: production
