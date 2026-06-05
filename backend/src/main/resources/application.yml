@@ -1,26 +1,40 @@
 server:
   port: ${SERVER_PORT:8080}
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,application/json,application/javascript
+    min-response-size: 1024
 
 spring:
   profiles:
     active: ${ACTIVE_PROFILE:dev}
 
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/addexstores_db?user=postgres&password=postgres}
+    url: ${DATABASE_URL}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
+      maximum-pool-size: ${HIKARI_MAX_POOL:20}
+      minimum-idle: ${HIKARI_MIN_IDLE:5}
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: AddexPool
 
   jpa:
     hibernate:
       ddl-auto: validate
     show-sql: false
+    open-in-view: false
     properties:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
-    open-in-view: false
+        jdbc:
+          batch_size: 25
+        order_inserts: true
+        order_updates: true
+        query:
+          in_clause_parameter_padding: true
 
   flyway:
     enabled: true
@@ -32,6 +46,9 @@ spring:
       enabled: true
       max-file-size: 10MB
       max-request-size: 10MB
+
+  cache:
+    type: ${CACHE_TYPE:simple}
 
   mail:
     host: ${EMAIL_HOST:}
@@ -48,10 +65,12 @@ spring:
 logging:
   level:
     root: ${LOG_LEVEL:INFO}
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{correlationId}] %logger{36} - %msg%n"
 
 app:
   jwt:
-    secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970337336763979244226452948404D635166546A576E5A7234753778214125442A47}
+    secret: ${JWT_SECRET}
     expiration: ${JWT_EXPIRATION:86400000}
     refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
@@ -76,6 +95,10 @@ payment:
     secret-key: ${STRIPE_SECRET_KEY:}
     publishable-key: ${STRIPE_PUBLISHABLE_KEY:}
     webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+  razorpay:
+    key-id: ${RAZORPAY_KEY_ID:}
+    key-secret: ${RAZORPAY_KEY_SECRET:}
+    webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:}
 
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}

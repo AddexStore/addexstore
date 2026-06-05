@@ -46,7 +46,7 @@ public class AuthServiceImpl implements AuthService {
             throw new BadRequestException("Account is blocked. Please contact support.");
         }
 
-        String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail());
+        String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole().name(), user.isBlocked());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
 
         log.info("User logged in: {}", user.getEmail());
@@ -73,7 +73,7 @@ public class AuthServiceImpl implements AuthService {
 
         user = userRepository.save(user);
 
-        String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail());
+        String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole().name(), user.isBlocked());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
 
         log.info("User registered: {}", user.getEmail());

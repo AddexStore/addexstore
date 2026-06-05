@@ -46,6 +46,7 @@ export default function StripeCheckout({ shipping, onSuccess, onError, onSyncCar
           zipCode: shipping.zip,
           country: shipping.country,
           currency: getCurrencyForCountry(shipping.country),
+          paymentMethod: 'STRIPE',
         })
         const data = res.data || res
         setClientSecret(data.clientSecret)

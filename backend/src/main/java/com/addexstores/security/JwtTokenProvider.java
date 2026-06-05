@@ -17,7 +17,7 @@ public class JwtTokenProvider {
     private final long refreshExpiration;
 
     public JwtTokenProvider(
-            @Value("${app.jwt.secret:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970337336763979244226452948404D635166546A576E5A7234753778214125442A47}") String secret,
+            @Value("${app.jwt.secret}") String secret,
             @Value("${app.jwt.expiration:86400000}") long jwtExpiration,
             @Value("${app.jwt.refresh-expiration:2592000000}") long refreshExpiration) {
         this.jwtSecret = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
@@ -25,13 +25,15 @@ public class JwtTokenProvider {
         this.refreshExpiration = refreshExpiration;
     }
 
-    public String generateToken(Long userId, String email) {
+    public String generateToken(Long userId, String email, String role, boolean isBlocked) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpiration);
 
         return Jwts.builder()
                 .subject(userId.toString())
                 .claim("email", email)
+                .claim("role", role)
+                .claim("blocked", isBlocked)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(jwtSecret)
@@ -51,14 +53,24 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public Long getUserIdFromToken(String token) {
-        Claims claims = Jwts.parser()
+    private Claims getClaims(String token) {
+        return Jwts.parser()
                 .verifyWith(jwtSecret)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
 
-        return Long.parseLong(claims.getSubject());
+    public Long getUserIdFromToken(String token) {
+        return Long.parseLong(getClaims(token).getSubject());
+    }
+
+    public String getRoleFromToken(String token) {
+        return getClaims(token).get("role", String.class);
+    }
+
+    public boolean isBlockedFromToken(String token) {
+        return getClaims(token).get("blocked", Boolean.class);
     }
 
     public boolean validateToken(String token) {

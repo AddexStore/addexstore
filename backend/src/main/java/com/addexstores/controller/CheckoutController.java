@@ -5,9 +5,11 @@ import com.addexstores.dto.request.CreatePaymentRequest;
 import com.addexstores.dto.response.ApiResponse;
 import com.addexstores.dto.response.CheckoutQuoteResponse;
 import com.addexstores.dto.response.CreatePaymentResponse;
+import com.addexstores.enums.PaymentMethod;
+import com.addexstores.payment.PaymentGateway;
+import com.addexstores.payment.PaymentGatewayFactory;
 import com.addexstores.security.CurrentUser;
 import com.addexstores.service.CheckoutPricingService;
-import com.addexstores.service.StripePaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -21,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
 public class CheckoutController {
 
     private final CheckoutPricingService checkoutPricingService;
-    private final StripePaymentService stripePaymentService;
+    private final PaymentGatewayFactory gatewayFactory;
 
     @PostMapping("/quote")
     @Operation(summary = "Get checkout pricing quote")
@@ -32,10 +34,19 @@ public class CheckoutController {
     }
 
     @PostMapping("/create-payment")
-    @Operation(summary = "Create order and Stripe PaymentIntent in one call")
+    @Operation(summary = "Create order and payment via active gateway")
     public ApiResponse<CreatePaymentResponse> createPayment(
             @CurrentUser Long userId,
             @Valid @RequestBody CreatePaymentRequest request) {
-        return ApiResponse.success(stripePaymentService.createOrderAndPaymentIntent(userId, request));
+        PaymentMethod method = PaymentMethod.STRIPE;
+        if (request.getPaymentMethod() != null) {
+            try {
+                method = PaymentMethod.valueOf(request.getPaymentMethod().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                method = gatewayFactory.getActivePaymentMethod();
+            }
+        }
+        PaymentGateway gateway = gatewayFactory.getGateway(method);
+        return ApiResponse.success(gateway.createOrderAndPaymentIntent(userId, request));
     }
 }

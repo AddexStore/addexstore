@@ -7,11 +7,13 @@ import { cartService } from '../services/cartService'
 import { checkoutService } from '../services/checkoutService'
 import { formatPrice } from '../utils/helpers'
 import StripeCheckout from '../components/StripeCheckout'
+import RazorpayCheckout from '../components/RazorpayCheckout'
 
 const STEPS = ['Shipping', 'Payment']
 
 const PAYMENT_METHODS = [
   { id: 'STRIPE', label: 'Credit/Debit Card', description: 'Pay with card, Apple Pay, or Google Pay', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
+  { id: 'RAZORPAY', label: 'UPI / Cards / Net Banking', description: 'Pay with UPI, Cards, Net Banking, or Wallets', icon: 'M12 11c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3zm6 0c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z' },
 ]
 
 export default function Checkout() {
@@ -19,7 +21,7 @@ export default function Checkout() {
   const { isAuthenticated } = useAuth()
   const { cartItems, getCartTotal, clearCart } = useCart()
   const { showToast } = useToast()
-  const paymentMethod = 'STRIPE'
+  const [paymentMethod, setPaymentMethod] = useState('STRIPE')
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -227,7 +229,15 @@ export default function Checkout() {
                 <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-6">Payment Method</h2>
                 <div className="space-y-3 mb-6">
                   {PAYMENT_METHODS.map((method) => (
-                    <div key={method.id} className="flex items-start gap-4 p-4 rounded-xl border-2 border-[#C6A972] bg-[#C6A972]/5">
+                    <div
+                      key={method.id}
+                      onClick={() => setPaymentMethod(method.id)}
+                      className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition ${
+                        paymentMethod === method.id
+                          ? 'border-[#C6A972] bg-[#C6A972]/5'
+                          : 'border-[var(--border-color)] bg-transparent hover:border-[var(--text-secondary)]'
+                      }`}
+                    >
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <svg className="w-5 h-5 text-[#C6A972]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -237,12 +247,28 @@ export default function Checkout() {
                         </div>
                         <p className="text-xs text-[var(--text-secondary)] mt-1 ml-7">{method.description}</p>
                       </div>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        paymentMethod === method.id ? 'border-[#C6A972]' : 'border-[var(--border-color)]'
+                      }`}>
+                        {paymentMethod === method.id && (
+                          <div className="w-2.5 h-2.5 rounded-full bg-[#C6A972]" />
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
 
                 {paymentMethod === 'STRIPE' && (
                   <StripeCheckout
+                    shipping={shipping}
+                    onSuccess={handlePaymentSuccess}
+                    onError={() => {}}
+                    onSyncCart={syncCartWithBackend}
+                  />
+                )}
+
+                {paymentMethod === 'RAZORPAY' && (
+                  <RazorpayCheckout
                     shipping={shipping}
                     onSuccess={handlePaymentSuccess}
                     onError={() => {}}

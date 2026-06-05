@@ -12,6 +12,8 @@ import com.addexstores.mapper.OrderMapper;
 import com.addexstores.repository.*;
 import com.addexstores.service.NotificationService;
 import com.addexstores.service.OrderService;
+import com.addexstores.service.TaxService;
+import com.addexstores.service.ShippingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -26,6 +28,7 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -40,6 +43,8 @@ public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final NotificationService notificationService;
+    private final TaxService taxService;
+    private final ShippingService shippingService;
 
     @Override
     @Transactional
@@ -58,16 +63,12 @@ public class OrderServiceImpl implements OrderService {
                 .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal tax = subtotal.multiply(new BigDecimal("0.085"))
-                .setScale(2, RoundingMode.HALF_UP);
-
-        BigDecimal shippingCost = subtotal.compareTo(new BigDecimal("100")) >= 0
-                ? BigDecimal.ZERO
-                : new BigDecimal("9.99");
-
+        BigDecimal subtotalInUsd = subtotal;
+        BigDecimal tax = taxService.calculateTax(subtotalInUsd, request.getCountry(), request.getState());
+        BigDecimal shippingCost = shippingService.calculateShipping(subtotalInUsd, request.getCountry());
         BigDecimal totalAmount = subtotal.add(tax).add(shippingCost);
 
-        String orderNumber = "ORD-" + System.currentTimeMillis() + (int)(Math.random() * 90 + 10);
+        String orderNumber = "ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
         Order order = Order.builder()
                 .orderNumber(orderNumber)

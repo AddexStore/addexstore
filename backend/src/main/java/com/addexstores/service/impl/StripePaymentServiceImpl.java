@@ -15,6 +15,7 @@ import com.addexstores.exception.ResourceNotFoundException;
 import com.addexstores.exception.UnauthorizedException;
 import com.addexstores.mapper.PaymentMapper;
 import com.addexstores.repository.*;
+import com.addexstores.payment.PaymentGateway;
 import com.addexstores.service.CartService;
 import com.addexstores.service.CurrencyService;
 import com.addexstores.service.NotificationService;
@@ -41,11 +42,12 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class StripePaymentServiceImpl implements StripePaymentService {
+public class StripePaymentServiceImpl implements StripePaymentService, PaymentGateway {
 
     private static final Set<String> SUPPORTED_CURRENCIES = Set.of("USD", "EUR", "GBP", "AED", "INR");
 
@@ -90,7 +92,7 @@ public class StripePaymentServiceImpl implements StripePaymentService {
 
         BigDecimal totalAmount = currencyService.convertFromUsd(totalInUsd, request.getCurrency() != null ? request.getCurrency() : "USD");
 
-        String orderNumber = "ORD-" + System.currentTimeMillis() + (int)(Math.random() * 90 + 10);
+        String orderNumber = "ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
         String targetCurrency = request.getCurrency() != null ? request.getCurrency().toUpperCase() : "USD";
         BigDecimal taxInTarget = currencyService.convertFromUsd(tax, targetCurrency);
@@ -490,14 +492,6 @@ public class StripePaymentServiceImpl implements StripePaymentService {
             order.setStatus(OrderStatus.PROCESSING);
             orderRepository.save(order);
 
-            for (OrderItem item : order.getItems()) {
-                Product product = item.getProduct();
-                if (product != null) {
-                    product.setStock(product.getStock() - item.getQuantity());
-                    productRepository.save(product);
-                }
-            }
-
             User orderUser = order.getUser();
             if (orderUser != null) {
                 cartRepository.findByUserId(orderUser.getId()).ifPresent(cart -> {
@@ -622,6 +616,11 @@ public class StripePaymentServiceImpl implements StripePaymentService {
             payment.setGatewayResponse(pi.toJson());
             paymentRepository.save(payment);
         }
+    }
+
+    @Override
+    public String getGatewayName() {
+        return "STRIPE";
     }
 
     private long convertToSmallestUnit(BigDecimal amount, String currency) {

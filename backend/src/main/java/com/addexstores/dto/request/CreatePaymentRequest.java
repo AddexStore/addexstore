@@ -31,5 +31,7 @@ public class CreatePaymentRequest {
     @NotNull
     private String currency;
 
+    private String paymentMethod;
+
     private String notes;
 }

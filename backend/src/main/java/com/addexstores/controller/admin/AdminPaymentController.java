@@ -15,8 +15,10 @@ import com.addexstores.mapper.PaymentMapper;
 import com.addexstores.repository.PaymentRepository;
 import com.addexstores.repository.PaymentTransactionRepository;
 import com.addexstores.repository.RefundRepository;
+import com.addexstores.enums.PaymentMethod;
+import com.addexstores.payment.PaymentGateway;
+import com.addexstores.payment.PaymentGatewayFactory;
 import com.addexstores.security.CurrentUser;
-import com.addexstores.service.StripePaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -37,7 +39,7 @@ public class AdminPaymentController {
     private final PaymentRepository paymentRepository;
     private final PaymentTransactionRepository transactionRepository;
     private final RefundRepository refundRepository;
-    private final StripePaymentService stripePaymentService;
+    private final PaymentGatewayFactory gatewayFactory;
 
     @GetMapping
     @Operation(summary = "Get all payments with search and filter")
@@ -113,7 +115,10 @@ public class AdminPaymentController {
             @PathVariable Long id,
             @Valid @RequestBody RefundPaymentRequest request) {
         request.setPaymentId(id);
-        return ApiResponse.success(stripePaymentService.refundPayment(adminId, request));
+        Payment payment = paymentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment", id));
+        PaymentGateway gateway = gatewayFactory.getGateway(payment.getPaymentMethod());
+        return ApiResponse.success(gateway.refundPayment(adminId, request));
     }
 
     @PostMapping("/refund")
@@ -121,6 +126,9 @@ public class AdminPaymentController {
     public ApiResponse<RefundResponse> refundPaymentBody(
             @CurrentUser Long adminId,
             @Valid @RequestBody RefundPaymentRequest request) {
-        return ApiResponse.success(stripePaymentService.refundPayment(adminId, request));
+        Payment payment = paymentRepository.findById(request.getPaymentId())
+                .orElseThrow(() -> new ResourceNotFoundException("Payment", request.getPaymentId()));
+        PaymentGateway gateway = gatewayFactory.getGateway(payment.getPaymentMethod());
+        return ApiResponse.success(gateway.refundPayment(adminId, request));
     }
 }

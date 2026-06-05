@@ -1,6 +1,5 @@
 package com.addexstores.security;
 
-import com.addexstores.entity.User;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,10 +26,8 @@ public class CurrentUserResolver implements HandlerMethodArgumentResolver {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null) {
             Object principal = authentication.getPrincipal();
-            if (principal instanceof User) {
-                return ((User) principal).getId();
-            } else if (principal instanceof Long) {
-                return principal;
+            if (principal instanceof TokenUser tokenUser) {
+                return tokenUser.getId();
             }
         }
         return null;
