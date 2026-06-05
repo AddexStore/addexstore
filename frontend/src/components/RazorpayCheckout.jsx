@@ -39,6 +39,12 @@ export default function RazorpayCheckout({ shipping, onSuccess, onError, onSyncC
 
     const initPayment = async () => {
       try {
+        if (!import.meta.env.VITE_RAZORPAY_KEY_ID) {
+          setError('Razorpay key not configured. Please set VITE_RAZORPAY_KEY_ID in your environment.')
+          setLoading(false)
+          return
+        }
+
         const loaded = await loadRazorpayScript()
         if (!loaded) {
           setError('Failed to load Razorpay SDK')
@@ -73,8 +79,14 @@ export default function RazorpayCheckout({ shipping, onSuccess, onError, onSyncC
   const handlePayment = () => {
     if (!orderData || !window.Razorpay) return
 
+    const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID
+    if (!razorpayKey) {
+      showToast('Razorpay is not configured. Please set VITE_RAZORPAY_KEY_ID.', 'error')
+      return
+    }
+
     const options = {
-      key: import.meta.env.VITE_RAZORPAY_KEY_ID || '',
+      key: razorpayKey,
       amount: orderData.amount,
       currency: orderData.currency || 'INR',
       name: import.meta.env.VITE_APP_NAME || 'AddexStores',
