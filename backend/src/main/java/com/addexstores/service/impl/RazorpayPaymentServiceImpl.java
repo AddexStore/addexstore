@@ -22,10 +22,8 @@ import com.addexstores.service.CurrencyService;
 import com.addexstores.service.NotificationService;
 import com.addexstores.service.ShippingService;
 import com.addexstores.service.TaxService;
-import com.razorpay.Order;
 import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
-import com.razorpay.Refund;
 import com.razorpay.Utils;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -106,7 +104,7 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
         BigDecimal taxInTarget = currencyService.convertFromUsd(tax, targetCurrency);
         BigDecimal shippingInTarget = currencyService.convertFromUsd(shippingCost, targetCurrency);
 
-        Order order = Order.builder()
+        com.addexstores.entity.Order dbOrder = com.addexstores.entity.Order.builder()
                 .orderNumber(orderNumber)
                 .user(user)
                 .subtotal(subtotal)
@@ -141,7 +139,7 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
             }
 
             OrderItem orderItem = OrderItem.builder()
-                    .order(order)
+                    .order(dbOrder)
                     .product(product)
                     .productName(product.getName())
                     .productImage(image)
@@ -152,8 +150,8 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
             orderItems.add(orderItem);
         }
 
-        order.setItems(orderItems);
-        order = orderRepository.save(order);
+        dbOrder.setItems(orderItems);
+        dbOrder = orderRepository.save(dbOrder);
 
         long amountInPaise = totalAmount.multiply(BigDecimal.valueOf(100))
                 .setScale(0, RoundingMode.HALF_UP).longValue();
@@ -165,23 +163,23 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
             orderRequest.put("currency", targetCurrency);
             orderRequest.put("receipt", orderNumber);
             JSONObject notes = new JSONObject();
-            notes.put("orderId", order.getId().toString());
+            notes.put("orderId", dbOrder.getId().toString());
             notes.put("customerId", userId.toString());
             orderRequest.put("notes", notes);
 
-            Order razorpayOrder = razorpayClient.orders.create(orderRequest);
-            razorpayOrderId = razorpayOrder.get("id");
+            com.razorpay.Order razorpaySdkOrder = razorpayClient.orders.create(orderRequest);
+            razorpayOrderId = razorpaySdkOrder.get("id");
             log.info("Razorpay order created: {} for order {}, amount {} {}", razorpayOrderId, orderNumber, amountInPaise, targetCurrency);
         } catch (RazorpayException e) {
             log.error("Failed to create Razorpay order: {}", e.getMessage());
-            order.setStatus(OrderStatus.CANCELLED);
-            orderRepository.save(order);
+            dbOrder.setStatus(OrderStatus.CANCELLED);
+            orderRepository.save(dbOrder);
             throw new PaymentGatewayException("Payment processing failed: " + e.getMessage());
         }
 
         Payment payment = Payment.builder()
                 .userId(userId)
-                .order(order)
+                .order(dbOrder)
                 .amount(totalAmount)
                 .currency(targetCurrency)
                 .baseAmount(totalAmount)
@@ -204,7 +202,7 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
                 .clientSecret(razorpayOrderId)
                 .paymentIntentId(razorpayOrderId)
                 .paymentId(payment.getId())
-                .orderId(order.getId())
+                .orderId(dbOrder.getId())
                 .orderNumber(orderNumber)
                 .currency(targetCurrency)
                 .amount(amountInPaise)
@@ -240,9 +238,9 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
         paymentRepository.save(payment);
 
         if (payment.getOrder() != null) {
-            Order order = payment.getOrder();
-            order.setStatus(OrderStatus.CANCELLED);
-            orderRepository.save(order);
+            com.addexstores.entity.Order dbOrder = payment.getOrder();
+            dbOrder.setStatus(OrderStatus.CANCELLED);
+            orderRepository.save(dbOrder);
         }
     }
 
@@ -265,7 +263,7 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
         BigDecimal totalRefunded = refundRepository.findByPaymentIdOrderByCreatedAtDesc(payment.getId())
                 .stream()
                 .filter(r -> "SUCCEEDED".equals(r.getStatus()))
-                .map(Refund::getAmount)
+                .map(com.addexstores.entity.Refund::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         if (totalRefunded.add(refundAmount).compareTo(payment.getAmount()) > 0) {
@@ -314,9 +312,9 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
             paymentRepository.save(payment);
 
             if (payment.getOrder() != null) {
-                Order order = payment.getOrder();
-                order.setStatus(OrderStatus.REFUNDED);
-                orderRepository.save(order);
+                com.addexstores.entity.Order dbOrder = payment.getOrder();
+                dbOrder.setStatus(OrderStatus.REFUNDED);
+                orderRepository.save(dbOrder);
             }
         }
 
@@ -384,11 +382,11 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
         paymentRepository.save(payment);
 
         if (payment.getOrder() != null) {
-            Order order = payment.getOrder();
-            order.setStatus(OrderStatus.PROCESSING);
-            orderRepository.save(order);
+            com.addexstores.entity.Order dbOrder = payment.getOrder();
+            dbOrder.setStatus(OrderStatus.PROCESSING);
+            orderRepository.save(dbOrder);
 
-            User orderUser = order.getUser();
+            User orderUser = dbOrder.getUser();
             if (orderUser != null) {
                 cartRepository.findByUserId(orderUser.getId()).ifPresent(cart -> {
                     cart.getItems().clear();
