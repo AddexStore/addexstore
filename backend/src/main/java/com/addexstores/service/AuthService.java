@@ -2,6 +2,7 @@ package com.addexstores.service;
 
 import com.addexstores.dto.request.ChangePasswordRequest;
 import com.addexstores.dto.request.LoginRequest;
+import com.addexstores.dto.request.RefreshTokenRequest;
 import com.addexstores.dto.request.SignupRequest;
 import com.addexstores.dto.request.UpdateProfileRequest;
 import com.addexstores.dto.response.AuthResponse;
@@ -13,6 +14,8 @@ public interface AuthService {
     AuthResponse login(LoginRequest request);
 
     AuthResponse signup(SignupRequest request);
+
+    AuthResponse refreshToken(RefreshTokenRequest request);
 
     UserResponse getCurrentUser(Long userId);
 

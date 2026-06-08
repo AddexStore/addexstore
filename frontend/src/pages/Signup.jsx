@@ -66,8 +66,13 @@ export default function Signup() {
       await signup(form.name, form.email, form.password)
       showToast('Account created successfully!', 'success')
       navigate(redirect)
-    } catch {
-      showToast('Signup failed. Please try again.', 'error')
+    } catch (err) {
+      const msg = err?.message || ''
+      if (msg.toLowerCase().includes('email')) {
+        setErrors((prev) => ({ ...prev, email: msg }))
+      } else {
+        showToast(msg || 'Signup failed. Please try again.', 'error')
+      }
     } finally {
       setLoading(false)
     }

@@ -2,6 +2,7 @@ package com.addexstores.controller;
 
 import com.addexstores.dto.request.ChangePasswordRequest;
 import com.addexstores.dto.request.LoginRequest;
+import com.addexstores.dto.request.RefreshTokenRequest;
 import com.addexstores.dto.request.SignupRequest;
 import com.addexstores.dto.request.UpdateProfileRequest;
 import com.addexstores.dto.response.ApiResponse;
@@ -38,6 +39,12 @@ public class AuthController {
     @Operation(summary = "Register new user")
     public AuthResponse signup(@Valid @RequestBody SignupRequest request) {
         return authService.signup(request);
+    }
+
+    @PostMapping("/refresh")
+    @Operation(summary = "Refresh access token")
+    public AuthResponse refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        return authService.refreshToken(request);
     }
 
     @GetMapping("/me")

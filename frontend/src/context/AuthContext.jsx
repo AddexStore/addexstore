@@ -4,6 +4,7 @@ import { authService } from '../services/authService'
 const AuthContext = createContext(null)
 
 const TOKEN_KEY = 'sifr_token'
+const REFRESH_TOKEN_KEY = 'sifr_refresh_token'
 const USER_KEY = 'sifr_user'
 
 function mapUser(user) {
@@ -36,18 +37,28 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (token && !user) {
+    if (token) {
       authService.getMe()
         .then((res) => { setUser(mapUser(res.data)) })
-        .catch(() => { localStorage.removeItem(TOKEN_KEY); setToken(null) })
+        .catch(() => { clearAuth() })
         .finally(() => setLoading(false))
     } else {
       setLoading(false)
     }
   }, [])
 
-  const saveAuth = useCallback((tokenVal, userData) => {
+  useEffect(() => {
+    const handler = () => {
+      setToken(null)
+      setUser(null)
+    }
+    window.addEventListener('auth-cleared', handler)
+    return () => window.removeEventListener('auth-cleared', handler)
+  }, [])
+
+  const saveAuth = useCallback((tokenVal, refreshTokenVal, userData) => {
     localStorage.setItem(TOKEN_KEY, tokenVal)
+    localStorage.setItem(REFRESH_TOKEN_KEY, refreshTokenVal)
     localStorage.setItem(USER_KEY, JSON.stringify(mapUser(userData)))
     setToken(tokenVal)
     setUser(mapUser(userData))
@@ -55,6 +66,7 @@ export function AuthProvider({ children }) {
 
   const clearAuth = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(REFRESH_TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
     setToken(null)
     setUser(null)
@@ -65,13 +77,13 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (email, password) => {
     const res = await authService.login(email, password)
-    saveAuth(res.token, res.user)
+    saveAuth(res.token, res.refreshToken, res.user)
     return mapUser(res.user)
   }, [saveAuth])
 
   const signup = useCallback(async (name, email, password) => {
     const res = await authService.signup(name, email, password)
-    saveAuth(res.token, res.user)
+    saveAuth(res.token, res.refreshToken, res.user)
     return mapUser(res.user)
   }, [saveAuth])
 

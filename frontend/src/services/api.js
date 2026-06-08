@@ -13,12 +13,52 @@ function getToken() {
   return localStorage.getItem('sifr_token');
 }
 
+let refreshPromise = null;
+
+async function attemptRefresh() {
+  const refreshToken = localStorage.getItem('sifr_refresh_token');
+  if (!refreshToken) return null;
+
+  if (!refreshPromise) {
+    refreshPromise = fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    }).then(async (res) => {
+      if (!res.ok) throw new Error('Refresh failed');
+      return res.json();
+    }).then((data) => {
+      localStorage.setItem('sifr_token', data.token);
+      localStorage.setItem('sifr_refresh_token', data.refreshToken);
+      return data.token;
+    }).catch(() => {
+      localStorage.removeItem('sifr_token');
+      localStorage.removeItem('sifr_refresh_token');
+      localStorage.removeItem('sifr_user');
+      window.dispatchEvent(new Event('auth-cleared'));
+      return null;
+    }).finally(() => {
+      refreshPromise = null;
+    });
+  }
+
+  return refreshPromise;
+}
+
 async function request(endpoint, options = {}) {
   const token = getToken();
   const headers = { 'Content-Type': 'application/json', ...options.headers };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+  let res = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+
+  if (res.status === 401 && token && !endpoint.includes('/auth/refresh')) {
+    const newToken = await attemptRefresh();
+    if (newToken) {
+      headers['Authorization'] = `Bearer ${newToken}`;
+      res = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+    }
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -33,11 +73,23 @@ async function uploadRequest(endpoint, formData) {
   const headers = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+  let res = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'POST',
     headers,
     body: formData,
   });
+
+  if (res.status === 401 && token && !endpoint.includes('/auth/refresh')) {
+    const newToken = await attemptRefresh();
+    if (newToken) {
+      headers['Authorization'] = `Bearer ${newToken}`;
+      res = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+    }
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));

@@ -2,6 +2,7 @@ package com.addexstores.service.impl;
 
 import com.addexstores.dto.request.ChangePasswordRequest;
 import com.addexstores.dto.request.LoginRequest;
+import com.addexstores.dto.request.RefreshTokenRequest;
 import com.addexstores.dto.request.SignupRequest;
 import com.addexstores.dto.request.UpdateProfileRequest;
 import com.addexstores.dto.response.AuthResponse;
@@ -10,6 +11,7 @@ import com.addexstores.dto.response.UserResponse;
 import com.addexstores.entity.User;
 import com.addexstores.exception.BadRequestException;
 import com.addexstores.exception.ResourceNotFoundException;
+import com.addexstores.exception.UnauthorizedException;
 import com.addexstores.mapper.UserMapper;
 import com.addexstores.repository.UserRepository;
 import org.springframework.data.domain.Page;
@@ -81,6 +83,35 @@ public class AuthServiceImpl implements AuthService {
         return AuthResponse.builder()
                 .token(token)
                 .refreshToken(refreshToken)
+                .user(UserMapper.toUserResponse(user))
+                .build();
+    }
+
+    @Override
+    public AuthResponse refreshToken(RefreshTokenRequest request) {
+        String refreshTokenValue = request.getRefreshToken();
+
+        if (!jwtTokenProvider.validateToken(refreshTokenValue)) {
+            throw new UnauthorizedException("Invalid or expired refresh token");
+        }
+
+        Long userId = jwtTokenProvider.getUserIdFromToken(refreshTokenValue);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("User not found"));
+
+        if (user.isBlocked()) {
+            throw new BadRequestException("Account is blocked. Please contact support.");
+        }
+
+        String newToken = jwtTokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole().name(), user.isBlocked());
+        String newRefreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
+
+        log.info("Token refreshed for user: {}", user.getEmail());
+
+        return AuthResponse.builder()
+                .token(newToken)
+                .refreshToken(newRefreshToken)
                 .user(UserMapper.toUserResponse(user))
                 .build();
     }
