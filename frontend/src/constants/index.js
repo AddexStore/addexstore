@@ -20,6 +20,7 @@ export const SORT_OPTIONS = [
 
 export const ORDER_STATUS = {
   PENDING: 'Pending',
+  PENDING_PAYMENT: 'Pending Payment',
   PROCESSING: 'Processing',
   SHIPPED: 'Shipped',
   DELIVERED: 'Delivered',

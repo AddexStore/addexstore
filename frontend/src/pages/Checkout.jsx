@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { useToast } from '../context/ToastContext'
+import { api } from '../services/api'
 import { cartService } from '../services/cartService'
 import { checkoutService } from '../services/checkoutService'
 import { formatPrice } from '../utils/helpers'
@@ -100,10 +101,19 @@ export default function Checkout() {
     })))
   }
 
-  const handlePaymentSuccess = (paymentData) => {
+  const handlePaymentSuccess = async (paymentData) => {
     clearCart()
     showToast('Order placed successfully!', 'success')
     const orderNumber = paymentData?.orderNumber || `ORD-${Date.now()}`
+
+    if (paymentData?.paymentIntentId) {
+      try {
+        await api.get(`/payments/stripe/status/${paymentData.paymentIntentId}`)
+      } catch {
+        // non-blocking — order status will sync on confirmation page fallback
+      }
+    }
+
     navigate(`/order-confirmation/${orderNumber}`)
   }
 

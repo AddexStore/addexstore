@@ -1,21 +1,41 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { orderService } from '../services/orderService'
 import { mapOrder } from '../services/mappers'
 import { formatPrice } from '../utils/helpers'
 import BackButton from '../components/BackButton'
 
+const MAX_POLLS = 5
+const POLL_INTERVAL = 2000
+
 export default function OrderConfirmation() {
   const { orderId } = useParams()
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
+  const pollCount = useRef(0)
+  const timerRef = useRef(null)
+
+  const fetchOrder = () => {
+    orderService.getByOrderNumber(orderId)
+      .then((res) => {
+        const o = mapOrder(res.data || res)
+        setOrder(o)
+        if (o.status === 'PENDING_PAYMENT' && pollCount.current < MAX_POLLS) {
+          pollCount.current++
+          timerRef.current = setTimeout(fetchOrder, POLL_INTERVAL)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }
 
   useEffect(() => {
     setLoading(true)
-    orderService.getByOrderNumber(orderId)
-      .then((res) => { setOrder(mapOrder(res.data || res)) })
-      .catch(() => {})
-      .finally(() => setLoading(false))
+    pollCount.current = 0
+    fetchOrder()
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
   }, [orderId])
 
   const paymentLabels = {
@@ -74,8 +94,8 @@ export default function OrderConfirmation() {
               <div className="text-right">
                 <p className="text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-1">Status</p>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#C6A972]/10 text-[#C6A972] text-sm font-medium rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#C6A972]" />
-                  {order.status}
+                  <span className={`w-1.5 h-1.5 rounded-full ${order.status === 'PENDING_PAYMENT' ? 'bg-yellow-500 animate-pulse' : 'bg-[#C6A972]'}`} />
+                  {order.status === 'PENDING_PAYMENT' ? 'Confirmed' : order.status}
                 </span>
               </div>
               <div className="text-right">

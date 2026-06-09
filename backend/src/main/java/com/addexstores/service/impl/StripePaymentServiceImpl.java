@@ -615,6 +615,13 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
             payment.setStatus(newStatus);
             payment.setGatewayResponse(pi.toJson());
             paymentRepository.save(payment);
+
+            if (newStatus == PaymentStatus.COMPLETED && payment.getOrder() != null) {
+                Order order = payment.getOrder();
+                order.setStatus(OrderStatus.PROCESSING);
+                orderRepository.save(order);
+                log.info("Order {} status updated to PROCESSING via payment sync", order.getOrderNumber());
+            }
         }
     }
 
