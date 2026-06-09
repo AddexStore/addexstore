@@ -334,7 +334,7 @@ export default function ProductDetails() {
             <button
               onClick={handleAddToCart}
               disabled={product.stock === 0}
-              className="flex-1 flex items-center justify-center gap-2 px-8 py-3.5 bg-[#C6A972] text-white text-sm font-semibold rounded-full hover:bg-[#B8965F] transition disabled:bg-[var(--border-color)] disabled:text-[var(--text-muted)] disabled:cursor-not-allowed active:scale-[0.98]"
+              className="flex-1 flex items-center justify-center gap-2 px-8 py-3.5 bg-[#b5b5b5] text-white text-sm font-semibold rounded-full hover:bg-[#a0a0a0] transition disabled:bg-[var(--border-color)] disabled:text-[var(--text-muted)] disabled:cursor-not-allowed active:scale-[0.98]"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -482,7 +482,7 @@ export default function ProductDetails() {
           <button
             onClick={handleAddToCart}
             disabled={product.stock === 0}
-            className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#C6A972] text-white text-sm font-semibold rounded-full hover:bg-[#B8965F] transition disabled:bg-[var(--border-color)] disabled:text-[var(--text-muted)] disabled:cursor-not-allowed active:scale-[0.98] min-h-[44px]"
+            className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#b5b5b5] text-white text-sm font-semibold rounded-full hover:bg-[#a0a0a0] transition disabled:bg-[var(--border-color)] disabled:text-[var(--text-muted)] disabled:cursor-not-allowed active:scale-[0.98] min-h-[44px]"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />

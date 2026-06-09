@@ -133,7 +133,7 @@ export default function Wishlist() {
                 <div className="mt-3 flex gap-2">
                   <button
                     onClick={() => handleAddToCart(item)}
-                    className="flex-1 py-2.5 bg-[#C6A972] text-white text-xs font-medium rounded-full hover:bg-[#B8965F] transition active:scale-[0.98] min-h-[44px]"
+                    className="flex-1 py-2.5 bg-[#b5b5b5] text-white text-xs font-medium rounded-full hover:bg-[#a0a0a0] transition active:scale-[0.98] min-h-[44px]"
                   >
                     Add to Cart
                   </button>

@@ -132,7 +132,7 @@ export default function ProductCard({ product }) {
           className={`mt-3 w-full min-h-[44px] rounded-xl text-sm font-medium transition ${
             outOfStock
               ? 'bg-[var(--bg-secondary)] text-[#666] cursor-not-allowed'
-              : 'bg-[#C6A972] text-white active:scale-[0.98]'
+              : 'bg-[#b5b5b5] text-white active:scale-[0.98]'
           }`}
         >
           {outOfStock ? 'Out of Stock' : 'Add to Cart'}
