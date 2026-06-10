@@ -8,6 +8,7 @@ import { productService } from '../services/productService'
 import { categoryService } from '../services/categoryService'
 import { mapProduct, mapCategory } from '../services/mappers'
 import { formatPrice, getDiscountPrice, formatDate } from '../utils/helpers'
+import { getAssetUrl } from '../services/api'
 import ImageWithFallback from '../components/ImageWithFallback'
 import StarRating from '../components/StarRating'
 import QuantitySelector from '../components/QuantitySelector'
@@ -96,7 +97,9 @@ export default function ProductDetails() {
   const inWishlist = isInWishlist(product.id)
   const hasDiscount = product.discountPercentage > 0
   const discountedPrice = getDiscountPrice(product.price, product.discountPercentage)
-  const productImages = [product.image, product.image, product.image, product.image]
+  const fallbackImage = '/assets/placeholders/product.svg'
+  const mainImage = getAssetUrl(product.image) || fallbackImage
+  const productImages = [mainImage, mainImage, mainImage, mainImage]
 
   const handleColorSelect = (color) => {
     setSelectedColor(color)

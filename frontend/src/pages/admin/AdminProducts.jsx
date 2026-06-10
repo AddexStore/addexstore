@@ -3,8 +3,8 @@ import { categories } from '../../data/categories'
 import { productService } from '../../services/productService'
 import { mapProduct } from '../../services/mappers'
 import { useToast } from '../../context/ToastContext'
-import { formatPrice, getDiscountPrice } from '../../utils/helpers'
-import { COLORS, SIZES } from '../../constants'
+import { formatPrice } from '../../utils/helpers'
+import { getAssetUrl } from '../../services/api'
 import BackButton from '../../components/BackButton'
 
 const ITEMS_PER_PAGE = 5
@@ -319,7 +319,7 @@ export default function AdminProducts() {
                     <input type="checkbox" checked={selectedIds.has(product.id)} onChange={() => toggleBulkSelect(product.id)} className="accent-[#C6A972]" />
                   </td>
                   <td className="py-2 px-2 hidden sm:table-cell">
-                    <img src={product.image || '/assets/placeholders/product.svg'} alt="" className="w-8 h-8 rounded object-cover bg-[var(--bg-input)]" onError={(e) => { e.target.src = '/assets/placeholders/product.svg' }} />
+                    <img src={getAssetUrl(product.image) || '/assets/placeholders/product.svg'} alt="" className="w-8 h-8 rounded object-cover bg-[var(--bg-input)]" onError={(e) => { e.target.src = '/assets/placeholders/product.svg' }} />
                   </td>
                   <td className="py-2 px-2 text-[var(--text-primary)] truncate max-w-[120px] sm:max-w-[160px] text-xs sm:text-sm">
                     <div className="flex items-center gap-1.5">

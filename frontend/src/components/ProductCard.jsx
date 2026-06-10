@@ -5,6 +5,7 @@ import { useWishlist } from '../context/WishlistContext'
 import ImageWithFallback from './ImageWithFallback'
 import StarRating from './StarRating'
 import { formatPrice } from '../utils/helpers'
+import { getAssetUrl } from '../services/api'
 
 const ProductCard = memo(function ProductCard({ product }) {
   const { addToCart } = useCart()
@@ -29,7 +30,7 @@ const ProductCard = memo(function ProductCard({ product }) {
   } = product
 
   const productId = _id || id
-  const productImage = images?.[0] || image || '/assets/placeholders/product.svg'
+  const productImage = getAssetUrl(images?.[0] || image) || '/assets/placeholders/product.svg'
   const inWishlist = isInWishlist(productId)
   const outOfStock = stock === 0
   const discountPercent = discount || (originalPrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : null)
