@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
@@ -5,7 +6,7 @@ import ImageWithFallback from './ImageWithFallback'
 import StarRating from './StarRating'
 import { formatPrice } from '../utils/helpers'
 
-export default function ProductCard({ product }) {
+const ProductCard = memo(function ProductCard({ product }) {
   const { addToCart } = useCart()
   const { toggleWishlist: addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
 
@@ -140,4 +141,6 @@ export default function ProductCard({ product }) {
       </div>
     </Link>
   )
-}
+})
+
+export default ProductCard

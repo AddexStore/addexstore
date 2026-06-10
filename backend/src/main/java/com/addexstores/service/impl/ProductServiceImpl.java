@@ -18,6 +18,8 @@ import com.addexstores.repository.SubCategoryRepository;
 import com.addexstores.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -42,43 +44,33 @@ public class ProductServiceImpl implements ProductService {
     private final SubCategoryRepository subCategoryRepository;
 
     @Override
+    @Cacheable(value = "products", key = "'all_' + #page + '_' + #size + '_' + #sort + '_' + #category + '_' + #subcategory + '_' + #brand + '_' + #minPrice + '_' + #maxPrice + '_' + #featured + '_' + #trending + '_' + #newArrival + '_' + #onSale + '_' + #search")
     public PagedResponse<ProductResponse> getAllProducts(int page, int size, String sort, Long category,
                                                            Long subcategory, String brand, Double minPrice,
                                                            Double maxPrice, Boolean featured, Boolean trending,
                                                            Boolean newArrival, Boolean onSale, String search) {
         Pageable pageable = createPageable(page, size, sort);
 
-        Page<Product> products;
+        BigDecimal min = minPrice != null ? BigDecimal.valueOf(minPrice) : null;
+        BigDecimal max = maxPrice != null ? BigDecimal.valueOf(maxPrice) : null;
 
-        if (search != null && !search.isBlank()) {
-            products = productRepository.search(search, pageable);
-        } else if (category != null) {
-            products = productRepository.findByCategoryId(category, pageable);
-        } else if (subcategory != null) {
-            products = productRepository.findBySubCategoryId(subcategory, pageable);
-        } else if (featured != null && featured) {
-            products = productRepository.findByFeaturedTrue(pageable);
-        } else if (trending != null && trending) {
-            products = productRepository.findByTrendingTrue(pageable);
-        } else if (newArrival != null && newArrival) {
-            products = productRepository.findByIsNewArrivalTrue(pageable);
-        } else if (onSale != null && onSale) {
-            products = productRepository.findByIsOnSaleTrue(pageable);
-        } else {
-            products = productRepository.findAll(pageable);
-        }
+        Page<Product> products = productRepository.findAllFiltered(
+                search, category, subcategory, brand, min, max,
+                featured, trending, newArrival, onSale, pageable);
 
         return buildPagedResponse(products);
     }
 
     @Override
+    @Cacheable(value = "products", key = "'byId_' + #id")
     public ProductResponse getProductById(Long id) {
-        Product product = productRepository.findById(id)
+        Product product = productRepository.findByIdWithGraph(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", id));
         return ProductMapper.toProductResponse(product);
     }
 
     @Override
+    @Cacheable(value = "products", key = "'bySlug_' + #slug")
     public ProductResponse getProductBySlug(String slug) {
         Product product = productRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "slug", slug));
@@ -86,6 +78,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Cacheable(value = "products", key = "'featured_' + #page + '_' + #size")
     public PagedResponse<ProductResponse> getFeaturedProducts(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Product> products = productRepository.findByFeaturedTrue(pageable);
@@ -93,6 +86,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Cacheable(value = "products", key = "'trending_' + #page + '_' + #size")
     public PagedResponse<ProductResponse> getTrendingProducts(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Product> products = productRepository.findByTrendingTrue(pageable);
@@ -100,6 +94,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Cacheable(value = "products", key = "'newArrivals_' + #page + '_' + #size")
     public PagedResponse<ProductResponse> getNewArrivals(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Product> products = productRepository.findByIsNewArrivalTrue(pageable);
@@ -107,6 +102,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Cacheable(value = "products", key = "'onSale_' + #page + '_' + #size")
     public PagedResponse<ProductResponse> getOnSaleProducts(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Product> products = productRepository.findByIsOnSaleTrue(pageable);
@@ -115,6 +111,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "products", allEntries = true)
     public ProductResponse createProduct(ProductRequest request) {
         if (request.getName() == null || request.getName().isBlank()) {
             throw new BadRequestException("Product name is required");
@@ -191,6 +188,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "products", allEntries = true)
     public ProductResponse updateProduct(Long id, ProductRequest request) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", id));
@@ -266,6 +264,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "products", allEntries = true)
     public void deleteProduct(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", id));

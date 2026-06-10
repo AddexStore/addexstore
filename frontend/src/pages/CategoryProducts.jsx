@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router-dom'
-import { products } from '../data/products'
 import { SORT_OPTIONS, COLORS, SIZES } from '../constants'
 import { formatPrice, getDiscountPrice } from '../utils/helpers'
+import { productService } from '../services/productService'
 import { categoryService } from '../services/categoryService'
-import { mapCategory } from '../services/mappers'
+import { mapProduct, mapCategory } from '../services/mappers'
 import { getAssetUrl } from '../services/api'
 import ProductCard from '../components/ProductCard'
 import SkeletonLoader from '../components/SkeletonLoader'
@@ -33,6 +33,8 @@ export default function CategoryProducts() {
 
   const [category, setCategory] = useState(null)
   const [categoryLoading, setCategoryLoading] = useState(true)
+  const [allCategoryProducts, setAllCategoryProducts] = useState([])
+  const [productLoading, setProductLoading] = useState(false)
 
   useEffect(() => {
     setCategoryLoading(true)
@@ -42,6 +44,15 @@ export default function CategoryProducts() {
       .finally(() => setCategoryLoading(false))
   }, [categoryName])
 
+  useEffect(() => {
+    if (!category?.id) return
+    setProductLoading(true)
+    productService.getProducts({ category: category.id, page: 0, size: 100, sort: 'createdAt,desc' })
+      .then((data) => setAllCategoryProducts((data.content || []).map(mapProduct)))
+      .catch(() => setAllCategoryProducts([]))
+      .finally(() => setProductLoading(false))
+  }, [category?.id])
+
   const normalizedSubcategories = useMemo(() => {
     if (!category?.subcategories) return []
     return category.subcategories.map((sub) =>
@@ -49,7 +60,7 @@ export default function CategoryProducts() {
     )
   }, [category])
 
-  const [loading, setLoading] = useState(true)
+  const loading = categoryLoading || productLoading
   const [selectedSubcategories, setSelectedSubcategories] = useState([])
   const [priceRange, setPriceRange] = useState([0, 50000])
   const [selectedBrands, setSelectedBrands] = useState([])
@@ -60,7 +71,6 @@ export default function CategoryProducts() {
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false)
 
   useEffect(() => {
-    setLoading(true)
     setCurrentPage(1)
     setSelectedSubcategories([])
     setPriceRange([0, 50000])
@@ -68,14 +78,9 @@ export default function CategoryProducts() {
     setSelectedColors([])
     setSelectedSizes([])
     setSortBy('')
-    const timer = setTimeout(() => setLoading(false), 400)
-    return () => clearTimeout(timer)
   }, [categoryName, selectedSub])
 
-  const categoryProducts = useMemo(
-    () => products.filter((p) => p.category === category?.name),
-    [category, category?.name]
-  )
+  const categoryProducts = allCategoryProducts
 
   const sidebarSubcategories = useMemo(
     () => [...new Set(categoryProducts.map((p) => p.subCategory))],

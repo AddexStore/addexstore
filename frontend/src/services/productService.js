@@ -12,4 +12,8 @@ export const productService = {
   getTrending: (page = 0, size = 10) => api.get(`/products/trending?page=${page}&size=${size}`),
   getNewArrivals: (page = 0, size = 10) => api.get(`/products/new-arrivals?page=${page}&size=${size}`),
   getSales: (page = 0, size = 10) => api.get(`/products/sales?page=${page}&size=${size}`),
+  createProduct: (data) => api.post('/admin/products', data).then(r => r.data),
+  updateProduct: (id, data) => api.put(`/admin/products/${id}`, data).then(r => r.data),
+  deleteProduct: (id) => api.delete(`/admin/products/${id}`),
+  uploadImage: (file) => api.upload('/admin/products/upload-image', file).then(r => r.data),
 };

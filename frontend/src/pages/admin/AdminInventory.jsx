@@ -1,34 +1,60 @@
-import { useState, useMemo } from 'react'
-import { products as initialProducts } from '../../data/products'
+import { useState, useEffect, useMemo } from 'react'
+import { productService } from '../../services/productService'
 import { useToast } from '../../context/ToastContext'
-import { formatPrice } from '../../utils/helpers'
 import BackButton from '../../components/BackButton'
 
 export default function AdminInventory() {
   const { showToast } = useToast()
-  const [products, setProducts] = useState(initialProducts)
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [editingStock, setEditingStock] = useState(null)
   const [stockValue, setStockValue] = useState('')
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [bulkStock, setBulkStock] = useState('')
   const [showBulkModal, setShowBulkModal] = useState(false)
+  const [savingId, setSavingId] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      try {
+        const res = await productService.getProducts({ page: 0, size: 1000 })
+        const list = Array.isArray(res) ? res : res?.content || []
+        if (!cancelled) setProducts(list)
+      } catch (err) {
+        showToast('Failed to load products', 'error')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [showToast])
 
   const filtered = useMemo(() => {
-    if (filter === 'low') return products.filter((p) => p.stock >= 1 && p.stock <= 10)
-    if (filter === 'out') return products.filter((p) => p.stock === 0)
+    if (filter === 'low') return products.filter((p) => (p.stock ?? 0) >= 1 && (p.stock ?? 0) <= 10)
+    if (filter === 'out') return products.filter((p) => (p.stock ?? 0) === 0)
     return products
   }, [products, filter])
 
-  const lowStockCount = products.filter((p) => p.stock >= 1 && p.stock <= 10).length
-  const outOfStockCount = products.filter((p) => p.stock === 0).length
+  const lowStockCount = products.filter((p) => (p.stock ?? 0) >= 1 && (p.stock ?? 0) <= 10).length
+  const outOfStockCount = products.filter((p) => (p.stock ?? 0) === 0).length
 
-  const handleStockUpdate = (id) => {
+  const handleStockUpdate = async (id) => {
     const val = parseInt(stockValue)
     if (isNaN(val) || val < 0) { showToast('Please enter a valid stock number', 'error'); return }
-    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, stock: val } : p)))
-    showToast('Stock updated successfully', 'success')
-    setEditingStock(null)
+    setSavingId(id)
+    try {
+      await productService.updateProduct(id, { stock: val })
+      setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, stock: val } : p)))
+      showToast('Stock updated successfully', 'success')
+      setEditingStock(null)
+    } catch (err) {
+      showToast(err.message || 'Failed to update stock', 'error')
+    } finally {
+      setSavingId(null)
+    }
   }
 
   const toggleSelect = (id) => {
@@ -40,14 +66,36 @@ export default function AdminInventory() {
     else setSelectedIds(new Set(filtered.map((p) => p.id)))
   }
 
-  const applyBulkStock = () => {
+  const applyBulkStock = async () => {
     const val = parseInt(bulkStock)
     if (isNaN(val) || val < 0) { showToast('Please enter a valid stock number', 'error'); return }
     if (selectedIds.size === 0) { showToast('No products selected', 'error'); return }
+    const ids = [...selectedIds]
+    let updated = 0
+    for (const id of ids) {
+      try {
+        await productService.updateProduct(id, { stock: val })
+        updated++
+      } catch (err) {
+        console.error(`Failed to update product ${id}:`, err)
+      }
+    }
     setProducts((prev) => prev.map((p) => (selectedIds.has(p.id) ? { ...p, stock: val } : p)))
-    showToast(`Stock updated for ${selectedIds.size} product(s)`, 'success')
+    showToast(`Stock updated for ${updated} product(s)`, 'success')
     setShowBulkModal(false)
     setSelectedIds(new Set())
+  }
+
+  if (loading) {
+    return (
+      <div className="h-full flex flex-col gap-2 py-3">
+        <div className="flex items-center gap-3">
+          <BackButton />
+          <h1 className="text-lg font-bold text-[var(--text-primary)] font-['Playfair_Display']">Inventory</h1>
+        </div>
+        <div className="flex-1 bg-[var(--bg-card)] rounded-lg border border-[var(--border-color)]/50 animate-pulse" />
+      </div>
+    )
   }
 
   return (
@@ -89,24 +137,31 @@ export default function AdminInventory() {
             </thead>
             <tbody>
               {filtered.map((product) => {
+                const stock = product.stock ?? 0
                 const isEditing = editingStock === product.id
-                const status = product.stock === 0 ? { label: 'OOS', color: 'text-red-600 bg-red-500/10' } : product.stock <= 10 ? { label: 'Low', color: 'text-yellow-600 bg-yellow-500/10' } : { label: 'In Stock', color: 'text-green-600 bg-green-500/10' }
+                const status = stock === 0 ? { label: 'OOS', color: 'text-red-600 bg-red-500/10' } : stock <= 10 ? { label: 'Low', color: 'text-yellow-600 bg-yellow-500/10' } : { label: 'In Stock', color: 'text-green-600 bg-green-500/10' }
                 return (
                   <tr key={product.id} className="border-b border-[var(--border-color)]/30 hover:bg-[var(--bg-hover)] transition-colors">
                     <td className="py-1.5 px-2"><input type="checkbox" checked={selectedIds.has(product.id)} onChange={() => toggleSelect(product.id)} className="accent-[#C6A972]" /></td>
                     <td className="py-1.5 px-2 text-[var(--text-primary)] truncate max-w-[160px]">{product.name}</td>
                     <td className="py-1.5 px-2 text-[var(--text-secondary)] font-mono text-[10px] hidden sm:table-cell">SKU-{String(product.id).padStart(4, '0')}</td>
-                    <td className="py-1.5 px-2 text-[var(--text-secondary)] hidden sm:table-cell">{product.category}</td>
+                    <td className="py-1.5 px-2 text-[var(--text-secondary)] hidden sm:table-cell">{product.category?.name || product.category || ''}</td>
                     <td className="py-1.5 px-2 text-right">
                       {isEditing ? (
                         <div className="flex items-center justify-end gap-1">
                           <input type="number" value={stockValue} onChange={(e) => setStockValue(e.target.value)} autoFocus className="w-16 bg-[var(--bg-input)] border border-[#C6A972] rounded px-1.5 py-0.5 text-xs text-[var(--text-primary)] focus:outline-none" />
-                          <button onClick={() => handleStockUpdate(product.id)} className="text-green-600 hover:text-green-300"><svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg></button>
+                          <button onClick={() => handleStockUpdate(product.id)} disabled={savingId === product.id} className="text-green-600 hover:text-green-300">
+                            {savingId === product.id ? (
+                              <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="8"/></svg>
+                            ) : (
+                              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            )}
+                          </button>
                           <button onClick={() => setEditingStock(null)} className="text-red-600 hover:text-red-300"><svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
                         </div>
                       ) : (
-                        <button onClick={() => { setEditingStock(product.id); setStockValue(String(product.stock)) }} className="inline-flex items-center gap-1 text-[var(--text-primary)] hover:text-[#C6A972] transition-colors">
-                          <span className="font-medium">{product.stock}</span>
+                        <button onClick={() => { setEditingStock(product.id); setStockValue(String(stock)) }} className="inline-flex items-center gap-1 text-[var(--text-primary)] hover:text-[#C6A972] transition-colors">
+                          <span className="font-medium">{stock}</span>
                           <svg className="w-3 h-3 text-[var(--text-secondary)] group-hover:text-[#C6A972]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
                       )}
@@ -118,7 +173,7 @@ export default function AdminInventory() {
             </tbody>
           </table>
         </div>
-        {filtered.length === 0 && <div className="text-center py-6 text-[var(--text-secondary)] text-xs">No products found</div>}
+        {filtered.length === 0 && !loading && <div className="text-center py-6 text-[var(--text-secondary)] text-xs">No products found</div>}
       </div>
 
       {showBulkModal && (

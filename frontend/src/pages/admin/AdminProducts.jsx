@@ -1,6 +1,7 @@
-import { useState, useMemo, useEffect } from 'react'
-import { products as initialProducts } from '../../data/products'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { categories } from '../../data/categories'
+import { productService } from '../../services/productService'
+import { mapProduct } from '../../services/mappers'
 import { useToast } from '../../context/ToastContext'
 import { formatPrice, getDiscountPrice } from '../../utils/helpers'
 import { COLORS, SIZES } from '../../constants'
@@ -8,23 +9,11 @@ import BackButton from '../../components/BackButton'
 
 const ITEMS_PER_PAGE = 5
 
-const STORAGE_KEY = 'sifr_admin_products'
-
-const loadProducts = () => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) return JSON.parse(stored)
-  } catch {}
-  return initialProducts
-}
-
 export default function AdminProducts() {
   const { showToast } = useToast()
-  const [products, setProducts] = useState(loadProducts)
-
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(products)) } catch {}
-  }, [products])
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [pageInfo, setPageInfo] = useState({ totalElements: 0, totalPages: 0 })
 
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
@@ -35,6 +24,24 @@ export default function AdminProducts() {
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [currentPage, setCurrentPage] = useState(1)
+  const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [imageUploading, setImageUploading] = useState(false)
+
+  const fetchProducts = useCallback(() => {
+    setLoading(true)
+    productService.getProducts({ page: 0, size: 100, sort: 'createdAt,desc' })
+      .then((data) => {
+        const list = (data.content || []).map(mapProduct)
+        setProducts(list)
+        setPageInfo({ totalElements: data.totalElements || list.length, totalPages: data.totalPages || 1 })
+      })
+      .catch(() => showToast('Failed to load products', 'error'))
+      .finally(() => setLoading(false))
+  }, [showToast])
+
+  useEffect(() => { fetchProducts() }, [fetchProducts])
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
@@ -75,9 +82,27 @@ export default function AdminProducts() {
 
   const handleImageUpload = (file) => {
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = (e) => setForm({ ...form, image: e.target.result })
-    reader.readAsDataURL(file)
+    setImageUploading(true)
+    productService.uploadImage(file)
+      .then((url) => setForm({ ...form, image: url }))
+      .catch(() => {
+        const reader = new FileReader()
+        reader.onload = (e) => setForm({ ...form, image: e.target.result })
+        reader.readAsDataURL(file)
+      })
+      .finally(() => setImageUploading(false))
+  }
+
+  const lookupCategoryId = (name) => {
+    const cat = categories.find((c) => c.name === name)
+    return cat ? cat.id : null
+  }
+
+  const lookupSubCategoryId = (catName, subName) => {
+    const cat = categories.find((c) => c.name === catName)
+    if (!cat) return null
+    const sub = cat.subcategories.find((s) => s.name === subName)
+    return sub ? sub.id : null
   }
 
   const openAdd = () => {
@@ -99,42 +124,97 @@ export default function AdminProducts() {
     setShowModal(true)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const price = parseFloat(form.price)
     if (!form.name || !form.category || !price) {
       showToast('Please fill in required fields (Name, Category, Price)', 'error')
       return
     }
-    const productData = {
-      name: form.name, category: form.category, subCategory: form.subCategory,
-      description: form.description, brand: form.brand, price,
-      originalPrice: price, discountPercentage: form.discount ? parseFloat(form.discount) : null,
-      stock: parseInt(form.stock) || 0, colors: form.colors, sizes: form.sizes,
-      featured: form.featured, trending: form.trending,
-      image: form.image || '/assets/placeholders/product.svg',
-      rating: 0, totalReviews: 0, createdAt: new Date().toISOString(),
+    setSaving(true)
+    try {
+      const categoryId = lookupCategoryId(form.category)
+      const subCategoryId = form.subCategory ? lookupSubCategoryId(form.category, form.subCategory) : null
+
+      const payload = {
+        name: form.name,
+        slug: form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+        description: form.description || '',
+        brand: form.brand || '',
+        sku: '',
+        price,
+        originalPrice: price,
+        discountPercentage: form.discount ? parseFloat(form.discount) : 0,
+        stock: parseInt(form.stock) || 0,
+        featured: form.featured,
+        trending: form.trending,
+        newArrival: false,
+        onSale: false,
+        categoryId,
+        subCategoryId,
+        images: form.image ? [form.image] : [],
+        variants: [],
+      }
+
+      if (editingProduct) {
+        await productService.updateProduct(editingProduct.id, payload)
+        showToast(`Product "${form.name}" updated successfully`, 'success')
+      } else {
+        await productService.createProduct(payload)
+        showToast(`Product "${form.name}" added successfully`, 'success')
+      }
+      setShowModal(false)
+      fetchProducts()
+    } catch (err) {
+      showToast(err.message || 'Failed to save product', 'error')
+    } finally {
+      setSaving(false)
     }
-    if (editingProduct) {
-      setProducts((prev) => prev.map((p) => (p.id === editingProduct.id ? { ...p, ...productData } : p)))
-      showToast(`Product "${form.name}" updated successfully`, 'success')
-    } else {
-      const newId = Math.max(...products.map((p) => p.id), 0) + 1
-      setProducts((prev) => [...prev, { id: newId, ...productData }])
-      showToast(`Product "${form.name}" added successfully`, 'success')
-    }
-    setShowModal(false)
   }
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
+    setDeletingId(id)
     const product = products.find((p) => p.id === id)
-    setProducts((prev) => prev.filter((p) => p.id !== id))
-    setSelectedIds((prev) => { const s = new Set(prev); s.delete(id); return s })
-    showToast(`Product "${product?.name}" deleted`, 'success')
+    try {
+      await productService.deleteProduct(id)
+      setSelectedIds((prev) => { const s = new Set(prev); s.delete(id); return s })
+      showToast(`Product "${product?.name}" deleted`, 'success')
+      fetchProducts()
+    } catch (err) {
+      showToast(err.message || 'Failed to delete product', 'error')
+    }
+    setDeletingId(null)
     setDeleteConfirm(null)
   }
 
-  const toggleFeatured = (id) => {
-    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, featured: !p.featured } : p)))
+  const toggleFeatured = async (id) => {
+    const product = products.find((p) => p.id === id)
+    if (!product) return
+    try {
+      const categoryId = lookupCategoryId(product.category)
+      const subCategoryId = product.subCategory ? lookupSubCategoryId(product.category, product.subCategory) : null
+      await productService.updateProduct(id, {
+        name: product.name,
+        slug: product.slug || product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        description: product.description || '',
+        brand: product.brand || '',
+        sku: '',
+        price: product.price,
+        originalPrice: product.originalPrice || product.price,
+        discountPercentage: product.discountPercentage || 0,
+        stock: product.stock || 0,
+        featured: !product.featured,
+        trending: product.trending || false,
+        newArrival: false,
+        onSale: false,
+        categoryId,
+        subCategoryId,
+        images: product.images || (product.image ? [product.image] : []),
+        variants: [],
+      })
+      fetchProducts()
+    } catch (err) {
+      showToast(err.message || 'Failed to update product', 'error')
+    }
   }
 
   const toggleBulkSelect = (id) => {
@@ -150,11 +230,18 @@ export default function AdminProducts() {
     else setSelectedIds(new Set(paginated.map((p) => p.id)))
   }
 
-  const deleteSelected = () => {
+  const deleteSelected = async () => {
     if (selectedIds.size === 0) return
-    setProducts((prev) => prev.filter((p) => !selectedIds.has(p.id)))
-    showToast(`${selectedIds.size} product(s) deleted`, 'success')
-    setSelectedIds(new Set())
+    setBulkDeleting(true)
+    try {
+      await Promise.all(Array.from(selectedIds).map((id) => productService.deleteProduct(id)))
+      showToast(`${selectedIds.size} product(s) deleted`, 'success')
+      setSelectedIds(new Set())
+      fetchProducts()
+    } catch (err) {
+      showToast(err.message || 'Failed to delete products', 'error')
+    }
+    setBulkDeleting(false)
   }
 
   const toggleArrayItem = (arr, item) =>
@@ -169,8 +256,8 @@ export default function AdminProducts() {
         </div>
         <div className="flex items-center gap-2">
           {selectedIds.size > 0 && (
-            <button onClick={deleteSelected} className="px-3 py-1.5 bg-red-500/20 text-red-600 rounded-lg text-xs font-medium hover:bg-red-500/30 transition-colors">
-              Delete ({selectedIds.size})
+            <button onClick={deleteSelected} disabled={bulkDeleting} className="px-3 py-1.5 bg-red-500/20 text-red-600 rounded-lg text-xs font-medium hover:bg-red-500/30 transition-colors disabled:opacity-40">
+              {bulkDeleting ? 'Deleting...' : `Delete (${selectedIds.size})`}
             </button>
           )}
           <button onClick={openAdd} className="px-4 py-1.5 bg-[#C6A972] text-white rounded-lg text-xs font-semibold hover:bg-[#B8965F] transition-colors">
@@ -269,7 +356,18 @@ export default function AdminProducts() {
                   </td>
                 </tr>
               ))}
-              {paginated.length === 0 && (
+              {loading && (
+                <tr><td colSpan={7} className="text-center py-8 text-[var(--text-secondary)] text-xs">
+                  <div className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Loading...
+                  </div>
+                </td></tr>
+              )}
+              {!loading && paginated.length === 0 && (
                 <tr><td colSpan={7} className="text-center py-8 text-[var(--text-secondary)] text-xs">No products found</td></tr>
               )}
             </tbody>
@@ -292,8 +390,11 @@ export default function AdminProducts() {
             <h3 className="text-[var(--text-primary)] font-semibold mb-2">Delete Product</h3>
             <p className="text-sm text-[var(--text-secondary)] mb-4">Are you sure you want to delete this product? This action cannot be undone.</p>
             <div className="flex gap-3">
-              <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-2 border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition">Cancel</button>
-              <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 py-2 bg-red-500/20 text-red-600 rounded-lg text-sm font-medium hover:bg-red-500/30 transition">Delete</button>
+              <button onClick={() => setDeleteConfirm(null)} disabled={deletingId !== null} className="flex-1 py-2 border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition disabled:opacity-40">Cancel</button>
+              <button onClick={() => handleDelete(deleteConfirm)} disabled={deletingId === deleteConfirm}
+                className="flex-1 py-2 bg-red-500/20 text-red-600 rounded-lg text-sm font-medium hover:bg-red-500/30 transition disabled:opacity-40">
+                {deletingId === deleteConfirm ? 'Deleting...' : 'Delete'}
+              </button>
             </div>
           </div>
         </div>
@@ -375,8 +476,11 @@ export default function AdminProducts() {
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowModal(false)} className="px-5 py-2 border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition">Cancel</button>
-              <button onClick={handleSave} className="px-5 py-2 bg-[#C6A972] text-white rounded-lg text-sm font-semibold hover:bg-[#B8965F] transition">{editingProduct ? 'Update' : 'Save'}</button>
+              <button onClick={() => setShowModal(false)} disabled={saving} className="px-5 py-2 border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition disabled:opacity-40">Cancel</button>
+              <button onClick={handleSave} disabled={saving}
+                className="px-5 py-2 bg-[#C6A972] text-white rounded-lg text-sm font-semibold hover:bg-[#B8965F] transition disabled:opacity-40">
+                {saving ? 'Saving...' : (editingProduct ? 'Update' : 'Save')}
+              </button>
             </div>
           </div>
         </div>

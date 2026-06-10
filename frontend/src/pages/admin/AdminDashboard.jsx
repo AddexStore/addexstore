@@ -1,46 +1,96 @@
-import { products } from '../../data/products'
-import { orders } from '../../data/orders'
-import { users } from '../../data/users'
+import { useState, useEffect } from 'react'
+import { adminService } from '../../services/adminService'
 import { formatPrice, formatDate } from '../../utils/helpers'
 import { Link } from 'react-router-dom'
 import BackButton from '../../components/BackButton'
 
-const stats = [
-  { label: 'Total Sales', value: '₹128.4K', change: '+12.5%', changeType: 'up' },
-  { label: 'Revenue', value: '₹95.3K', change: '+8.3%', changeType: 'up' },
-  { label: 'Users', value: '1,284', change: '+18.2%', changeType: 'up' },
-  { label: 'Orders', value: '342', change: '+6.7%', changeType: 'up' },
-  { label: 'Products', value: '126', change: '+3.4%', changeType: 'up' },
-  { label: 'Low Stock', value: '12', change: '-2.1%', changeType: 'down' },
-]
-
-const monthlySales = [
-  { month: 'J', value: 65 }, { month: 'F', value: 72 }, { month: 'M', value: 85 },
-  { month: 'A', value: 78 }, { month: 'M', value: 92 }, { month: 'J', value: 88 },
-  { month: 'J', value: 95 }, { month: 'A', value: 102 }, { month: 'S', value: 110 },
-  { month: 'O', value: 98 }, { month: 'N', value: 120 }, { month: 'D', value: 135 },
-]
-
-const weeklyOrders = [
-  { day: 'Mon', value: 28 }, { day: 'Tue', value: 35 }, { day: 'Wed', value: 42 },
-  { day: 'Thu', value: 38 }, { day: 'Fri', value: 55 }, { day: 'Sat', value: 48 },
-  { day: 'Sun', value: 30 },
-]
-
-const recentOrders = orders.slice(0, 3)
-
-const activities = [
-  { text: "New order #ORD-010", time: "2 min ago", type: "order" },
-  { text: "Classic Leather Sneakers restocked", time: "15 min ago", type: "restock" },
-  { text: "Emily Park registered", time: "1 hour ago", type: "user" },
-  { text: "Order #ORD-008 shipped", time: "2 hours ago", type: "status" },
-  { text: "Silk Evening Gown trending", time: "3 hours ago", type: "trending" },
-]
-
-const maxSale = Math.max(...monthlySales.map((m) => m.value))
-const maxOrder = Math.max(...weeklyOrders.map((w) => w.value))
+const monthLabels = ['J','F','M','A','M','J','J','A','S','O','N','D']
+const dayLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState(null)
+  const [analytics, setAnalytics] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      try {
+        const [s, a] = await Promise.all([
+          adminService.getDashboardStats(),
+          adminService.getAnalytics(),
+        ])
+        if (cancelled) return
+        setStats(s)
+        setAnalytics(a)
+      } catch (err) {
+        console.error('Failed to load dashboard data:', err)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="h-full flex flex-col gap-3 py-4">
+        <div className="flex items-center gap-3">
+          <BackButton />
+          <h1 className="text-lg font-bold text-[var(--text-primary)] font-['Playfair_Display']">Dashboard</h1>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="bg-[var(--bg-card)] rounded-lg px-3 py-2.5 border border-[var(--border-color)]/50 animate-pulse">
+              <div className="h-3 w-16 bg-[var(--border-color)] rounded mb-2" />
+              <div className="h-5 w-20 bg-[var(--border-color)] rounded" />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  const statCards = stats ? [
+    { label: 'Total Sales', value: formatPrice(stats.totalRevenue), change: '', changeType: 'up', link: '/admin/orders' },
+    { label: 'Revenue', value: formatPrice(stats.totalRevenue), change: '', changeType: 'up', link: '/admin/orders' },
+    { label: 'Users', value: stats.totalUsers.toLocaleString(), change: '', changeType: 'up', link: '/admin/users' },
+    { label: 'Orders', value: stats.totalOrders.toLocaleString(), change: '', changeType: 'up', link: '/admin/orders' },
+    { label: 'Products', value: stats.totalProducts.toLocaleString(), change: '', changeType: 'up', link: '/admin/products' },
+    { label: 'Low Stock', value: stats.lowStockProducts.toLocaleString(), change: '', changeType: 'down', link: '/admin/inventory' },
+  ] : []
+
+  const monthlySales = analytics?.monthlyRevenue?.map((m) => ({
+    month: monthLabels[(m.month || 1) - 1] || 'J',
+    value: Number(m.revenue) || 0,
+  })) || []
+
+  const weeklyOrdersData = analytics?.weeklyOrders?.map((w, i) => ({
+    day: dayLabels[i] || `Day ${i + 1}`,
+    value: Number(w.orderCount) || 0,
+  })) || []
+
+  const maxSale = monthlySales.length > 0 ? Math.max(...monthlySales.map((m) => m.value)) : 1
+  const maxOrd = weeklyOrdersData.length > 0 ? Math.max(...weeklyOrdersData.map((w) => w.value)) : 1
+
+  const recentOrders = stats?.recentOrders || []
+
+  const activities = [
+    ...recentOrders.slice(0, 3).map((o) => ({
+      text: `New order #${o.orderNumber || o.id}`,
+      time: formatDate(o.createdAt),
+      type: 'order',
+    })),
+    { text: "Classic Leather Sneakers restocked", time: "15 min ago", type: "restock" },
+    { text: "Emily Park registered", time: "1 hour ago", type: "user" },
+    ...(recentOrders.length > 0 ? [{
+      text: `Order #${recentOrders[0].orderNumber || recentOrders[0].id} ${recentOrders[0].status?.toLowerCase()}`,
+      time: formatDate(recentOrders[0].createdAt),
+      type: 'status',
+    }] : []),
+  ]
+
   return (
     <div className="h-full flex flex-col gap-3 py-4">
       <div className="flex items-center gap-3">
@@ -49,20 +99,22 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
-        {stats.map((stat) => (
+        {statCards.map((stat) => (
           <Link
             key={stat.label}
-            to={stat.label === 'Products' ? '/admin/products' : stat.label === 'Orders' ? '/admin/orders' : stat.label === 'Users' ? '/admin/users' : '#'}
+            to={stat.link}
             className="bg-[var(--bg-card)] rounded-lg px-3 py-2.5 border border-[var(--border-color)]/50 block"
           >
             <p className="text-[var(--text-secondary)] text-[10px] font-medium uppercase tracking-wider">{stat.label}</p>
             <p className="text-base font-bold text-[var(--text-primary)] mt-0.5">{stat.value}</p>
-            <div className={`flex items-center gap-1 mt-0.5 text-[10px] font-medium ${stat.changeType === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-              <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor">
-                {stat.changeType === 'up' ? <path d="M12 5l7 7h-5v7h-4v-7H5l7-7z" /> : <path d="M12 19l-7-7h5V5h4v7h5l-7 7z" />}
-              </svg>
-              <span>{stat.change}</span>
-            </div>
+            {stat.change && (
+              <div className={`flex items-center gap-1 mt-0.5 text-[10px] font-medium ${stat.changeType === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+                <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor">
+                  {stat.changeType === 'up' ? <path d="M12 5l7 7h-5v7h-4v-7H5l7-7z" /> : <path d="M12 19l-7-7h5V5h4v7h5l-7 7z" />}
+                </svg>
+                <span>{stat.change}</span>
+              </div>
+            )}
           </Link>
         ))}
         <Link
@@ -98,19 +150,36 @@ export default function AdminDashboard() {
         <div className="bg-[var(--bg-card)] rounded-lg p-3 border border-[var(--border-color)]/50 flex flex-col">
           <h3 className="text-[var(--text-primary)] text-xs font-semibold mb-2">Revenue</h3>
           <div className="flex-1 relative">
-            <svg className="w-full h-full" viewBox="0 0 300 100" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#C6A972" stopOpacity="0.3" />
-                  <stop offset="100%" stopColor="#C6A972" stopOpacity="0.01" />
-                </linearGradient>
-              </defs>
-              <polyline points="10,90 35,75 60,82 85,55 110,65 135,40 160,50 185,25 210,35 235,20 260,15 290,10" fill="none" stroke="#C6A972" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-              <polygon points="10,90 35,75 60,82 85,55 110,65 135,40 160,50 185,25 210,35 235,20 260,15 290,10 290,100 10,100" fill="url(#revGrad)" />
-            </svg>
+            {monthlySales.length > 0 && (
+              <svg className="w-full h-full" viewBox="0 0 300 100" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#C6A972" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="#C6A972" stopOpacity="0.01" />
+                  </linearGradient>
+                </defs>
+                {(() => {
+                  const n = monthlySales.length
+                  const maxV = maxSale || 1
+                  const pts = monthlySales.map((m, i) => {
+                    const x = 10 + (i / (n - 1 || 1)) * 280
+                    const y = 90 - (m.value / maxV) * 75
+                    return `${x},${y}`
+                  }).join(' ')
+                  const polyline = pts
+                  const polygon = `${pts} 290,100 10,100`
+                  return (
+                    <>
+                      <polyline points={polyline} fill="none" stroke="#C6A972" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+                      <polygon points={polygon} fill="url(#revGrad)" />
+                    </>
+                  )
+                })()}
+              </svg>
+            )}
           </div>
           <div className="flex justify-between mt-1">
-            {['J','F','M','A','M','J','J','A','S','O','N','D'].map((m) => (
+            {monthLabels.slice(0, monthlySales.length).map((m) => (
               <span key={m} className="text-[8px] text-[var(--text-secondary)]">{m}</span>
             ))}
           </div>
@@ -119,14 +188,14 @@ export default function AdminDashboard() {
         <div className="bg-[var(--bg-card)] rounded-lg p-3 border border-[var(--border-color)]/50 flex flex-col">
           <h3 className="text-[var(--text-primary)] text-xs font-semibold mb-2">Weekly Orders</h3>
           <div className="flex-1 flex gap-[1px]">
-            {weeklyOrders.map((item) => (
+            {weeklyOrdersData.map((item) => (
               <div key={item.day} className="flex-1 self-stretch flex flex-col justify-end items-center">
-                <div className="w-full rounded-sm" style={{ height: `${(item.value / maxOrder) * 100}%`, background: 'linear-gradient(to top, #C6A972, #f0d060)', minHeight: item.value > 0 ? '2px' : 0 }} />
+                <div className="w-full rounded-sm" style={{ height: `${(item.value / maxOrd) * 100}%`, background: 'linear-gradient(to top, #C6A972, #f0d060)', minHeight: item.value > 0 ? '2px' : 0 }} />
               </div>
             ))}
           </div>
           <div className="flex justify-between mt-1">
-            {weeklyOrders.map((item) => (
+            {weeklyOrdersData.map((item) => (
               <span key={item.day} className="text-[8px] text-[var(--text-secondary)] flex-1 text-center">{item.day}</span>
             ))}
           </div>
@@ -136,39 +205,40 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-shrink-0">
         <div className="bg-[var(--bg-card)] rounded-lg p-3 border border-[var(--border-color)]/50 overflow-hidden">
           <h3 className="text-[var(--text-primary)] text-xs font-semibold mb-2">Recent Orders</h3>
-          <div className="overflow-x-auto">
-          <table className="w-full text-[11px]">
-            <thead>
-              <tr className="text-[var(--text-secondary)] border-b border-[var(--border-color)]">
-                <th className="text-left py-1.5 font-medium">ID</th>
-                <th className="text-left py-1.5 font-medium">Customer</th>
-                <th className="text-left py-1.5 font-medium">Status</th>
-                <th className="text-right py-1.5 font-medium">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentOrders.map((order) => {
-                const user = users.find((u) => u.id === order.userId)
-                return (
-                  <tr key={order.id} className="border-b border-[var(--border-color)]/30">
-                    <td className="py-1.5 text-[var(--text-primary)] font-mono text-[10px]">{order.id}</td>
-                    <td className="py-1.5 text-[var(--text-secondary)]">{user?.name || 'Unknown'}</td>
-                    <td className="py-1.5">
-                      <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium ${
-                        order.status === 'Delivered' ? 'bg-green-500/20 text-green-600' :
-                        order.status === 'Processing' ? 'bg-blue-500/20 text-blue-400' :
-                        order.status === 'Shipped' ? 'bg-purple-500/20 text-purple-400' :
-                        order.status === 'Pending' ? 'bg-yellow-500/20 text-yellow-600' :
-                        'bg-red-500/20 text-red-600'
-                      }`}>{order.status}</span>
-                    </td>
-                    <td className="py-1.5 text-right text-[var(--text-primary)]">{formatPrice(order.totalAmount)}</td>
+          {recentOrders.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-[11px]">
+                <thead>
+                  <tr className="text-[var(--text-secondary)] border-b border-[var(--border-color)]">
+                    <th className="text-left py-1.5 font-medium">ID</th>
+                    <th className="text-left py-1.5 font-medium">Customer</th>
+                    <th className="text-left py-1.5 font-medium">Status</th>
+                    <th className="text-right py-1.5 font-medium">Total</th>
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
-          </div>
+                </thead>
+                <tbody>
+                  {recentOrders.map((order) => (
+                    <tr key={order.id} className="border-b border-[var(--border-color)]/30">
+                      <td className="py-1.5 text-[var(--text-primary)] font-mono text-[10px]">{order.orderNumber || order.id}</td>
+                      <td className="py-1.5 text-[var(--text-secondary)]">{order.customerName || 'Unknown'}</td>
+                      <td className="py-1.5">
+                        <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium ${
+                          order.status === 'Delivered' ? 'bg-green-500/20 text-green-600' :
+                          order.status === 'Processing' ? 'bg-blue-500/20 text-blue-400' :
+                          order.status === 'Shipped' ? 'bg-purple-500/20 text-purple-400' :
+                          order.status === 'Pending' ? 'bg-yellow-500/20 text-yellow-600' :
+                          'bg-red-500/20 text-red-600'
+                        }`}>{order.status}</span>
+                      </td>
+                      <td className="py-1.5 text-right text-[var(--text-primary)]">{formatPrice(order.totalAmount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-xs text-[var(--text-secondary)] py-4 text-center">No orders yet</p>
+          )}
         </div>
 
         <div className="bg-[var(--bg-card)] rounded-lg p-3 border border-[var(--border-color)]/50">

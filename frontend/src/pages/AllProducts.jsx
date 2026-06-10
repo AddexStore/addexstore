@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { SORT_OPTIONS } from '../constants'
 import { productService } from '../services/productService'
 import { categoryService } from '../services/categoryService'
@@ -10,63 +10,72 @@ import BackButton from '../components/BackButton'
 
 const ITEMS_PER_PAGE = 12
 
+const getSortParam = (sortBy) => {
+  switch (sortBy) {
+    case 'price-asc': return 'price,asc'
+    case 'price-desc': return 'price,desc'
+    case 'rating': return 'rating,desc'
+    case 'newest':
+    default: return 'createdAt,desc'
+  }
+}
+
 export default function AllProducts() {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
   const [selectedCategory, setSelectedCategory] = useState('')
   const [selectedSubCategory, setSelectedSubCategory] = useState('')
   const [sortBy, setSortBy] = useState('newest')
   const [priceRange, setPriceRange] = useState({ min: '', max: '' })
-  const [currentPage, setCurrentPage] = useState(1)
+  const [currentPage, setCurrentPage] = useState(0)
   const [loading, setLoading] = useState(true)
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false)
+  const initialLoadDone = useRef(false)
 
   useEffect(() => {
-    Promise.all([
-      productService.getProducts({ page: 0, size: 100 }).then((r) => (r.content || r.data?.content || r.data || []).map(mapProduct)),
-      categoryService.getAll().then((r) => (r.data || []).map(mapCategory)),
-    ]).then(([prods, cats]) => {
-      setProducts(prods)
-      setCategories(cats)
-    }).catch(() => {}).finally(() => setLoading(false))
+    categoryService.getAll()
+      .then((r) => setCategories((r.data || []).map(mapCategory)))
+      .catch(() => {})
   }, [])
 
-  const filtered = useMemo(() => {
-    let result = [...products]
-    if (selectedCategory) {
-      result = result.filter((p) => p.category === selectedCategory)
+  const fetchProducts = useCallback(() => {
+    setLoading(true)
+    const params = {
+      page: currentPage,
+      size: ITEMS_PER_PAGE,
+      sort: getSortParam(sortBy),
     }
+    const cat = categories.find((c) => c.name === selectedCategory)
+    if (cat) params.category = cat.id
     if (selectedSubCategory) {
-      result = result.filter((p) => p.subCategory === selectedSubCategory)
+      const sub = cat?.subcategories?.find((s) => s.name === selectedSubCategory)
+      if (sub) params.subcategory = sub.id
     }
-    if (priceRange.min !== '') {
-      result = result.filter((p) => p.price >= Number(priceRange.min))
-    }
-    if (priceRange.max !== '') {
-      result = result.filter((p) => p.price <= Number(priceRange.max))
-    }
-    switch (sortBy) {
-      case 'price-asc':
-        result.sort((a, b) => a.price - b.price)
-        break
-      case 'price-desc':
-        result.sort((a, b) => b.price - a.price)
-        break
-      case 'rating':
-        result.sort((a, b) => (b.rating || 0) - (a.rating || 0))
-        break
-      case 'newest':
-      default:
-        result.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-    }
-    return result
-  }, [products, selectedCategory, selectedSubCategory, sortBy, priceRange])
+    if (priceRange.min !== '') params.minPrice = priceRange.min
+    if (priceRange.max !== '') params.maxPrice = priceRange.max
 
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
-  const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+    productService.getProducts(params)
+      .then((data) => {
+        const list = (data.content || []).map(mapProduct)
+        setProducts(list)
+        setTotalPages(data.totalPages || 0)
+        setTotalElements(data.totalElements || 0)
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [currentPage, sortBy, selectedCategory, selectedSubCategory, priceRange.min, priceRange.max, categories])
+
+  useEffect(() => {
+    if (categories.length > 0 || !initialLoadDone.current) {
+      initialLoadDone.current = true
+      fetchProducts()
+    }
+  }, [fetchProducts, categories.length])
 
   const handlePageChange = (page) => {
-    setCurrentPage(page)
+    setCurrentPage(page - 1)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -74,13 +83,13 @@ export default function AllProducts() {
     setSelectedCategory('')
     setSelectedSubCategory('')
     setPriceRange({ min: '', max: '' })
-    setCurrentPage(1)
+    setCurrentPage(0)
   }
 
   const hasActiveFilters = selectedCategory !== '' || selectedSubCategory !== '' || priceRange.min !== '' || priceRange.max !== ''
 
   const availableSubCategories = selectedCategory
-    ? [...new Set(products.filter((p) => p.category === selectedCategory && p.subCategory).map((p) => p.subCategory))]
+    ? (categories.find((c) => c.name === selectedCategory)?.subcategories || [])
     : []
 
   const FilterContent = () => (
@@ -89,7 +98,7 @@ export default function AllProducts() {
         <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3">Category</h3>
         <div className="space-y-2">
           <button
-            onClick={() => { setSelectedCategory(''); setSelectedSubCategory(''); setCurrentPage(1) }}
+            onClick={() => { setSelectedCategory(''); setSelectedSubCategory(''); setCurrentPage(0) }}
             className={`block w-full text-left text-sm px-3 py-2 rounded-lg transition min-h-[44px] ${!selectedCategory ? 'text-[#C6A972] bg-[#C6A972]/10' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'}`}
           >
             All
@@ -97,7 +106,7 @@ export default function AllProducts() {
           {categories.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => { setSelectedCategory(cat.name); setSelectedSubCategory(''); setCurrentPage(1) }}
+              onClick={() => { setSelectedCategory(cat.name); setSelectedSubCategory(''); setCurrentPage(0) }}
               className={`block w-full text-left text-sm px-3 py-2 rounded-lg transition min-h-[44px] ${selectedCategory === cat.name ? 'text-[#C6A972] bg-[#C6A972]/10' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'}`}
             >
               {cat.name}
@@ -111,7 +120,7 @@ export default function AllProducts() {
           <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3">Subcategory</h3>
           <div className="space-y-2">
             <button
-              onClick={() => { setSelectedSubCategory(''); setCurrentPage(1) }}
+              onClick={() => { setSelectedSubCategory(''); setCurrentPage(0) }}
               className={`block w-full text-left text-sm px-3 py-2 rounded-lg transition min-h-[44px] ${!selectedSubCategory ? 'text-[#C6A972] bg-[#C6A972]/10' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'}`}
             >
               All
@@ -119,7 +128,7 @@ export default function AllProducts() {
             {availableSubCategories.map((sub) => (
               <button
                 key={sub}
-                onClick={() => { setSelectedSubCategory(sub); setCurrentPage(1) }}
+                onClick={() => { setSelectedSubCategory(sub); setCurrentPage(0) }}
                 className={`block w-full text-left text-sm px-3 py-2 rounded-lg transition min-h-[44px] ${selectedSubCategory === sub ? 'text-[#C6A972] bg-[#C6A972]/10' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'}`}
               >
                 {sub}
@@ -136,14 +145,14 @@ export default function AllProducts() {
             type="number"
             placeholder="Min"
             value={priceRange.min}
-            onChange={(e) => { setPriceRange((p) => ({ ...p, min: e.target.value })); setCurrentPage(1) }}
+            onChange={(e) => { setPriceRange((p) => ({ ...p, min: e.target.value })); setCurrentPage(0) }}
             className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[#C6A972]/50 min-h-[48px]"
           />
           <input
             type="number"
             placeholder="Max"
             value={priceRange.max}
-            onChange={(e) => { setPriceRange((p) => ({ ...p, max: e.target.value })); setCurrentPage(1) }}
+            onChange={(e) => { setPriceRange((p) => ({ ...p, max: e.target.value })); setCurrentPage(0) }}
             className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[#C6A972]/50 min-h-[48px]"
           />
         </div>
@@ -184,7 +193,7 @@ export default function AllProducts() {
               <BackButton />
               <h1 className="text-2xl sm:text-3xl font-playfair-display font-bold text-[var(--text-primary)]">All Products</h1>
             </div>
-            <p className="text-[var(--text-secondary)] text-sm mt-1">{filtered.length} products</p>
+            <p className="text-[var(--text-secondary)] text-sm mt-1">{totalElements} products</p>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -201,7 +210,7 @@ export default function AllProducts() {
             </button>
             <select
               value={sortBy}
-              onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1) }}
+              onChange={(e) => { setSortBy(e.target.value); setCurrentPage(0) }}
               className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-secondary)] focus:outline-none focus:border-[#C6A972]/50 min-h-[44px]"
             >
               {SORT_OPTIONS.map((opt) => (
@@ -219,17 +228,23 @@ export default function AllProducts() {
           </aside>
 
           <div className="flex-1">
-            {paginated.length === 0 ? (
+            {!loading && products.length === 0 ? (
               <div className="min-h-[40vh] flex items-center justify-center">
                 <EmptyState
                   title="No products found"
                   message="Try adjusting your filters."
                 />
               </div>
+            ) : loading && products.length === 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <SkeletonLoader key={i} type="product" />
+                ))}
+              </div>
             ) : (
               <>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-                  {paginated.map((product) => (
+                  {products.map((product) => (
                     <ProductCard key={product.id} product={product} />
                   ))}
                 </div>
@@ -237,8 +252,8 @@ export default function AllProducts() {
                 {totalPages > 1 && (
                   <div className="flex items-center justify-center gap-2 mt-12">
                     <button
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
+                      onClick={() => handlePageChange(currentPage)}
+                      disabled={currentPage === 0}
                       className="min-w-[44px] h-11 flex items-center justify-center rounded-xl border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] px-3 text-sm"
                     >
                       <svg className="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -248,7 +263,7 @@ export default function AllProducts() {
                     </button>
 
                     <span className="sm:hidden text-sm text-[var(--text-secondary)]">
-                      Page {currentPage} of {totalPages}
+                      Page {currentPage + 1} of {totalPages}
                     </span>
 
                     <div className="hidden sm:flex items-center gap-2">
@@ -256,7 +271,7 @@ export default function AllProducts() {
                         <button
                           key={page}
                           onClick={() => handlePageChange(page)}
-                          className={`w-11 h-11 rounded-xl text-sm font-medium transition active:scale-[0.98] ${page === currentPage ? 'bg-[#C6A972] text-white' : 'border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
+                          className={`w-11 h-11 rounded-xl text-sm font-medium transition active:scale-[0.98] ${page === currentPage + 1 ? 'bg-[#C6A972] text-white' : 'border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
                         >
                           {page}
                         </button>
@@ -264,8 +279,8 @@ export default function AllProducts() {
                     </div>
 
                     <button
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages}
+                      onClick={() => handlePageChange(currentPage + 2)}
+                      disabled={currentPage + 1 >= totalPages}
                       className="min-w-[44px] h-11 flex items-center justify-center rounded-xl border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] px-3 text-sm"
                     >
                       <span className="hidden sm:inline">Next</span>

@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { products } from '../data/products'
-import { SORT_OPTIONS } from '../constants'
+import { productService } from '../services/productService'
+import { mapProduct } from '../services/mappers'
 import ProductCard from '../components/ProductCard'
 import SkeletonLoader from '../components/SkeletonLoader'
 import EmptyState from '../components/EmptyState'
@@ -10,31 +10,29 @@ import BackButton from '../components/BackButton'
 const ITEMS_PER_PAGE = 12
 
 export default function NewArrivals() {
-  const [sortBy, setSortBy] = useState('newest')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [loading, setLoading] = useState(false)
+  const [products, setProducts] = useState([])
+  const [totalPages, setTotalPages] = useState(0)
+  const [currentPage, setCurrentPage] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [sortBy, setSortBy] = useState('createdAt,desc')
 
-  const sorted = useMemo(() => {
-    let result = [...products]
-    switch (sortBy) {
-      case 'price-asc':
-        result.sort((a, b) => a.price - b.price)
-        break
-      case 'price-desc':
-        result.sort((a, b) => b.price - a.price)
-        break
-      case 'rating':
-        result.sort((a, b) => (b.rating || 0) - (a.rating || 0))
-        break
-      case 'newest':
-      default:
-        result.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-    }
-    return result
-  }, [sortBy])
+  const sortOptions = [
+    { value: 'createdAt,desc', label: 'Newest' },
+    { value: 'price,asc', label: 'Price: Low to High' },
+    { value: 'price,desc', label: 'Price: High to Low' },
+    { value: 'rating,desc', label: 'Top Rated' },
+  ]
 
-  const totalPages = Math.ceil(sorted.length / ITEMS_PER_PAGE)
-  const paginated = sorted.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+  useEffect(() => {
+    setLoading(true)
+    productService.getProducts({ page: currentPage, size: ITEMS_PER_PAGE, sort: sortBy, newArrival: true })
+      .then((data) => {
+        setProducts((data.content || []).map(mapProduct))
+        setTotalPages(data.totalPages || 0)
+      })
+      .catch(() => setProducts([]))
+      .finally(() => setLoading(false))
+  }, [currentPage, sortBy])
 
   const handlePageChange = (page) => {
     setCurrentPage(page)
@@ -65,18 +63,20 @@ export default function NewArrivals() {
           </div>
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
+            onChange={(e) => { setSortBy(e.target.value); setCurrentPage(0) }}
             className="w-full sm:w-auto px-4 py-2.5 border border-[var(--border-color)] rounded-full text-sm text-[var(--text-secondary)] bg-[var(--bg-secondary)] focus:outline-none focus:ring-1 focus:ring-[#C6A972] cursor-pointer min-h-[44px]"
           >
-            {SORT_OPTIONS.map((opt) => (
+            {sortOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
         </div>
 
-        {loading ? (
-          <SkeletonLoader type="product" count={ITEMS_PER_PAGE} />
-        ) : paginated.length === 0 ? (
+        {loading && products.length === 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            {Array.from({ length: 8 }).map((_, i) => <SkeletonLoader key={i} type="product" />)}
+          </div>
+        ) : products.length === 0 ? (
           <EmptyState
             title="No products found"
             message="Check back soon for new arrivals."
@@ -86,7 +86,7 @@ export default function NewArrivals() {
         ) : (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-              {paginated.map((product) => (
+              {products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
@@ -94,8 +94,8 @@ export default function NewArrivals() {
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-2 mt-10">
                 <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                  disabled={currentPage === 0}
                   className="min-w-[44px] min-h-[44px] rounded-xl border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center justify-center"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -105,9 +105,9 @@ export default function NewArrivals() {
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                   <button
                     key={page}
-                    onClick={() => handlePageChange(page)}
+                    onClick={() => setCurrentPage(page - 1)}
                     className={`min-w-[44px] min-h-[44px] rounded-xl text-sm font-medium transition ${
-                      page === currentPage
+                      page === currentPage + 1
                         ? 'bg-[#C6A972] text-[var(--text-primary)]'
                         : 'border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
                     }`}
@@ -116,8 +116,8 @@ export default function NewArrivals() {
                   </button>
                 ))}
                 <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+                  disabled={currentPage + 1 >= totalPages}
                   className="min-w-[44px] min-h-[44px] rounded-xl border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center justify-center"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
