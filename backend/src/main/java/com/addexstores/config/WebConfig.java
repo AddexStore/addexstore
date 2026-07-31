@@ -25,6 +25,9 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${cors.allowed-origins:http://localhost:5173,http://localhost:3000}")
     private String allowedOrigins;
 
+    @Value("${cors.allowed-headers:Authorization,Content-Type,Accept,Origin,X-Requested-With,X-Correlation-Id}")
+    private String allowedHeaders;
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/uploads/**")
@@ -39,10 +42,12 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         String[] origins = allowedOrigins.split(",");
+        String[] headers = allowedHeaders.split(",");
         registry.addMapping("/**")
                 .allowedOrigins(origins)
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
-                .allowedHeaders("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With")
+                .allowedHeaders(headers)
+                .exposedHeaders("X-Correlation-Id", "X-Rate-Limit-Remaining", "X-Rate-Limit-Retry-After-Milliseconds")
                 .allowCredentials(true)
                 .maxAge(3600);
     }

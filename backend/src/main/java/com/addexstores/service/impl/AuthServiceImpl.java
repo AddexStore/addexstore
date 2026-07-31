@@ -19,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import java.util.List;
 
 import com.addexstores.security.JwtTokenProvider;
+import com.addexstores.security.TokenRevocationService;
 import com.addexstores.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final TokenRevocationService tokenRevocationService;
 
     @Override
     public AuthResponse login(LoginRequest request) {
@@ -51,6 +53,7 @@ public class AuthServiceImpl implements AuthService {
         String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole().name(), user.isBlocked());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
 
+        tokenRevocationService.storeRefreshToken(user.getId(), refreshToken);
         log.info("User logged in: {}", user.getEmail());
 
         return AuthResponse.builder()
@@ -78,6 +81,7 @@ public class AuthServiceImpl implements AuthService {
         String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole().name(), user.isBlocked());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
 
+        tokenRevocationService.storeRefreshToken(user.getId(), refreshToken);
         log.info("User registered: {}", user.getEmail());
 
         return AuthResponse.builder()
@@ -95,7 +99,16 @@ public class AuthServiceImpl implements AuthService {
             throw new UnauthorizedException("Invalid or expired refresh token");
         }
 
+        if (tokenRevocationService.isTokenRevoked(refreshTokenValue)) {
+            throw new UnauthorizedException("Refresh token has been revoked");
+        }
+
         Long userId = jwtTokenProvider.getUserIdFromToken(refreshTokenValue);
+
+        String storedRefreshToken = tokenRevocationService.getStoredRefreshToken(userId);
+        if (storedRefreshToken == null || !storedRefreshToken.equals(refreshTokenValue)) {
+            throw new UnauthorizedException("Refresh token has been revoked");
+        }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UnauthorizedException("User not found"));
@@ -104,9 +117,12 @@ public class AuthServiceImpl implements AuthService {
             throw new BadRequestException("Account is blocked. Please contact support.");
         }
 
+        tokenRevocationService.revokeRefreshToken(refreshTokenValue);
+
         String newToken = jwtTokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole().name(), user.isBlocked());
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
 
+        tokenRevocationService.storeRefreshToken(user.getId(), newRefreshToken);
         log.info("Token refreshed for user: {}", user.getEmail());
 
         return AuthResponse.builder()
@@ -158,6 +174,15 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
         log.info("Password changed for user: {}", user.getEmail());
+    }
+
+    @Override
+    public void logout(Long userId, String accessToken) {
+        if (accessToken != null) {
+            tokenRevocationService.revokeAccessToken(accessToken);
+        }
+        tokenRevocationService.revokeAllUserTokens(userId);
+        log.info("User logged out: {}", userId);
     }
 
     @Override

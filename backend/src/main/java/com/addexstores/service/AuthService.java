@@ -23,6 +23,8 @@ public interface AuthService {
 
     void changePassword(Long userId, ChangePasswordRequest request);
 
+    void logout(Long userId, String accessToken);
+
     PagedResponse<UserResponse> getAllUsers(int page, int size);
 
     UserResponse getUserById(Long id);

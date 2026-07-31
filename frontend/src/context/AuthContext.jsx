@@ -3,19 +3,20 @@ import { authService } from '../services/authService'
 
 const AuthContext = createContext(null)
 
-const TOKEN_KEY = 'sifr_token'
-const REFRESH_TOKEN_KEY = 'sifr_refresh_token'
-const USER_KEY = 'sifr_user'
+const TOKEN_KEY = 'addex_token'
+const REFRESH_TOKEN_KEY = 'addex_refresh_token'
+const USER_KEY = 'addex_user'
 
 function mapUser(user) {
   if (!user) return null
+  const roleMap = { ADMIN: 'admin', CUSTOMER: 'customer' }
   return {
     id: user.id,
     name: user.name,
     email: user.email,
     phone: user.phone || '',
     avatar: user.avatar || '',
-    role: user.role === 'ADMIN' ? 'admin' : (user.role === 'CUSTOMER' ? 'customer' : (user.role || 'customer')),
+    role: roleMap[user.role] || 'customer',
     joinDate: user.createdAt || user.joinDate || new Date().toISOString(),
   }
 }
@@ -88,6 +89,11 @@ export function AuthProvider({ children }) {
   }, [saveAuth])
 
   const logout = useCallback(async () => {
+    try {
+      await authService.logout()
+    } catch {
+      // proceed with local clear even if server call fails
+    }
     clearAuth()
   }, [clearAuth])
 

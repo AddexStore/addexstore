@@ -1,112 +1,95 @@
-const API_ORIGIN = import.meta.env.VITE_API_ORIGIN || 'http://localhost:8080';
-const ASSET_ORIGIN = import.meta.env.VITE_ASSET_ORIGIN || API_ORIGIN;
-const API_BASE_URL = `${API_ORIGIN}/api`;
+import axios from 'axios'
+
+const API_ORIGIN = import.meta.env.VITE_API_ORIGIN || import.meta.env.VITE_API_URL || 'http://localhost:8080'
+const ASSET_ORIGIN = import.meta.env.VITE_ASSET_ORIGIN || API_ORIGIN
+const API_BASE_URL = `${API_ORIGIN}/api`
 
 export function getAssetUrl(path) {
-  if (!path) return '';
-  if (path.startsWith('http') || path.startsWith('/assets/')) return path;
-  if (path.startsWith('/uploads/')) return `${ASSET_ORIGIN}${path}`;
-  return `${ASSET_ORIGIN}/uploads/${path}`;
+  if (!path) return ''
+  if (path.startsWith('http') || path.startsWith('/assets/')) return path
+  if (path.startsWith('/uploads/')) return `${ASSET_ORIGIN}${path}`
+  return `${ASSET_ORIGIN}/uploads/${path}`
 }
+
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 15000,
+})
 
 function getToken() {
-  return localStorage.getItem('sifr_token');
+  return localStorage.getItem('addex_token')
 }
 
-let refreshPromise = null;
+let refreshPromise = null
 
 async function attemptRefresh() {
-  const refreshToken = localStorage.getItem('sifr_refresh_token');
-  if (!refreshToken) return null;
+  const refreshToken = localStorage.getItem('addex_refresh_token')
+  if (!refreshToken) return null
 
   if (!refreshPromise) {
-    refreshPromise = fetch(`${API_BASE_URL}/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
-    }).then(async (res) => {
-      if (!res.ok) throw new Error('Refresh failed');
-      return res.json();
-    }).then((data) => {
-      localStorage.setItem('sifr_token', data.token);
-      localStorage.setItem('sifr_refresh_token', data.refreshToken);
-      return data.token;
-    }).catch(() => {
-      localStorage.removeItem('sifr_token');
-      localStorage.removeItem('sifr_refresh_token');
-      localStorage.removeItem('sifr_user');
-      window.dispatchEvent(new Event('auth-cleared'));
-      return null;
-    }).finally(() => {
-      refreshPromise = null;
-    });
+    refreshPromise = axios
+      .post(`${API_BASE_URL}/auth/refresh`, { refreshToken })
+      .then((res) => {
+        const { token, refreshToken: newRefresh } = res.data
+        localStorage.setItem('addex_token', token)
+        localStorage.setItem('addex_refresh_token', newRefresh)
+        return token
+      })
+      .catch(() => {
+        localStorage.removeItem('addex_token')
+        localStorage.removeItem('addex_refresh_token')
+        localStorage.removeItem('addex_user')
+        window.dispatchEvent(new Event('auth-cleared'))
+        return null
+      })
+      .finally(() => {
+        refreshPromise = null
+      })
   }
 
-  return refreshPromise;
+  return refreshPromise
 }
 
-async function request(endpoint, options = {}) {
-  const token = getToken();
-  const headers = { 'Content-Type': 'application/json', ...options.headers };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+apiClient.interceptors.request.use((config) => {
+  const token = getToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
 
-  let res = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config
 
-  if (res.status === 401 && token && !endpoint.includes('/auth/refresh')) {
-    const newToken = await attemptRefresh();
-    if (newToken) {
-      headers['Authorization'] = `Bearer ${newToken}`;
-      res = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes('/auth/refresh')) {
+      originalRequest._retry = true
+      const newToken = await attemptRefresh()
+      if (newToken) {
+        originalRequest.headers.Authorization = `Bearer ${newToken}`
+        return apiClient(originalRequest)
+      }
     }
+
+    const message = error.response?.data?.message || `Request failed: ${error.response?.status || 'network error'}`
+    return Promise.reject(new Error(message))
   }
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.message || `Request failed: ${res.status}`);
-  }
-
-  return res.json();
-}
-
-async function uploadRequest(endpoint, formData) {
-  const token = getToken();
-  const headers = {};
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-
-  let res = await fetch(`${API_BASE_URL}${endpoint}`, {
-    method: 'POST',
-    headers,
-    body: formData,
-  });
-
-  if (res.status === 401 && token && !endpoint.includes('/auth/refresh')) {
-    const newToken = await attemptRefresh();
-    if (newToken) {
-      headers['Authorization'] = `Bearer ${newToken}`;
-      res = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method: 'POST',
-        headers,
-        body: formData,
-      });
-    }
-  }
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.message || `Upload failed: ${res.status}`);
-  }
-
-  return res.json();
-}
+)
 
 export const api = {
-  get: (endpoint) => request(endpoint),
-  post: (endpoint, data) => request(endpoint, { method: 'POST', body: JSON.stringify(data) }),
-  put: (endpoint, data) => request(endpoint, { method: 'PUT', body: JSON.stringify(data) }),
-  delete: (endpoint) => request(endpoint, { method: 'DELETE' }),
+  get: (endpoint) => apiClient.get(endpoint).then((res) => res.data),
+  post: (endpoint, data) => apiClient.post(endpoint, data).then((res) => res.data),
+  put: (endpoint, data) => apiClient.put(endpoint, data).then((res) => res.data),
+  delete: (endpoint) => apiClient.delete(endpoint).then((res) => res.data),
   upload: (endpoint, file) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    return uploadRequest(endpoint, formData);
+    const formData = new FormData()
+    formData.append('file', file)
+    return apiClient
+      .post(endpoint, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+      .then((res) => res.data)
   },
-};
+}
+
+export default apiClient

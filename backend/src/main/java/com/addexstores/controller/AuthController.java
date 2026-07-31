@@ -12,6 +12,7 @@ import com.addexstores.security.CurrentUser;
 import com.addexstores.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -66,5 +67,17 @@ public class AuthController {
                                             @Valid @RequestBody ChangePasswordRequest request) {
         authService.changePassword(userId, request);
         return ApiResponse.success("Password changed successfully");
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "Logout user and revoke tokens")
+    public ApiResponse<String> logout(@CurrentUser Long userId, HttpServletRequest request) {
+        String accessToken = null;
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            accessToken = bearerToken.substring(7);
+        }
+        authService.logout(userId, accessToken);
+        return ApiResponse.success("Logged out successfully");
     }
 }

@@ -2,7 +2,7 @@ package com.addexstores.config;
 
 import com.addexstores.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -29,35 +29,51 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CorrelationIdFilter correlationIdFilter;
+    private final RateLimitFilter rateLimitFilter;
+    private final RequestLoggingFilter requestLoggingFilter;
+
+    @Value("${spring.profiles.active:dev}")
+    private String activeProfile;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
+        boolean isProduction = "production".equals(activeProfile);
+
+        var auth = http
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/banners/**").permitAll()
-                        .requestMatchers("/api/payments/stripe/webhook").permitAll()
-                        .requestMatchers("/api/payments/razorpay/webhook").permitAll()
-                        .requestMatchers("/uploads/**").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
-                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
-                        .requestMatchers("/actuator/metrics", "/actuator/prometheus").permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .anyRequest().authenticated()
-                )
+                .authorizeHttpRequests(authz -> {
+                    authz.requestMatchers("/api/auth/**").permitAll();
+                    authz.requestMatchers(HttpMethod.GET, "/api/products/**").permitAll();
+                    authz.requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll();
+                    authz.requestMatchers(HttpMethod.GET, "/api/banners/**").permitAll();
+                    authz.requestMatchers(HttpMethod.GET, "/api/settings").permitAll();
+                    authz.requestMatchers("/api/payments/stripe/webhook").permitAll();
+                    authz.requestMatchers("/api/payments/razorpay/webhook").permitAll();
+                    authz.requestMatchers("/uploads/**").permitAll();
+
+                    if (isProduction) {
+                        authz.requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").hasRole("ADMIN");
+                        authz.requestMatchers("/actuator/**").hasRole("ADMIN");
+                    } else {
+                        authz.requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll();
+                        authz.requestMatchers("/actuator/**").permitAll();
+                    }
+
+                    authz.requestMatchers("/api/admin/**").hasRole("ADMIN");
+                    authz.anyRequest().authenticated();
+                })
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(authenticationEntryPoint())
                         .accessDeniedHandler(accessDeniedHandler())
                 )
+                .addFilterBefore(requestLoggingFilter, CorrelationIdFilter.class)
+                .addFilterBefore(rateLimitFilter, CorrelationIdFilter.class)
                 .addFilterBefore(correlationIdFilter, JwtAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-        return http.build();
+        return auth.build();
     }
 
     @Bean

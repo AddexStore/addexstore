@@ -19,7 +19,7 @@ public class JwtTokenProvider {
     public JwtTokenProvider(
             @Value("${app.jwt.secret}") String secret,
             @Value("${app.jwt.expiration:86400000}") long jwtExpiration,
-            @Value("${app.jwt.refresh-expiration:2592000000}") long refreshExpiration) {
+            @Value("${app.jwt.refresh-expiration:604800000}") long refreshExpiration) {
         this.jwtSecret = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
         this.jwtExpiration = jwtExpiration;
         this.refreshExpiration = refreshExpiration;
@@ -34,6 +34,7 @@ public class JwtTokenProvider {
                 .claim("email", email)
                 .claim("role", role)
                 .claim("blocked", isBlocked)
+                .claim("type", "access")
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(jwtSecret)
@@ -65,12 +66,20 @@ public class JwtTokenProvider {
         return Long.parseLong(getClaims(token).getSubject());
     }
 
+    public String getEmailFromToken(String token) {
+        return getClaims(token).get("email", String.class);
+    }
+
     public String getRoleFromToken(String token) {
         return getClaims(token).get("role", String.class);
     }
 
     public boolean isBlockedFromToken(String token) {
         return getClaims(token).get("blocked", Boolean.class);
+    }
+
+    public String getTokenType(String token) {
+        return getClaims(token).get("type", String.class);
     }
 
     public boolean validateToken(String token) {

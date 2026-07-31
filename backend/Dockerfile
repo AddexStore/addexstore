@@ -39,19 +39,20 @@ RUN mkdir -p /app/uploads && chown -R appuser:appgroup /app
 # Switch to non-root user
 USER appuser
 
-# JVM optimization for containers
-ENV JAVA_OPTS="-XX:+UseContainerSupport \
-  -XX:MaxRAMPercentage=75.0 \
-  -XX:+AlwaysActAsServerClassMachine \
-  -Djava.security.egd=file:/dev/./urandom"
+# Railway injects PORT; default to 8080 for local/Docker
+ENV PORT=8080 \
+    JAVA_OPTS="-XX:+UseContainerSupport \
+    -XX:MaxRAMPercentage=75.0 \
+    -XX:+AlwaysActAsServerClassMachine \
+    -Djava.security.egd=file:/dev/./urandom"
 
 # Graceful shutdown
 STOPSIGNAL SIGTERM
 
 # Health check via Spring Boot Actuator
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-  CMD wget -qO- http://localhost:8080/actuator/health || exit 1
+  CMD wget -qO- http://localhost:${PORT}/actuator/health || exit 1
 
-EXPOSE 8080
+EXPOSE ${PORT}
 
-ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-XX:+AlwaysActAsServerClassMachine", "-Djava.security.egd=file:/dev/./urandom", "-jar", "/app/backend.jar"]
+ENTRYPOINT ["sh", "-c", "java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+AlwaysActAsServerClassMachine -Djava.security.egd=file:/dev/./urandom -Dserver.port=${PORT} -jar /app/backend.jar"]
