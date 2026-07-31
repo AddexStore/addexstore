@@ -70,8 +70,8 @@ public class RedisConfig {
             boolean useSsl = "rediss".equals(uri.getScheme());
             if (useSsl) {
                 LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
-                        .useSsl()
                         .commandTimeout(Duration.ofSeconds(5))
+                        .useSsl()
                         .build();
                 return new LettuceConnectionFactory(config, clientConfig);
             }
