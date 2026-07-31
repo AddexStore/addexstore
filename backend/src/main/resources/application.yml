@@ -128,7 +128,7 @@ management:
   endpoints:
     web:
       exposure:
-        health,info,metrics,prometheus
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: when-authorized

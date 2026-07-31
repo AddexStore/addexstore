@@ -27,7 +27,8 @@ springdoc:
 management:
   endpoints:
     web:
-      exposure: health,info
+      exposure:
+        include: health,info
   endpoint:
     health:
       show-details: never
