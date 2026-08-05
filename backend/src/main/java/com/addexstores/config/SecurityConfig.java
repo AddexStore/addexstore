@@ -68,10 +68,10 @@ public class SecurityConfig {
                         .authenticationEntryPoint(authenticationEntryPoint())
                         .accessDeniedHandler(accessDeniedHandler())
                 )
-                .addFilterBefore(requestLoggingFilter, CorrelationIdFilter.class)
-                .addFilterBefore(rateLimitFilter, CorrelationIdFilter.class)
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(correlationIdFilter, JwtAuthenticationFilter.class)
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(rateLimitFilter, CorrelationIdFilter.class)
+                .addFilterBefore(requestLoggingFilter, RateLimitFilter.class);
 
         return auth.build();
     }

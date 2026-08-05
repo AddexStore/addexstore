@@ -32,6 +32,7 @@ D:\addexStores\backend\src\main\java\com\addexstores\service\StripePaymentServic
 D:\addexStores\backend\src\main\java\com\addexstores\repository\SubCategoryRepository.java
 D:\addexStores\backend\src\main\java\com\addexstores\exception\ResourceNotFoundException.java
 D:\addexStores\backend\src\main\java\com\addexstores\repository\ProductImageRepository.java
+D:\addexStores\backend\src\main\java\com\addexstores\config\AdminBootstrap.java
 D:\addexStores\backend\src\main\java\com\addexstores\controller\admin\AdminPaymentController.java
 D:\addexStores\backend\src\main\java\com\addexstores\security\TokenUser.java
 D:\addexStores\backend\src\main\java\com\addexstores\service\impl\CheckoutPricingServiceImpl.java
