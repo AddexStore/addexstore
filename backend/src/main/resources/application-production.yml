@@ -32,3 +32,9 @@ management:
   endpoint:
     health:
       show-details: never
+      group:
+        liveness:
+          include: ping
+  health:
+    redis:
+      enabled: false
