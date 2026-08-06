@@ -14,7 +14,11 @@ public interface OrderService {
 
     OrderResponse getOrderByOrderNumber(Long userId, String orderNumber);
 
-    PagedResponse<OrderResponse> getAllOrders(int page, int size, String status);
+    PagedResponse<OrderResponse> getAllOrders(int page, int size, String status, String search);
 
     OrderResponse updateOrderStatus(Long id, String status);
+
+    OrderResponse markOrderCancelled(Long orderId, Long actorId, String reason);
+
+    OrderResponse markOrderRefunded(Long orderId, Long actorId, String reason);
 }

@@ -1,6 +1,7 @@
 package com.addexstores.controller.admin;
 
 import com.addexstores.dto.response.ApiResponse;
+import com.addexstores.dto.response.DashboardOverviewResponse;
 import com.addexstores.dto.response.DashboardResponse;
 import com.addexstores.service.DashboardService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,5 +23,11 @@ public class AdminDashboardController {
     @Operation(summary = "Get dashboard statistics")
     public ApiResponse<DashboardResponse> getDashboardStats() {
         return ApiResponse.success(dashboardService.getDashboardStats());
+    }
+
+    @GetMapping("/overview")
+    @Operation(summary = "Get aggregated dashboard overview")
+    public ApiResponse<DashboardOverviewResponse> getDashboardOverview() {
+        return ApiResponse.success(dashboardService.getDashboardOverview());
     }
 }

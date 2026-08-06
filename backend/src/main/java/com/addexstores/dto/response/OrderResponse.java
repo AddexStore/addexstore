@@ -25,12 +25,14 @@ public class OrderResponse {
     private BigDecimal tax;
     private BigDecimal shippingCost;
     private BigDecimal totalAmount;
+    private String currency;
     private OrderStatus status;
     private ShippingAddress shippingAddress;
     private String paymentMethod;
     private String notes;
     private List<OrderItemResponse> items;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     @Data
     @Builder

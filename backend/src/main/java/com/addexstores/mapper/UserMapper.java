@@ -14,7 +14,9 @@ public class UserMapper {
                 .phone(user.getPhone())
                 .avatar(user.getAvatar())
                 .role(user.getRole())
+                .blocked(user.isBlocked())
                 .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
                 .build();
     }
 }

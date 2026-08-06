@@ -1,10 +1,17 @@
 export function mapProduct(p) {
   if (!p) return null
+  const rawImages = Array.isArray(p.images) ? p.images : []
+  const sortedImages = [...rawImages]
+    .sort((a, b) => ((b.isPrimary === true) - (a.isPrimary === true)) || ((a.sortOrder || 0) - (b.sortOrder || 0)))
+  const imageUrls = sortedImages
+    .map((img) => (typeof img === 'string' ? img : img && img.imageUrl))
+    .filter(Boolean)
   return {
     _id: p.id,
     id: p.id,
     name: p.name,
     slug: p.slug,
+    sku: p.sku || '',
     brand: p.brand || '',
     category: p.category?.name || p.category || '',
     subCategory: p.subCategory?.name || p.subCategory || '',
@@ -17,14 +24,16 @@ export function mapProduct(p) {
     totalReviews: p.totalReviews || 0,
     numReviews: p.totalReviews || 0,
     stock: p.stock ?? 0,
-    images: (p.images || []).map((img) => img.imageUrl || img),
-    image: p.images?.[0]?.imageUrl || p.images?.[0] || null,
+    images: imageUrls,
+    gallery: imageUrls,
+    image: imageUrls[0] || null,
     colors: (p.variants || []).filter((v) => v.color).map((v) => v.color).filter((v, i, a) => a.indexOf(v) === i),
     sizes: (p.variants || []).filter((v) => v.size).map((v) => v.size).filter((v, i, a) => a.indexOf(v) === i),
     featured: p.featured || false,
     trending: p.trending || false,
     isNewArrival: p.isNewArrival || p.newArrival || false,
     isOnSale: p.isOnSale || p.onSale || false,
+    active: p.active !== undefined ? p.active : true,
     createdAt: p.createdAt || new Date().toISOString(),
     variants: p.variants || [],
   }
@@ -50,6 +59,7 @@ export function mapOrder(o) {
     subtotal: o.subtotal,
     tax: o.tax,
     shippingCost: o.shippingCost,
+    currency: o.currency || 'USD',
     status: o.status,
     shippingAddress: o.shippingAddress || {},
     paymentMethod: o.paymentMethod || '',
@@ -85,6 +95,7 @@ export function mapCategory(c) {
     image: c.image || '',
     description: c.description || '',
     productCount: c.productCount || 0,
+    active: c.active !== undefined ? c.active : true,
     icon: c.icon,
     subcategories: (c.subCategories || []).map((s) => ({
       id: s.id,

@@ -50,8 +50,8 @@ public class StripeWebhookController {
         }
 
         if (event == null) {
-            log.warn("Webhook secret not configured, skipping processing");
-            return ResponseEntity.ok("Webhook secret not configured");
+            log.error("Webhook verification returned no event");
+            return ResponseEntity.badRequest().body("Invalid event");
         }
 
         try {
@@ -59,7 +59,7 @@ public class StripeWebhookController {
             log.info("Webhook {} processed successfully", event.getType());
         } catch (Exception e) {
             log.error("Failed to process webhook event: {}", e.getMessage());
-            return ResponseEntity.ok("Event received but processing failed: " + e.getMessage());
+            return ResponseEntity.status(500).body("Event processing failed");
         }
 
         return ResponseEntity.ok("Webhook received");

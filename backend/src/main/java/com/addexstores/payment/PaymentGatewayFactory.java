@@ -40,12 +40,8 @@ public class PaymentGatewayFactory {
                 .orElse(null);
 
         if (config != null && !config.isEnabled()) {
-            PaymentGateway fallback = findFallback(method);
-            if (fallback != null) {
-                log.warn("Gateway {} is disabled, falling back to {}", method, fallback.getGatewayName());
-                return fallback;
-            }
-            throw new PaymentGatewayException("Payment gateway " + method + " is disabled and no fallback available");
+            log.warn("Payment gateway {} is disabled", method);
+            throw new PaymentGatewayException("Payment gateway " + method + " is disabled");
         }
 
         PaymentGateway gateway = gatewayMap.get(method);
@@ -86,13 +82,5 @@ public class PaymentGatewayFactory {
             }
         }
         return PaymentMethod.STRIPE;
-    }
-
-    private PaymentGateway findFallback(PaymentMethod disabledMethod) {
-        return gatewayMap.entrySet().stream()
-                .filter(entry -> entry.getKey() != disabledMethod)
-                .map(Map.Entry::getValue)
-                .findFirst()
-                .orElse(null);
     }
 }

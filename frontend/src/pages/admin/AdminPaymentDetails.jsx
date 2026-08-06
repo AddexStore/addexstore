@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { adminPaymentService } from '../../services/stripeService'
-import { formatDate } from '../../utils/helpers'
+import { formatDate, formatPrice, getCurrencySymbol } from '../../utils/helpers'
 import { useToast } from '../../context/ToastContext'
 
 const STATUS_COLORS = {
@@ -78,6 +78,12 @@ export default function AdminPaymentDetails() {
     )
   }
 
+  const successfulRefunds = (payment.refunds || []).filter((r) => r.status === 'SUCCEEDED')
+  const refundedTotal = successfulRefunds.reduce((sum, r) => sum + Number(r.amount || 0), 0)
+  const paymentAmount = Number(payment.amount || 0)
+  const maxRefundable = Math.max(0, paymentAmount - refundedTotal)
+  const canRefund = (payment.status === 'COMPLETED' || payment.status === 'REFUNDED') && maxRefundable > 0
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -92,7 +98,7 @@ export default function AdminPaymentDetails() {
             {payment.status}
           </span>
         </div>
-        {(payment.status === 'COMPLETED' || payment.status === 'REFUNDED') && (
+        {(payment.status === 'COMPLETED' || payment.status === 'REFUNDED') && canRefund && (
           <button
             onClick={() => setShowRefundModal(true)}
             className="px-5 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition"
@@ -112,11 +118,19 @@ export default function AdminPaymentDetails() {
             </div>
             <div className="flex justify-between">
               <dt className="text-[var(--text-secondary)]">Amount</dt>
-              <dd className="text-[var(--text-primary)] font-medium">{payment.currency} {Number(payment.amount).toFixed(2)}</dd>
+              <dd className="text-[var(--text-primary)] font-medium">{formatPrice(payment.amount, getCurrencySymbol(payment.currency))}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-[var(--text-secondary)]">Base Amount</dt>
-              <dd className="text-[var(--text-primary)]">{payment.baseAmount ? Number(payment.baseAmount).toFixed(2) : '-'}</dd>
+              <dd className="text-[var(--text-primary)]">{formatPrice(payment.baseAmount, getCurrencySymbol(payment.currency))}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-[var(--text-secondary)]">Refunded</dt>
+              <dd className="text-[var(--text-primary)]">{formatPrice(refundedTotal, getCurrencySymbol(payment.currency))}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-[var(--text-secondary)]">Remaining Refundable</dt>
+              <dd className="text-[var(--text-primary)]">{formatPrice(maxRefundable, getCurrencySymbol(payment.currency))}</dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-[var(--text-secondary)]">Currency</dt>
@@ -138,12 +152,12 @@ export default function AdminPaymentDetails() {
         </div>
 
         <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] p-6">
-          <h2 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-4">Stripe Information</h2>
+          <h2 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-4">Gateway Information</h2>
           <dl className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <dt className="text-[var(--text-secondary)]">PaymentIntent ID</dt>
+              <dt className="text-[var(--text-secondary)]">Gateway Order ID</dt>
               <dd className="text-[var(--text-primary)] font-mono text-xs break-all max-w-[250px] text-right">
-                {payment.stripePaymentIntentId || payment.gatewayOrderId || '-'}
+                {payment.gatewayOrderId || '-'}
               </dd>
             </div>
             <div className="flex justify-between">
@@ -244,7 +258,7 @@ export default function AdminPaymentDetails() {
                   <tr key={ref.id} className="hover:bg-[var(--bg-hover)]">
                     <td className="px-4 py-2 text-[var(--text-primary)] font-mono text-xs">#{ref.id}</td>
                     <td className="px-4 py-2 text-[var(--text-primary)] font-mono text-xs max-w-[200px] truncate">{ref.refundId || '-'}</td>
-                    <td className="px-4 py-2 text-right text-[var(--text-primary)]">{payment.currency} {Number(ref.amount).toFixed(2)}</td>
+                    <td className="px-4 py-2 text-right text-[var(--text-primary)]">{formatPrice(ref.amount, getCurrencySymbol(payment.currency))}</td>
                     <td className="px-4 py-2 text-[var(--text-secondary)] max-w-[200px] truncate">{ref.reason || '-'}</td>
                     <td className="px-4 py-2 text-center">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[ref.status] || 'bg-gray-100'}`}>
@@ -267,18 +281,22 @@ export default function AdminPaymentDetails() {
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
-                  Refund Amount (leave empty for full refund)
+                  Refund Amount (leave empty for full remaining refund)
                 </label>
                 <input
                   type="number"
                   step="0.01"
                   min="0"
-                  max={Number(payment.amount)}
-                  placeholder={`Max: ${payment.currency} ${Number(payment.amount).toFixed(2)}`}
+                  max={maxRefundable}
+                  placeholder={`Max: ${formatPrice(maxRefundable, getCurrencySymbol(payment.currency))}`}
                   value={refundAmount}
                   onChange={(e) => setRefundAmount(e.target.value)}
                   className="w-full px-4 py-2.5 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[#C6A972]"
                 />
+                <p className="text-xs text-[var(--text-secondary)] mt-1.5">
+                  Remaining refundable: {formatPrice(maxRefundable, getCurrencySymbol(payment.currency))} (
+                  {formatPrice(refundedTotal, getCurrencySymbol(payment.currency))} already refunded)
+                </p>
               </div>
               <div>
                 <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Refund Reason</label>

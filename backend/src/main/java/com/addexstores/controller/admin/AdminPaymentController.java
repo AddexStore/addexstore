@@ -16,6 +16,7 @@ import com.addexstores.repository.PaymentRepository;
 import com.addexstores.repository.PaymentTransactionRepository;
 import com.addexstores.repository.RefundRepository;
 import com.addexstores.enums.PaymentMethod;
+import com.addexstores.exception.BadRequestException;
 import com.addexstores.payment.PaymentGateway;
 import com.addexstores.payment.PaymentGatewayFactory;
 import com.addexstores.security.CurrentUser;
@@ -25,6 +26,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,6 +35,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/admin/payments")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "Admin Payments")
 public class AdminPaymentController {
 
@@ -52,10 +55,12 @@ public class AdminPaymentController {
         PageRequest pageRequest = PageRequest.of(page, size);
         Page<Payment> paymentPage;
 
-        if (search != null && !search.isBlank()) {
+        if (search != null && !search.isBlank() && status != null && !status.isBlank()) {
+            paymentPage = paymentRepository.searchWithOrderAndStatus(search, parseStatus(status), pageRequest);
+        } else if (search != null && !search.isBlank()) {
             paymentPage = paymentRepository.searchWithOrder(search, pageRequest);
         } else if (status != null && !status.isBlank()) {
-            paymentPage = paymentRepository.findByStatusWithOrder(PaymentStatus.valueOf(status.toUpperCase()), pageRequest);
+            paymentPage = paymentRepository.findByStatusWithOrder(parseStatus(status), pageRequest);
         } else {
             paymentPage = paymentRepository.findAllWithOrder(pageRequest);
         }
@@ -130,5 +135,13 @@ public class AdminPaymentController {
                 .orElseThrow(() -> new ResourceNotFoundException("Payment", request.getPaymentId()));
         PaymentGateway gateway = gatewayFactory.getGateway(payment.getPaymentMethod());
         return ApiResponse.success(gateway.refundPayment(adminId, request));
+    }
+
+    private PaymentStatus parseStatus(String status) {
+        try {
+            return PaymentStatus.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Invalid payment status: " + status);
+        }
     }
 }

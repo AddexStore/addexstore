@@ -15,7 +15,7 @@ public interface StripePaymentService {
 
     CreatePaymentResponse createOrderAndPaymentIntent(Long userId, CreatePaymentRequest request);
 
-    PaymentStatusResponse retrievePayment(String stripePaymentIntentId);
+    PaymentStatusResponse retrievePayment(String stripePaymentIntentId, Long userId);
 
     PaymentStatusResponse retrievePaymentByOrderId(Long orderId);
 

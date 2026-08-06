@@ -11,7 +11,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -21,14 +23,23 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/admin/categories")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "Admin Categories")
 public class AdminCategoryController {
 
     private final CategoryService categoryService;
     private final FileUploadService fileUploadService;
+
+    @GetMapping
+    @Operation(summary = "Get all categories including inactive")
+    public ApiResponse<List<CategoryResponse>> getAllAdminCategories() {
+        return ApiResponse.success(categoryService.getAllAdminCategories());
+    }
 
     @PostMapping
     @Operation(summary = "Create new category")
@@ -72,7 +83,7 @@ public class AdminCategoryController {
     }
 
     @PostMapping("/upload-icon")
-    @Operation(summary = "Upload category icon image")
+    @Operation(summary = "Upload category icon image and return its path")
     public ApiResponse<String> uploadIcon(@RequestParam("file") MultipartFile file) {
         return ApiResponse.success(fileUploadService.uploadFile(file, "categories"));
     }

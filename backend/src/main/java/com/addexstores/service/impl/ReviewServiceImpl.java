@@ -15,6 +15,7 @@ import com.addexstores.repository.UserRepository;
 import com.addexstores.service.ReviewService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,7 +37,7 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     public PagedResponse<ReviewResponse> getProductReviews(Long productId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<Review> reviews = reviewRepository.findByProductId(productId, pageable);
+        Page<Review> reviews = reviewRepository.findByProductIdAndApprovedTrue(productId, pageable);
 
         List<ReviewResponse> content = ReviewMapper.toReviewResponseList(reviews.getContent());
         return PagedResponse.<ReviewResponse>builder()
@@ -100,6 +101,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "products", allEntries = true)
     public void approveReview(Long id) {
         Review review = reviewRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Review", id));
@@ -113,6 +115,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "products", allEntries = true)
     public void deleteReview(Long id) {
         Review review = reviewRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Review", id));

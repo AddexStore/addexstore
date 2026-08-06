@@ -18,7 +18,9 @@ import com.addexstores.repository.*;
 import com.addexstores.payment.PaymentGateway;
 import com.addexstores.service.CartService;
 import com.addexstores.service.CurrencyService;
+import com.addexstores.service.InventoryService;
 import com.addexstores.service.NotificationService;
+import com.addexstores.service.OrderService;
 import com.addexstores.service.ShippingService;
 import com.addexstores.service.StripePaymentService;
 import com.addexstores.service.TaxService;
@@ -41,6 +43,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -64,6 +67,8 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
     private final TaxService taxService;
     private final ShippingService shippingService;
     private final CurrencyService currencyService;
+    private final OrderService orderService;
+    private final InventoryService inventoryService;
 
     @Value("${payment.stripe.webhook-secret:}")
     private String webhookSecret;
@@ -85,26 +90,26 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
                 .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal subtotalInUsd = currencyService.convertToUsd(subtotal, request.getCurrency() != null ? request.getCurrency() : "USD");
-        BigDecimal tax = taxService.calculateTax(subtotalInUsd, request.getCountry(), request.getState());
-        BigDecimal shippingCost = shippingService.calculateShipping(subtotalInUsd, request.getCountry());
-        BigDecimal totalInUsd = subtotalInUsd.add(tax).add(shippingCost);
+        String targetCurrency = request.getCurrency() != null ? request.getCurrency().toUpperCase() : "USD";
+        if (!SUPPORTED_CURRENCIES.contains(targetCurrency)) {
+            throw new BadRequestException("Unsupported currency: " + targetCurrency + ". Supported: " + SUPPORTED_CURRENCIES);
+        }
 
-        BigDecimal totalAmount = currencyService.convertFromUsd(totalInUsd, request.getCurrency() != null ? request.getCurrency() : "USD");
+        BigDecimal tax = taxService.calculateTax(subtotal, request.getCountry(), request.getState());
+        BigDecimal shippingCost = shippingService.calculateShipping(subtotal, request.getCountry());
+        BigDecimal totalAmount = subtotal.add(tax).add(shippingCost);
+        BigDecimal chargeAmount = currencyService.convertFromUsd(totalAmount, targetCurrency);
 
         String orderNumber = "ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-
-        String targetCurrency = request.getCurrency() != null ? request.getCurrency().toUpperCase() : "USD";
-        BigDecimal taxInTarget = currencyService.convertFromUsd(tax, targetCurrency);
-        BigDecimal shippingInTarget = currencyService.convertFromUsd(shippingCost, targetCurrency);
 
         Order order = Order.builder()
                 .orderNumber(orderNumber)
                 .user(user)
                 .subtotal(subtotal)
-                .tax(taxInTarget)
-                .shippingCost(shippingInTarget)
+                .tax(tax)
+                .shippingCost(shippingCost)
                 .totalAmount(totalAmount)
+                .currency("USD")
                 .status(OrderStatus.PENDING_PAYMENT)
                 .street(request.getStreet())
                 .city(request.getCity())
@@ -119,9 +124,8 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
         List<OrderItem> orderItems = new ArrayList<>();
         for (CartItem cartItem : cart.getItems()) {
             Product product = cartItem.getProduct();
-
-            if (product.getStock() < cartItem.getQuantity()) {
-                throw new BadRequestException("Insufficient stock for product: " + product.getName());
+            if (product == null || product.getId() == null) {
+                throw new BadRequestException("A product in your cart is no longer available");
             }
 
             String image = null;
@@ -147,9 +151,10 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
         }
 
         order.setItems(orderItems);
+        inventoryService.reserveStock(cart.getItems());
         order = orderRepository.save(order);
 
-        long stripeAmount = convertToSmallestUnit(totalAmount, targetCurrency);
+        long stripeAmount = convertToSmallestUnit(chargeAmount, targetCurrency);
 
         PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                 .setAmount(stripeAmount)
@@ -176,10 +181,10 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
         Payment payment = Payment.builder()
                 .userId(userId)
                 .order(order)
-                .amount(totalAmount)
+                .amount(chargeAmount)
                 .currency(targetCurrency)
                 .baseAmount(totalAmount)
-                .convertedAmount(null)
+                .convertedAmount(chargeAmount)
                 .paymentMethod(PaymentMethod.STRIPE)
                 .status(PaymentStatus.PROCESSING)
                 .stripePaymentIntentId(paymentIntent.getId())
@@ -234,12 +239,16 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
             throw new BadRequestException("An active payment already exists for this order");
         }
 
+        Optional<Payment> existingPayment = paymentRepository.findByOrderId(orderId);
+        if (existingPayment.isPresent() && !existingPayment.get().getCurrency().equalsIgnoreCase(currencyUpper)) {
+            throw new BadRequestException("Currency mismatch with existing payment for this order");
+        }
+
         BigDecimal appAmount = order.getTotalAmount();
-        BigDecimal baseAmount = appAmount;
-        BigDecimal convertedAmount = null;
+        BigDecimal chargeAmount = currencyService.convertFromUsd(appAmount, currencyUpper);
         String stripeCurrency = currencyUpper.toLowerCase();
 
-        long stripeAmount = convertToSmallestUnit(appAmount, currencyUpper);
+        long stripeAmount = convertToSmallestUnit(chargeAmount, currencyUpper);
 
         PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                 .setAmount(stripeAmount)
@@ -263,10 +272,10 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
         Payment payment = Payment.builder()
                 .userId(userId)
                 .order(order)
-                .amount(appAmount)
+                .amount(chargeAmount)
                 .currency(currencyUpper)
-                .baseAmount(baseAmount)
-                .convertedAmount(convertedAmount)
+                .baseAmount(appAmount)
+                .convertedAmount(chargeAmount)
                 .paymentMethod(PaymentMethod.STRIPE)
                 .status(PaymentStatus.PROCESSING)
                 .stripePaymentIntentId(paymentIntent.getId())
@@ -290,8 +299,17 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
 
     @Override
     public PaymentStatusResponse retrievePayment(String stripePaymentIntentId) {
+        return retrievePayment(stripePaymentIntentId, null);
+    }
+
+    @Override
+    public PaymentStatusResponse retrievePayment(String stripePaymentIntentId, Long userId) {
         Payment payment = paymentRepository.findByStripePaymentIntentId(stripePaymentIntentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment", "stripePaymentIntentId", stripePaymentIntentId));
+
+        if (userId != null && !payment.getUserId().equals(userId)) {
+            throw new UnauthorizedException("Payment does not belong to this user");
+        }
 
         try {
             PaymentIntent pi = PaymentIntent.retrieve(stripePaymentIntentId);
@@ -317,7 +335,7 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
                 .orElseThrow(() -> new ResourceNotFoundException("Payment", "stripePaymentIntentId", stripePaymentIntentId));
 
         if (!payment.getUserId().equals(userId)) {
-            // Allow admin too — checked in controller
+            throw new UnauthorizedException("Payment does not belong to this user");
         }
 
         if (payment.getStatus() != PaymentStatus.PENDING && payment.getStatus() != PaymentStatus.PROCESSING) {
@@ -337,9 +355,7 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
         paymentRepository.save(payment);
 
         if (payment.getOrder() != null) {
-            Order order = payment.getOrder();
-            order.setStatus(OrderStatus.CANCELLED);
-            orderRepository.save(order);
+            orderService.markOrderCancelled(payment.getOrder().getId(), userId, "Payment cancelled");
         }
     }
 
@@ -360,6 +376,13 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
         BigDecimal refundAmount = request.getAmount() != null
                 ? request.getAmount()
                 : payment.getAmount();
+
+        if (refundAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BadRequestException("Refund amount must be positive");
+        }
+        if (refundAmount.compareTo(payment.getAmount()) > 0) {
+            throw new BadRequestException("Refund amount exceeds payment amount");
+        }
 
         long refundStripeAmount = convertToSmallestUnit(refundAmount, payment.getCurrency());
 
@@ -415,9 +438,7 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
             paymentRepository.save(payment);
 
             if (payment.getOrder() != null) {
-                Order order = payment.getOrder();
-                order.setStatus(OrderStatus.REFUNDED);
-                orderRepository.save(order);
+                orderService.markOrderRefunded(payment.getOrder().getId(), adminId, request.getReason());
             }
         }
 
@@ -430,8 +451,8 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
     @Override
     public Event verifyWebhook(String payload, String signatureHeader) {
         if (webhookSecret.isBlank()) {
-            log.warn("Webhook secret not configured, skipping signature verification");
-            return null;
+            log.error("Stripe webhook secret is not configured");
+            throw new BadRequestException("Stripe webhook secret is not configured");
         }
 
         try {
@@ -482,6 +503,16 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
             return payment;
         }
 
+        long expectedAmount = convertToSmallestUnit(payment.getAmount(), payment.getCurrency());
+        boolean amountMismatch = pi.getAmount() == null || pi.getAmount().longValue() != expectedAmount;
+        boolean currencyMismatch = pi.getCurrency() == null
+                || !pi.getCurrency().equalsIgnoreCase(payment.getCurrency());
+        if (amountMismatch || currencyMismatch) {
+            log.error("Payment amount/currency mismatch for PaymentIntent {}: charged {} {}, expected {} {}",
+                    pi.getId(), pi.getAmount(), pi.getCurrency(), expectedAmount, payment.getCurrency());
+            return null;
+        }
+
         payment.setStatus(PaymentStatus.COMPLETED);
         payment.setGatewayPaymentId(pi.getLatestCharge());
         payment.setGatewayResponse(pi.toJson());
@@ -489,8 +520,10 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
 
         if (payment.getOrder() != null) {
             Order order = payment.getOrder();
-            order.setStatus(OrderStatus.PROCESSING);
-            orderRepository.save(order);
+            if (order.getStatus() == OrderStatus.PENDING || order.getStatus() == OrderStatus.PENDING_PAYMENT) {
+                order.setStatus(OrderStatus.PROCESSING);
+                orderRepository.save(order);
+            }
 
             User orderUser = order.getUser();
             if (orderUser != null) {
@@ -502,16 +535,20 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
             }
         }
 
-        PaymentTransaction tx = PaymentTransaction.builder()
-                .payment(payment)
-                .transactionId(pi.getId())
-                .gateway("STRIPE")
-                .currency(payment.getCurrency())
-                .amount(payment.getAmount())
-                .status("SUCCEEDED")
-                .responsePayload(pi.toJson())
-                .build();
-        transactionRepository.save(tx);
+        String chargeId = pi.getLatestCharge() != null ? pi.getLatestCharge() : pi.getId();
+        if (!transactionRepository.existsByPaymentIdAndTransactionIdAndGateway(
+                payment.getId(), chargeId, "STRIPE")) {
+            PaymentTransaction tx = PaymentTransaction.builder()
+                    .payment(payment)
+                    .transactionId(chargeId)
+                    .gateway("STRIPE")
+                    .currency(payment.getCurrency())
+                    .amount(payment.getAmount())
+                    .status("SUCCEEDED")
+                    .responsePayload(pi.toJson())
+                    .build();
+            transactionRepository.save(tx);
+        }
 
         log.info("Payment succeeded for PaymentIntent: {} order: {}",
                 pi.getId(), payment.getOrder() != null ? payment.getOrder().getOrderNumber() : "N/A");
@@ -530,16 +567,19 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
         payment.setGatewayResponse(pi.toJson());
         paymentRepository.save(payment);
 
-        PaymentTransaction tx = PaymentTransaction.builder()
-                .payment(payment)
-                .transactionId(pi.getId())
-                .gateway("STRIPE")
-                .currency(payment.getCurrency())
-                .amount(payment.getAmount())
-                .status("FAILED")
-                .responsePayload(pi.toJson())
-                .build();
-        transactionRepository.save(tx);
+        if (!transactionRepository.existsByPaymentIdAndTransactionIdAndGateway(
+                payment.getId(), pi.getId(), "STRIPE")) {
+            PaymentTransaction tx = PaymentTransaction.builder()
+                    .payment(payment)
+                    .transactionId(pi.getId())
+                    .gateway("STRIPE")
+                    .currency(payment.getCurrency())
+                    .amount(payment.getAmount())
+                    .status("FAILED")
+                    .responsePayload(pi.toJson())
+                    .build();
+            transactionRepository.save(tx);
+        }
 
         log.info("Payment failed for PaymentIntent: {}", pi.getId());
         return payment;
@@ -554,18 +594,33 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
             return null;
         }
 
-        PaymentTransaction tx = PaymentTransaction.builder()
-                .payment(payment)
-                .transactionId(charge.getId())
-                .gateway("STRIPE")
-                .currency(payment.getCurrency())
-                .amount(charge.getAmountRefunded() != null
-                        ? BigDecimal.valueOf(charge.getAmountRefunded()).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)
-                        : payment.getAmount())
-                .status("REFUNDED")
-                .responsePayload(charge.toJson())
-                .build();
-        transactionRepository.save(tx);
+        if (!transactionRepository.existsByPaymentIdAndTransactionIdAndGateway(
+                payment.getId(), charge.getId(), "STRIPE")) {
+            PaymentTransaction tx = PaymentTransaction.builder()
+                    .payment(payment)
+                    .transactionId(charge.getId())
+                    .gateway("STRIPE")
+                    .currency(payment.getCurrency())
+                    .amount(charge.getAmountRefunded() != null
+                            ? BigDecimal.valueOf(charge.getAmountRefunded()).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)
+                            : payment.getAmount())
+                    .status("REFUNDED")
+                    .responsePayload(charge.toJson())
+                    .build();
+            transactionRepository.save(tx);
+        }
+
+        BigDecimal amountRefunded = charge.getAmountRefunded() != null
+                ? BigDecimal.valueOf(charge.getAmountRefunded()).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)
+                : payment.getAmount();
+        if (amountRefunded.compareTo(payment.getAmount()) >= 0 && payment.getStatus() != PaymentStatus.REFUNDED) {
+            payment.setStatus(PaymentStatus.REFUNDED);
+            paymentRepository.save(payment);
+
+            if (payment.getOrder() != null) {
+                orderService.markOrderRefunded(payment.getOrder().getId(), null, "Refunded via Stripe");
+            }
+        }
 
         log.info("Charge refunded for PaymentIntent: {}", paymentIntentId);
         return payment;
@@ -618,9 +673,13 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
 
             if (newStatus == PaymentStatus.COMPLETED && payment.getOrder() != null) {
                 Order order = payment.getOrder();
-                order.setStatus(OrderStatus.PROCESSING);
-                orderRepository.save(order);
-                log.info("Order {} status updated to PROCESSING via payment sync", order.getOrderNumber());
+                if (order.getStatus() == OrderStatus.PENDING || order.getStatus() == OrderStatus.PENDING_PAYMENT) {
+                    order.setStatus(OrderStatus.PROCESSING);
+                    orderRepository.save(order);
+                    log.info("Order {} status updated to PROCESSING via payment sync", order.getOrderNumber());
+                }
+            } else if (newStatus == PaymentStatus.CANCELLED && payment.getOrder() != null) {
+                orderService.markOrderCancelled(payment.getOrder().getId(), payment.getUserId(), "Payment cancelled by gateway");
             }
         }
     }

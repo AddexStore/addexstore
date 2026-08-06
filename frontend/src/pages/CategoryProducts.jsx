@@ -10,21 +10,10 @@ import ProductCard from '../components/ProductCard'
 import SkeletonLoader from '../components/SkeletonLoader'
 import EmptyState from '../components/EmptyState'
 import BackButton from '../components/BackButton'
+import SafeIcon from '../components/SafeIcon'
+import { isSvgMarkup } from '../utils/sanitizeSvg'
 
 const ITEMS_PER_PAGE = 12
-
-const SUBCATEGORY_ICONS = {
-  'T-Shirts': 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01',
-  Shirts: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',
-  Jeans: 'M14.5 3l-9 4M9.5 3l-9 4m18 0l-9 4m0 0l-9 4m9-4l9 4M3 7v12a2 2 0 002 2h14a2 2 0 002-2V7M8 7v10a2 2 0 002 2h4a2 2 0 002-2V7',
-  Hoodies: 'M12 2a6 6 0 00-6 6v3a6 6 0 0012 0V8a6 6 0 00-6-6zM4 13a8 8 0 0016 0M9 16l-2 4m8-4l2 4',
-  Jackets: 'M3 6l9-4 9 4v4a9 9 0 01-9 9 9 9 0 01-9-9V6zM12 6v13',
-  Sneakers: 'M4 16c.5-1 2-2 5-2 4 0 5 2 8 2 2 0 3.5-1 4-2M3 20c.5-1 2-2 5-2 4 0 5 2 8 2 2 0 3.5-1 4-2M2 24c.5-1 2-2 5-2 4 0 5 2 8 2 2 0 3.5-1 4-2',
-  'Formal Shoes': 'M4 12c.5-1 2-2 5-2 4 0 5 2 8 2 2 0 3.5-1 4-2M3 16c.5-1 2-2 5-2 4 0 5 2 8 2 2 0 3.5-1 4-2M2 20c.5-1 2-2 5-2 4 0 5 2 8 2 2 0 3.5-1 4-2M6 8l3-3 3 3',
-  Watches: 'M12 4a8 8 0 100 16 8 8 0 000-16zm0 4v4l2 2M10 2h4M11 22h2',
-  Wallets: 'M4 6h16v12H4V6zm2 4h12M6 14h4m-4 4h12',
-  Accessories: 'M12 8a4 4 0 100 8 4 4 0 000-8zm-8 4h2m14 0h2M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 0l1.41-1.41',
-}
 
 export default function CategoryProducts() {
   const { categoryName } = useParams()
@@ -255,7 +244,7 @@ export default function CategoryProducts() {
               className="w-full px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#C6A972] bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
               placeholder="Min"
             />
-            <span className="text-[var(--text-secondary)]">â€”</span>
+            <span className="text-[var(--text-secondary)]">—</span>
             <input
               type="number"
               value={priceRange[1]}
@@ -381,15 +370,11 @@ export default function CategoryProducts() {
                 className="bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-color)] hover:border-[#C6A972]/50 hover:-translate-y-1 transition-all duration-300 text-left group"
               >
                 <div className="w-12 h-12 rounded-full bg-[#C6A972]/10 flex items-center justify-center mb-4 group-hover:bg-[#C6A972]/20 transition-colors overflow-hidden">
-                  {sub.icon && sub.icon.trim().startsWith('<') ? (
-                    <span className="w-6 h-6 text-[#C6A972]" dangerouslySetInnerHTML={{ __html: sub.icon }} />
+                  {isSvgMarkup(sub.icon) ? (
+                    <SafeIcon icon={sub.icon} className="w-6 h-6 text-[#C6A972]" />
                   ) : sub.icon ? (
                     <img src={getAssetUrl(sub.icon)} alt={sub.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <svg className="w-6 h-6 text-[#C6A972]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-                      <path d={SUBCATEGORY_ICONS[sub.name] || 'M12 8a4 4 0 100 8 4 4 0 000-8zm-8 4h2m14 0h2M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 0l1.41-1.41'} />
-                    </svg>
-                  )}
+                  ) : null}
                 </div>
                 <h3 className="text-[var(--text-primary)] font-medium text-base mb-1">{sub.name}</h3>
                 <p className="text-[var(--text-secondary)] text-sm">{count} {count === 1 ? 'Product' : 'Products'}</p>

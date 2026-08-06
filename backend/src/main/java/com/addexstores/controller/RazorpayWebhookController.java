@@ -33,22 +33,34 @@ public class RazorpayWebhookController {
             payload = sb.toString();
         } catch (Exception e) {
             log.error("Failed to read webhook payload: {}", e.getMessage());
-            return ResponseEntity.ok("OK");
+            return ResponseEntity.badRequest().body("Invalid payload");
         }
 
         String signatureHeader = request.getHeader("X-Razorpay-Signature");
-        if (signatureHeader == null) {
+        if (signatureHeader == null || signatureHeader.isBlank()) {
             log.warn("Missing Razorpay webhook signature header");
-            return ResponseEntity.ok("OK");
+            return ResponseEntity.badRequest().body("Missing signature");
+        }
+
+        JSONObject event;
+        try {
+            event = razorpayPaymentService.verifyWebhook(payload, signatureHeader);
+        } catch (Exception e) {
+            log.error("Razorpay webhook signature verification failed: {}", e.getMessage());
+            return ResponseEntity.status(400).body("Signature verification failed");
+        }
+
+        if (event == null) {
+            log.error("Razorpay webhook verification returned no event");
+            return ResponseEntity.badRequest().body("Invalid event");
         }
 
         try {
-            JSONObject event = razorpayPaymentService.verifyWebhook(payload, signatureHeader);
-            if (event != null) {
-                razorpayPaymentService.processWebhookEvent(event);
-            }
+            razorpayPaymentService.processWebhookEvent(event);
+            log.info("Razorpay webhook {} processed successfully", event.optString("event"));
         } catch (Exception e) {
             log.error("Razorpay webhook processing failed: {}", e.getMessage());
+            return ResponseEntity.status(500).body("Event processing failed");
         }
 
         return ResponseEntity.ok("OK");

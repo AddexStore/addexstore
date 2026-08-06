@@ -18,13 +18,19 @@ public class ProductMapper {
     public static ProductResponse toProductResponse(Product product) {
         if (product == null) return null;
 
-        Integer discount = null;
-        if (product.getOriginalPrice() != null && product.getOriginalPrice().compareTo(BigDecimal.ZERO) > 0) {
+        Integer discount = product.getDiscountPercentage();
+        if (discount == null
+                && product.getOriginalPrice() != null
+                && product.getOriginalPrice().compareTo(BigDecimal.ZERO) > 0
+                && product.getPrice() != null) {
             discount = product.getOriginalPrice()
                     .subtract(product.getPrice())
                     .multiply(BigDecimal.valueOf(100))
                     .divide(product.getOriginalPrice(), 0, RoundingMode.HALF_UP)
                     .intValue();
+            if (discount < 0) {
+                discount = 0;
+            }
         }
 
         return ProductResponse.builder()
@@ -45,6 +51,7 @@ public class ProductMapper {
                 .isNewArrival(product.isNewArrival())
                 .isOnSale(product.isOnSale())
                 .saleEndDate(product.getSaleEndDate())
+                .active(product.isActive())
                 .category(product.getCategory() != null
                         ? CategoryMapper.toCategoryResponse(product.getCategory())
                         : null)

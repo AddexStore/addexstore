@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { orderService } from '../services/orderService'
 import { mapOrder } from '../services/mappers'
-import { formatPrice, formatDate } from '../utils/helpers'
+import { formatPrice, formatDate, getCurrencySymbol } from '../utils/helpers'
 import { ORDER_STATUS } from '../constants'
 import ImageWithFallback from '../components/ImageWithFallback'
 import EmptyState from '../components/EmptyState'
@@ -17,13 +17,24 @@ const STATUS_STEPS = [
 
 const STATUS_STYLES = {
   [ORDER_STATUS.PENDING]: 'bg-yellow-100 text-yellow-700',
+  [ORDER_STATUS.PENDING_PAYMENT]: 'bg-amber-100 text-amber-700',
   [ORDER_STATUS.PROCESSING]: 'bg-blue-100 text-blue-700',
   [ORDER_STATUS.SHIPPED]: 'bg-purple-100 text-purple-700',
   [ORDER_STATUS.DELIVERED]: 'bg-green-100 text-green-700',
   [ORDER_STATUS.CANCELLED]: 'bg-red-100 text-red-700',
+  [ORDER_STATUS.REFUNDED]: 'bg-gray-200 text-gray-700',
 }
 
-const TABS = ['All', ORDER_STATUS.PENDING, ORDER_STATUS.PROCESSING, ORDER_STATUS.SHIPPED, ORDER_STATUS.DELIVERED, ORDER_STATUS.CANCELLED]
+const TABS = [
+  'All',
+  ORDER_STATUS.PENDING,
+  ORDER_STATUS.PENDING_PAYMENT,
+  ORDER_STATUS.PROCESSING,
+  ORDER_STATUS.SHIPPED,
+  ORDER_STATUS.DELIVERED,
+  ORDER_STATUS.CANCELLED,
+  ORDER_STATUS.REFUNDED,
+]
 
 export default function Orders() {
   const { user } = useAuth()
@@ -55,7 +66,7 @@ export default function Orders() {
   }, [userOrders, activeTab])
 
   const getStepIndex = (status) => {
-    if (status === ORDER_STATUS.CANCELLED) return -1
+    if (status === ORDER_STATUS.CANCELLED || status === ORDER_STATUS.REFUNDED || status === ORDER_STATUS.PENDING_PAYMENT) return -1
     return STATUS_STEPS.indexOf(status)
   }
 
@@ -139,7 +150,7 @@ export default function Orders() {
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[order.status] || 'bg-[var(--bg-card)] text-[var(--text-secondary)]'}`}>
                             {order.status}
                           </span>
-                          <span className="text-sm font-semibold text-[var(--text-primary)]">{formatPrice(order.totalAmount)}</span>
+                          <span className="text-sm font-semibold text-[var(--text-primary)]">{formatPrice(order.totalAmount, getCurrencySymbol(order.currency))}</span>
                         </div>
                       </div>
 
@@ -175,7 +186,7 @@ export default function Orders() {
                     } overflow-hidden`}
                   >
                     <div className="border-t border-[var(--border-color)] px-5 sm:px-6 py-5 space-y-6">
-                      {order.status !== ORDER_STATUS.CANCELLED && (
+                      {STATUS_STEPS.includes(order.status) && (
                         <div>
                           <h4 className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-4">Order Progress</h4>
                           <div className="relative">
@@ -217,12 +228,30 @@ export default function Orders() {
                         </div>
                       )}
 
+                      {order.status === ORDER_STATUS.PENDING_PAYMENT && (
+                        <div className="flex items-center gap-2 px-4 py-3 bg-amber-100/70 rounded-xl">
+                          <svg className="w-4 h-4 text-amber-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-sm text-amber-800">This order is awaiting payment confirmation.</span>
+                        </div>
+                      )}
+
                       {order.status === ORDER_STATUS.CANCELLED && (
                         <div className="flex items-center gap-2 px-4 py-3 bg-[#C53030]/10 rounded-xl">
                           <svg className="w-4 h-4 text-[#C53030] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                           </svg>
                           <span className="text-sm text-[#C53030]">This order has been cancelled.</span>
+                        </div>
+                      )}
+
+                      {order.status === ORDER_STATUS.REFUNDED && (
+                        <div className="flex items-center gap-2 px-4 py-3 bg-gray-200/70 rounded-xl">
+                          <svg className="w-4 h-4 text-gray-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                          </svg>
+                          <span className="text-sm text-gray-700">This order has been refunded.</span>
                         </div>
                       )}
 
@@ -242,7 +271,7 @@ export default function Orders() {
                                   <span>Qty: {item.quantity}</span>
                                 </div>
                               </div>
-                              <span className="text-sm font-medium text-[var(--text-primary)] whitespace-nowrap">{formatPrice(item.price)}</span>
+                              <span className="text-sm font-medium text-[var(--text-primary)] whitespace-nowrap">{formatPrice(item.price, getCurrencySymbol(order.currency))}</span>
                             </div>
                           ))}
                         </div>
@@ -251,15 +280,23 @@ export default function Orders() {
                       <div className="border-t border-[var(--border-color)] pt-4 space-y-1">
                         <div className="flex justify-between items-center">
                           <span className="text-xs text-[var(--text-secondary)]">Subtotal</span>
-                          <span className="text-sm text-[var(--text-primary)]">{formatPrice(order.totalAmount)}</span>
+                          <span className="text-sm text-[var(--text-primary)]">{formatPrice(order.subtotal, getCurrencySymbol(order.currency))}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-[var(--text-secondary)]">Tax</span>
+                          <span className="text-sm text-[var(--text-primary)]">{formatPrice(order.tax, getCurrencySymbol(order.currency))}</span>
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-xs text-[var(--text-secondary)]">Shipping</span>
-                          <span className="text-sm text-[#2F855A] font-medium">Free</span>
+                          {Number(order.shippingCost) > 0 ? (
+                            <span className="text-sm text-[var(--text-primary)]">{formatPrice(order.shippingCost, getCurrencySymbol(order.currency))}</span>
+                          ) : (
+                            <span className="text-sm text-[#2F855A] font-medium">Free</span>
+                          )}
                         </div>
                         <div className="flex justify-between items-center pt-2 border-t border-[var(--border-color)] mt-2">
                           <span className="text-sm font-semibold text-[var(--text-primary)]">Total</span>
-                          <span className="text-base font-bold text-[var(--text-primary)]">{formatPrice(order.totalAmount)}</span>
+                          <span className="text-base font-bold text-[var(--text-primary)]">{formatPrice(order.totalAmount, getCurrencySymbol(order.currency))}</span>
                         </div>
                       </div>
 

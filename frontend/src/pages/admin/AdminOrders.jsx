@@ -2,17 +2,31 @@ import { useState, useMemo, useEffect, Fragment } from 'react'
 import { orderService } from '../../services/orderService'
 import { getAssetUrl } from '../../services/api'
 import { useToast } from '../../context/ToastContext'
-import { formatPrice } from '../../utils/helpers'
+import { formatPrice, formatDate, getCurrencySymbol } from '../../utils/helpers'
 import BackButton from '../../components/BackButton'
 
-const TABS = ['All', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled']
+const PAGE_SIZE = 20
+
+const TABS = ['All', 'Pending', 'Pending Payment', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Refunded']
 
 const statusColors = {
   Pending: 'bg-yellow-500/20 text-yellow-600',
+  'Pending Payment': 'bg-amber-500/20 text-amber-600',
   Processing: 'bg-blue-500/20 text-blue-400',
   Shipped: 'bg-purple-500/20 text-purple-400',
   Delivered: 'bg-green-500/20 text-green-600',
   Cancelled: 'bg-red-500/20 text-red-600',
+  Refunded: 'bg-gray-500/20 text-gray-400',
+}
+
+const VALID_TRANSITIONS = {
+  Pending: ['Pending Payment', 'Processing', 'Cancelled'],
+  'Pending Payment': ['Processing', 'Cancelled'],
+  Processing: ['Shipped', 'Cancelled', 'Refunded'],
+  Shipped: ['Delivered', 'Cancelled', 'Refunded'],
+  Delivered: ['Refunded'],
+  Cancelled: [],
+  Refunded: [],
 }
 
 const toDisplayStatus = (status = '') =>
@@ -39,6 +53,7 @@ const mapOrder = (order) => ({
   tax: Number(order.tax || 0),
   shippingCost: Number(order.shippingCost || 0),
   totalAmount: Number(order.totalAmount || 0),
+  currency: order.currency || 'USD',
   status: toDisplayStatus(order.status || 'PENDING'),
   shippingAddress: order.shippingAddress || {},
   paymentMethod: order.paymentMethod || '',
@@ -52,35 +67,44 @@ export default function AdminOrders() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('All')
   const [search, setSearch] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [page, setPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
   const [expandedId, setExpandedId] = useState(null)
 
-  const fetchOrders = async () => {
-    try {
-      setLoading(true)
-      const status = activeTab === 'All' ? undefined : toApiStatus(activeTab)
-      const res = await orderService.getAdminOrders({ page: 0, size: 100, status })
-      setOrders((res.data?.content || []).map(mapOrder))
-    } catch (e) {
-      showToast(e.message || 'Failed to load orders', 'error')
-    } finally {
-      setLoading(false)
-    }
-  }
+  useEffect(() => {
+    const timer = setTimeout(() => setSearchTerm(search.trim()), 300)
+    return () => clearTimeout(timer)
+  }, [search])
 
   useEffect(() => {
-    fetchOrders()
-  }, [activeTab])
+    setPage(0)
+  }, [activeTab, searchTerm])
 
-  const filtered = useMemo(() => {
-    if (!search) return orders
-    const q = search.toLowerCase()
-    return orders.filter((order) =>
-      String(order.orderNumber).toLowerCase().includes(q) ||
-      String(order.id).toLowerCase().includes(q) ||
-      order.customerName.toLowerCase().includes(q) ||
-      order.customerEmail.toLowerCase().includes(q)
-    )
-  }, [orders, search])
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true)
+        const status = activeTab === 'All' ? undefined : toApiStatus(activeTab)
+        const res = await orderService.getAdminOrders({
+          page,
+          size: PAGE_SIZE,
+          status,
+          search: searchTerm || undefined,
+        })
+        const data = res.data || {}
+        setOrders((data.content || []).map(mapOrder))
+        setTotalPages(data.totalPages || 0)
+        setTotalElements(data.totalElements || 0)
+      } catch (e) {
+        showToast(e.message || 'Failed to load orders', 'error')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchOrders()
+  }, [activeTab, searchTerm, page])
 
   const handleStatusChange = async (orderId, newStatus) => {
     try {
@@ -93,14 +117,7 @@ export default function AdminOrders() {
     }
   }
 
-  const statusCounts = useMemo(() => {
-    const counts = { All: orders.length }
-    TABS.filter(t => t !== 'All').forEach(tab => {
-      const apiStatus = toApiStatus(tab)
-      counts[tab] = orders.filter(o => o.status === tab).length
-    })
-    return counts
-  }, [orders])
+  const renderedOrders = useMemo(() => orders, [orders])
 
   return (
     <div className="h-full flex flex-col gap-2 py-3">
@@ -111,10 +128,10 @@ export default function AdminOrders() {
         </div>
         <input
           type="text"
-          placeholder="Search ID or customer..."
+          placeholder="Search order or customer..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-48 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[#C6A972]"
+          className="w-52 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[#C6A972]"
         />
       </div>
 
@@ -133,9 +150,6 @@ export default function AdminOrders() {
             }`}
           >
             {tab}
-            {tab !== 'All' && (
-              <span className="ml-1 text-[10px] opacity-60">({statusCounts[tab]})</span>
-            )}
           </button>
         ))}
       </div>
@@ -159,8 +173,9 @@ export default function AdminOrders() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((order) => {
+                {renderedOrders.map((order) => {
                   const isExpanded = expandedId === order.id
+                  const transitions = VALID_TRANSITIONS[order.status] || []
                   return (
                     <Fragment key={order.id}>
                       <tr
@@ -170,25 +185,34 @@ export default function AdminOrders() {
                         <td className="py-1.5 px-2 text-[var(--text-primary)] font-mono text-[10px]">{order.orderNumber}</td>
                         <td className="py-1.5 px-2 text-[var(--text-secondary)]">{order.customerName}</td>
                         <td className="py-1.5 px-2 text-center text-[var(--text-secondary)]">{order.items.length}</td>
-                        <td className="py-1.5 px-2 text-right text-[var(--text-primary)]">{formatPrice(order.totalAmount)}</td>
+                        <td className="py-1.5 px-2 text-right text-[var(--text-primary)]">{formatPrice(order.totalAmount, getCurrencySymbol(order.currency))}</td>
                         <td className="py-1.5 px-2">
-                          <select
-                            value={order.status}
-                            onChange={(e) => {
-                              e.stopPropagation()
-                              handleStatusChange(order.id, e.target.value)
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                            className={`px-1.5 py-0.5 rounded text-[10px] font-medium border cursor-pointer focus:outline-none ${
-                              statusColors[order.status] || 'bg-gray-500/20 text-gray-400'
-                            }`}
-                          >
-                            {['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'].map((s) => (
-                              <option key={s} value={s} className="bg-[var(--bg-card)] text-[var(--text-secondary)]">
-                                {s}
+                          {transitions.length === 0 ? (
+                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${statusColors[order.status] || 'bg-gray-500/20 text-gray-400'}`}>
+                              {order.status}
+                            </span>
+                          ) : (
+                            <select
+                              value={order.status}
+                              onChange={(e) => {
+                                e.stopPropagation()
+                                handleStatusChange(order.id, e.target.value)
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-medium border cursor-pointer focus:outline-none ${
+                                statusColors[order.status] || 'bg-gray-500/20 text-gray-400'
+                              }`}
+                            >
+                              <option value={order.status} disabled className="bg-[var(--bg-card)] text-[var(--text-secondary)]">
+                                {order.status}
                               </option>
-                            ))}
-                          </select>
+                              {transitions.map((s) => (
+                                <option key={s} value={s} className="bg-[var(--bg-card)] text-[var(--text-secondary)]">
+                                  {s}
+                                </option>
+                              ))}
+                            </select>
+                          )}
                         </td>
                         <td className="py-1.5 px-2 text-right">
                           <button
@@ -226,14 +250,26 @@ export default function AdminOrders() {
                                     <div className="flex-1 min-w-0">
                                       <p className="text-[var(--text-primary)] truncate">{item.name}</p>
                                       <p className="text-[var(--text-secondary)] text-[10px]">
-                                        x{item.quantity} @ {formatPrice(item.price)}
+                                        x{item.quantity} @ {formatPrice(item.price, getCurrencySymbol(order.currency))}
                                       </p>
                                     </div>
                                   </div>
                                 ))}
                                 <div className="flex justify-between pt-2 mt-1 border-t border-[var(--border-color)]">
+                                  <span className="text-[var(--text-secondary)]">Subtotal</span>
+                                  <span className="text-[var(--text-primary)]">{formatPrice(order.subtotal, getCurrencySymbol(order.currency))}</span>
+                                </div>
+                                <div className="flex justify-between pt-1">
+                                  <span className="text-[var(--text-secondary)]">Tax</span>
+                                  <span className="text-[var(--text-primary)]">{formatPrice(order.tax, getCurrencySymbol(order.currency))}</span>
+                                </div>
+                                <div className="flex justify-between pt-1">
+                                  <span className="text-[var(--text-secondary)]">Shipping</span>
+                                  <span className="text-[var(--text-primary)]">{formatPrice(order.shippingCost, getCurrencySymbol(order.currency))}</span>
+                                </div>
+                                <div className="flex justify-between pt-2 mt-1 border-t border-[var(--border-color)]">
                                   <span className="text-[var(--text-secondary)]">Total</span>
-                                  <span className="text-[var(--text-primary)] font-semibold">{formatPrice(order.totalAmount)}</span>
+                                  <span className="text-[var(--text-primary)] font-semibold">{formatPrice(order.totalAmount, getCurrencySymbol(order.currency))}</span>
                                 </div>
                               </div>
                               <div>
@@ -242,6 +278,8 @@ export default function AdminOrders() {
                                 <p className="text-[var(--text-secondary)] text-[10px]">{order.customerEmail}</p>
                                 <p className="text-[var(--text-secondary)] mt-2 mb-1 font-medium">Payment</p>
                                 <p className="text-[var(--text-primary)]">{order.paymentMethod || 'Not available'}</p>
+                                <p className="text-[var(--text-secondary)] mt-2 mb-1 font-medium">Placed</p>
+                                <p className="text-[var(--text-primary)] text-[10px]">{formatDate(order.createdAt)}</p>
                                 <p className="text-[var(--text-secondary)] mt-2 mb-1 font-medium">Shipping</p>
                                 <p className="text-[var(--text-primary)]">{order.shippingAddress.street || 'Not available'}</p>
                                 <p className="text-[var(--text-secondary)] text-[10px]">
@@ -260,8 +298,35 @@ export default function AdminOrders() {
           </div>
         )}
 
-        {!loading && filtered.length === 0 && (
+        {!loading && renderedOrders.length === 0 && (
           <div className="text-center py-6 text-[var(--text-secondary)] text-xs">No orders found</div>
+        )}
+
+        {!loading && totalPages > 0 && (
+          <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-t border-[var(--border-color)]">
+            <span className="text-[10px] text-[var(--text-secondary)]">
+              {totalElements} order{totalElements === 1 ? '' : 's'}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="px-2 py-1 rounded text-[10px] font-medium bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-primary)] disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <span className="text-[10px] text-[var(--text-secondary)]">
+                Page {page + 1} of {Math.max(1, totalPages)}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}
+                className="px-2 py-1 rounded text-[10px] font-medium bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-primary)] disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>

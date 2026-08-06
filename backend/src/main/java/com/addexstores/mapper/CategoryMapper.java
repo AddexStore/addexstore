@@ -21,6 +21,7 @@ public class CategoryMapper {
                 .icon(category.getIcon())
                 .image(category.getImage())
                 .productCount(category.getProductCount())
+                .active(category.isActive())
                 .subCategories(category.getSubCategories() != null
                         ? category.getSubCategories().stream()
                             .map(CategoryMapper::toSubCategoryResponse)

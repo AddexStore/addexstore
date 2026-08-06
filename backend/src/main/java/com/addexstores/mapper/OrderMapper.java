@@ -37,6 +37,7 @@ public class OrderMapper {
                 .tax(order.getTax())
                 .shippingCost(order.getShippingCost())
                 .totalAmount(order.getTotalAmount())
+                .currency(order.getCurrency())
                 .status(order.getStatus())
                 .shippingAddress(ShippingAddressMapper.toShippingAddress(order))
                 .paymentMethod(order.getPaymentMethod())
@@ -47,6 +48,7 @@ public class OrderMapper {
                             .collect(Collectors.toList())
                         : Collections.emptyList())
                 .createdAt(order.getCreatedAt())
+                .updatedAt(order.getUpdatedAt())
                 .build();
     }
 

@@ -34,4 +34,12 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
            "p.stripePaymentIntentId LIKE %:search% OR p.gatewayOrderId LIKE %:search% OR " +
            "p.customerEmail LIKE %:search%) ORDER BY p.createdAt DESC")
     Page<Payment> searchWithOrder(@Param("search") String search, Pageable pageable);
+
+    @Query("SELECT p FROM Payment p LEFT JOIN FETCH p.order WHERE p.status = :status AND (" +
+           "p.order.orderNumber LIKE %:search% OR " +
+           "p.stripePaymentIntentId LIKE %:search% OR p.gatewayOrderId LIKE %:search% OR " +
+           "p.customerEmail LIKE %:search%) ORDER BY p.createdAt DESC")
+    Page<Payment> searchWithOrderAndStatus(@Param("search") String search,
+                                           @Param("status") PaymentStatus status,
+                                           Pageable pageable);
 }

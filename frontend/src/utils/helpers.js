@@ -4,6 +4,12 @@ export const formatPrice = (price, symbol) => {
   return sym + Number(price).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 };
 
+export const getCurrencySymbol = (currency) => {
+  const symbols = { USD: '$', EUR: '€', GBP: '£', AED: 'د.إ', INR: '₹' };
+  const code = (currency || 'USD').toUpperCase();
+  return symbols[code] || `${code} `;
+};
+
 export const getDiscountPrice = (price, discount) => {
   if (!discount || discount <= 0) return price;
   const discounted = price - (price * discount) / 100;

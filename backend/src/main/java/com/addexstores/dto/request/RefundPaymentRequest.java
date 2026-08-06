@@ -19,6 +19,7 @@ public class RefundPaymentRequest {
     @NotNull
     private Long paymentId;
 
+    @Positive(message = "Refund amount must be positive")
     private BigDecimal amount;
 
     @NotBlank

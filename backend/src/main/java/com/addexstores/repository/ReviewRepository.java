@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
-    Page<Review> findByProductId(Long productId, Pageable pageable);
+    Page<Review> findByProductIdAndApprovedTrue(Long productId, Pageable pageable);
 
     Page<Review> findByApproved(Boolean approved, Pageable pageable);
 

@@ -6,20 +6,14 @@ import { useToast } from '../context/ToastContext'
 import { useRecentlyViewed } from '../hooks/useRecentlyViewed'
 import { productService } from '../services/productService'
 import { categoryService } from '../services/categoryService'
+import { reviewService } from '../services/reviewService'
 import { mapProduct, mapCategory } from '../services/mappers'
-import { formatPrice, getDiscountPrice, formatDate } from '../utils/helpers'
+import { formatPrice, formatDate } from '../utils/helpers'
 import { getAssetUrl } from '../services/api'
 import ImageWithFallback from '../components/ImageWithFallback'
 import StarRating from '../components/StarRating'
 import QuantitySelector from '../components/QuantitySelector'
 import ProductCard from '../components/ProductCard'
-
-const mockReviews = [
-  { id: 1, user: 'James W.', rating: 5, date: '2025-12-15T10:00:00Z', text: 'Absolutely stunning piece. The craftsmanship is impeccable and it exceeded all my expectations.', verified: true },
-  { id: 2, user: 'Sophia L.', rating: 4, date: '2025-12-10T14:30:00Z', text: 'Beautiful product with amazing quality. Shipping was fast and packaging was elegant.', verified: true },
-  { id: 3, user: 'Oliver C.', rating: 5, date: '2025-11-28T09:15:00Z', text: 'Worth every penny. The attention to detail is remarkable. Will definitely purchase again.', verified: true },
-  { id: 4, user: 'Isabella R.', rating: 4, date: '2025-11-20T16:45:00Z', text: 'Lovely addition to my collection. Slightly different shade than expected but still gorgeous.', verified: false },
-]
 
 export default function ProductDetails() {
   const { id } = useParams()
@@ -32,20 +26,34 @@ export default function ProductDetails() {
   const [product, setProduct] = useState(null)
   const [categories, setCategories] = useState([])
   const [allProducts, setAllProducts] = useState([])
+  const [reviews, setReviews] = useState([])
   const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
 
   useEffect(() => {
     setLoading(true)
+    setNotFound(false)
     const numId = Number(id)
     Promise.all([
-      productService.getProducts({ page: 0, size: 50 }).then((r) => (r.content || r.data?.content || r.data || []).map(mapProduct)),
-      categoryService.getAll().then((r) => (r.data || []).map(mapCategory)),
-    ]).then(([prods, cats]) => {
+      productService.getProduct(numId).then((r) => mapProduct(r.data)).catch(() => null),
+      reviewService.getReviews(numId, 0, 20).then((r) => (r.data?.content || r.content || []).map((rv) => ({
+        id: rv.id,
+        user: rv.userName || 'Customer',
+        avatar: rv.userAvatar || '',
+        rating: rv.rating,
+        date: rv.createdAt,
+        text: rv.comment,
+        verified: true,
+      }))).catch(() => []),
+      productService.getProducts({ page: 0, size: 50 }).then((r) => (r.content || r.data?.content || r.data || []).map(mapProduct)).catch(() => []),
+      categoryService.getAll().then((r) => (r.data || []).map(mapCategory)).catch(() => []),
+    ]).then(([p, rv, prods, cats]) => {
+      setProduct(p)
+      setReviews(rv)
       setAllProducts(prods)
       setCategories(cats)
-      const found = prods.find((p) => p.id === numId || p._id === id) || null
-      setProduct(found)
-    }).catch(() => {}).finally(() => setLoading(false))
+      setNotFound(!p)
+    }).finally(() => setLoading(false))
   }, [id])
 
   const category = categories.find((c) => c.name === product?.category)
@@ -72,7 +80,7 @@ export default function ProductDetails() {
 
   if (loading) return null
 
-  if (!product) {
+  if (!product || notFound) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center px-4">
         <div className="text-center">
@@ -96,10 +104,9 @@ export default function ProductDetails() {
 
   const inWishlist = isInWishlist(product.id)
   const hasDiscount = product.discountPercentage > 0
-  const discountedPrice = getDiscountPrice(product.price, product.discountPercentage)
+  const hasCompareAt = product.originalPrice && Number(product.originalPrice) > Number(product.price)
   const fallbackImage = '/assets/placeholders/product.svg'
-  const mainImage = getAssetUrl(product.image) || fallbackImage
-  const productImages = [mainImage, mainImage, mainImage, mainImage]
+  const gallery = product.gallery && product.gallery.length ? product.gallery : [fallbackImage]
 
   const handleColorSelect = (color) => {
     setSelectedColor(color)
@@ -144,8 +151,7 @@ export default function ProductDetails() {
           <p><span className="font-medium text-[var(--text-primary)]">Brand:</span> {product.brand}</p>
           <p><span className="font-medium text-[var(--text-primary)]">Category:</span> {product.category}</p>
           <p><span className="font-medium text-[var(--text-primary)]">Subcategory:</span> {product.subCategory}</p>
-          <p><span className="font-medium text-[var(--text-primary)]">SKU:</span> ADX-{String(product.id).padStart(4, '0')}</p>
-          <p><span className="font-medium text-[var(--text-primary)]">Material:</span> Premium quality materials</p>
+          <p><span className="font-medium text-[var(--text-primary)]">SKU:</span> {product.sku || '—'}</p>
         </div>
       ),
     },
@@ -206,7 +212,7 @@ export default function ProductDetails() {
               }}
             >
               <ImageWithFallback
-                src={productImages[selectedImage]}
+                src={getAssetUrl(gallery[selectedImage])}
                 alt={product.name}
                 className="w-full h-full object-cover"
               />
@@ -218,19 +224,21 @@ export default function ProductDetails() {
             )}
           </div>
 
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-            {productImages.map((img, index) => (
-              <button
-                key={index}
-                onClick={() => setSelectedImage(index)}
-                className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 flex-shrink-0 transition ${
-                  selectedImage === index ? 'border-[#C6A972]' : 'border-[var(--border-color)] hover:border-[#C6A972]'
-                }`}
-              >
-                <ImageWithFallback src={img} alt={`${product.name} ${index + 1}`} className="w-full h-full object-cover" />
-              </button>
-            ))}
-          </div>
+          {gallery.length > 1 && (
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+              {gallery.map((img, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedImage(index)}
+                  className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 flex-shrink-0 transition ${
+                    selectedImage === index ? 'border-[#C6A972]' : 'border-[var(--border-color)] hover:border-[#C6A972]'
+                  }`}
+                >
+                  <ImageWithFallback src={getAssetUrl(img)} alt={`${product.name} ${index + 1}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>
@@ -249,17 +257,17 @@ export default function ProductDetails() {
 
           <div className="flex items-center gap-3 mb-6">
             <span className="text-2xl font-bold text-[var(--text-primary)]">
-              {formatPrice(discountedPrice)}
+              {formatPrice(product.price)}
             </span>
+            {hasCompareAt && (
+              <span className="text-lg text-[var(--text-secondary)] line-through">
+                {formatPrice(product.originalPrice)}
+              </span>
+            )}
             {hasDiscount && (
-              <>
-                <span className="text-lg text-[var(--text-secondary)] line-through">
-                  {formatPrice(product.price)}
-                </span>
-                <span className="px-2 py-0.5 bg-[#C53030]/10 text-[#C53030] text-xs font-semibold rounded-full">
-                  Save {product.discountPercentage}%
-                </span>
-              </>
+              <span className="px-2 py-0.5 bg-[#C53030]/10 text-[#C53030] text-xs font-semibold rounded-full">
+                Save {product.discountPercentage}%
+              </span>
             )}
           </div>
 
@@ -426,28 +434,36 @@ export default function ProductDetails() {
             </div>
           </div>
           <div className="flex-1 space-y-5">
-            {mockReviews.map((review) => (
-              <div key={review.id} className="border-b border-[var(--border-color)] pb-5 last:border-0">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-[var(--bg-card)] flex items-center justify-center text-xs font-semibold text-[var(--text-secondary)]">
-                      {review.user.charAt(0)}
+            {reviews.length === 0 ? (
+              <p className="text-sm text-[var(--text-secondary)]">No reviews yet. Be the first to review this product.</p>
+            ) : (
+              reviews.map((review) => (
+                <div key={review.id} className="border-b border-[var(--border-color)] pb-5 last:border-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-[var(--bg-card)] flex items-center justify-center text-xs font-semibold text-[var(--text-secondary)] overflow-hidden">
+                        {review.avatar ? (
+                          <img src={getAssetUrl(review.avatar)} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          review.user.charAt(0)
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-[var(--text-primary)]">{review.user}</span>
+                        {review.verified && (
+                          <span className="ml-2 px-1.5 py-0.5 bg-[#2F855A]/10 text-[#2F855A] text-[10px] font-medium rounded">
+                            Verified
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-sm font-medium text-[var(--text-primary)]">{review.user}</span>
-                      {review.verified && (
-                        <span className="ml-2 px-1.5 py-0.5 bg-[#2F855A]/10 text-[#2F855A] text-[10px] font-medium rounded">
-                          Verified
-                        </span>
-                      )}
-                    </div>
+                    <span className="text-xs text-[var(--text-secondary)]">{formatDate(review.date)}</span>
                   </div>
-                  <span className="text-xs text-[var(--text-secondary)]">{formatDate(review.date)}</span>
+                  <StarRating rating={review.rating} />
+                  <p className="text-sm text-[var(--text-secondary)] mt-2">{review.text}</p>
                 </div>
-                <StarRating rating={review.rating} />
-                <p className="text-sm text-[var(--text-secondary)] mt-2">{review.text}</p>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -475,9 +491,9 @@ export default function ProductDetails() {
       <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-[var(--bg-secondary)] border-t border-[var(--border-color)] px-4 py-3 shadow-lg shadow-black/10">
         <div className="flex items-center justify-between mb-2">
           <div>
-            <span className="text-lg font-bold text-[var(--text-primary)]">{formatPrice(discountedPrice)}</span>
-            {hasDiscount && (
-              <span className="ml-2 text-sm text-[var(--text-secondary)] line-through">{formatPrice(product.price)}</span>
+            <span className="text-lg font-bold text-[var(--text-primary)]">{formatPrice(product.price)}</span>
+            {hasCompareAt && (
+              <span className="ml-2 text-sm text-[var(--text-secondary)] line-through">{formatPrice(product.originalPrice)}</span>
             )}
           </div>
         </div>

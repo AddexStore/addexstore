@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { categoryService } from '../services/categoryService'
 import { getAssetUrl } from '../services/api'
 import { mapCategory } from '../services/mappers'
+import { isSvgMarkup } from '../utils/sanitizeSvg'
+import SafeIcon from '../components/SafeIcon'
 import BackButton from '../components/BackButton'
 
 export default function CategoriesPage() {
@@ -17,17 +19,12 @@ export default function CategoriesPage() {
   }, [])
 
   const renderIcon = (icon, alt) => {
-    if (icon && icon.trim().startsWith('<')) {
-      return <span dangerouslySetInnerHTML={{ __html: icon }} className="w-10 h-10 sm:w-12 sm:h-12" />
+    if (isSvgMarkup(icon)) {
+      return <SafeIcon icon={icon} className="w-10 h-10 sm:w-12 sm:h-12" />
     } else if (icon) {
       return <img src={getAssetUrl(icon)} alt={alt} className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover" />
-    } else {
-      return (
-        <svg className="w-10 h-10 sm:w-12 sm:h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-        </svg>
-      )
     }
+    return null
   }
 
   return (

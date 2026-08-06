@@ -2,6 +2,7 @@ package com.addexstores.controller;
 
 import com.addexstores.dto.response.ApiResponse;
 import com.addexstores.dto.response.PaymentResponse;
+import com.addexstores.security.CurrentUser;
 import com.addexstores.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,7 +19,9 @@ public class PaymentController {
 
     @GetMapping("/order/{orderId}")
     @Operation(summary = "Get payment by order ID")
-    public ApiResponse<PaymentResponse> getPaymentByOrderId(@PathVariable Long orderId) {
-        return ApiResponse.success(paymentService.getPaymentByOrderId(orderId));
+    public ApiResponse<PaymentResponse> getPaymentByOrderId(
+            @CurrentUser Long userId,
+            @PathVariable Long orderId) {
+        return ApiResponse.success(paymentService.getPaymentByOrderId(orderId, userId));
     }
 }

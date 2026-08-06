@@ -6,7 +6,6 @@ import com.addexstores.dto.request.RefreshTokenRequest;
 import com.addexstores.dto.request.SignupRequest;
 import com.addexstores.dto.request.UpdateProfileRequest;
 import com.addexstores.dto.response.AuthResponse;
-import com.addexstores.dto.response.PagedResponse;
 import com.addexstores.dto.response.UserResponse;
 
 public interface AuthService {
@@ -24,8 +23,4 @@ public interface AuthService {
     void changePassword(Long userId, ChangePasswordRequest request);
 
     void logout(Long userId, String accessToken);
-
-    PagedResponse<UserResponse> getAllUsers(int page, int size);
-
-    UserResponse getUserById(Long id);
 }

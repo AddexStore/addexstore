@@ -6,7 +6,6 @@ import com.addexstores.dto.request.RefreshTokenRequest;
 import com.addexstores.dto.request.SignupRequest;
 import com.addexstores.dto.request.UpdateProfileRequest;
 import com.addexstores.dto.response.AuthResponse;
-import com.addexstores.dto.response.PagedResponse;
 import com.addexstores.dto.response.UserResponse;
 import com.addexstores.entity.User;
 import com.addexstores.exception.BadRequestException;
@@ -14,9 +13,6 @@ import com.addexstores.exception.ResourceNotFoundException;
 import com.addexstores.exception.UnauthorizedException;
 import com.addexstores.mapper.UserMapper;
 import com.addexstores.repository.UserRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import java.util.List;
 
 import com.addexstores.security.JwtTokenProvider;
 import com.addexstores.security.TokenRevocationService;
@@ -183,30 +179,5 @@ public class AuthServiceImpl implements AuthService {
         }
         tokenRevocationService.revokeAllUserTokens(userId);
         log.info("User logged out: {}", userId);
-    }
-
-    @Override
-    public PagedResponse<UserResponse> getAllUsers(int page, int size) {
-        Page<User> userPage = userRepository.findAll(PageRequest.of(page, size));
-        List<UserResponse> users = userPage.getContent().stream()
-                .map(UserMapper::toUserResponse)
-                .toList();
-
-        return PagedResponse.<UserResponse>builder()
-                .content(users)
-                .page(userPage.getNumber())
-                .size(userPage.getSize())
-                .totalElements(userPage.getTotalElements())
-                .totalPages(userPage.getTotalPages())
-                .last(userPage.isLast())
-                .first(userPage.isFirst())
-                .build();
-    }
-
-    @Override
-    public UserResponse getUserById(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User", id));
-        return UserMapper.toUserResponse(user);
     }
 }

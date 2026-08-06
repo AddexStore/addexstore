@@ -20,5 +20,6 @@ public class CategoryResponse {
     private String icon;
     private String image;
     private int productCount;
+    private Boolean active;
     private List<SubCategoryResponse> subCategories;
 }

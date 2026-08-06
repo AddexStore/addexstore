@@ -3,6 +3,7 @@ package com.addexstores.service.impl;
 import com.addexstores.dto.response.PaymentResponse;
 import com.addexstores.entity.Payment;
 import com.addexstores.exception.ResourceNotFoundException;
+import com.addexstores.exception.UnauthorizedException;
 import com.addexstores.repository.PaymentRepository;
 import com.addexstores.service.PaymentService;
 import lombok.RequiredArgsConstructor;
@@ -17,9 +18,14 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
 
     @Override
-    public PaymentResponse getPaymentByOrderId(Long orderId) {
+    public PaymentResponse getPaymentByOrderId(Long orderId, Long userId) {
         Payment payment = paymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment", "orderId", String.valueOf(orderId)));
+
+        if (!payment.getUserId().equals(userId)) {
+            throw new UnauthorizedException("Payment does not belong to this user");
+        }
+
         return PaymentResponse.builder()
                 .id(payment.getId())
                 .orderId(payment.getOrder() != null ? payment.getOrder().getId() : null)

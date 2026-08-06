@@ -8,8 +8,9 @@ public interface ProductService {
 
     PagedResponse<ProductResponse> getAllProducts(int page, int size, String sort, Long category,
                                                   Long subcategory, String brand, Double minPrice,
-                                                  Double maxPrice, Boolean featured, Boolean trending,
-                                                  Boolean newArrival, Boolean onSale, String search);
+                                                  Double maxPrice, String stockStatus, Boolean featured,
+                                                  Boolean trending, Boolean newArrival, Boolean onSale,
+                                                  String search);
 
     ProductResponse getProductById(Long id);
 

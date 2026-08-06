@@ -15,9 +15,8 @@ export default function AdminLogin() {
     e.preventDefault()
     setLoading(true)
     try {
-      await login(email, password)
-      const user = JSON.parse(localStorage.getItem('sifr_user'))
-      if (user?.role === 'admin') {
+      const loggedInUser = await login(email, password)
+      if (loggedInUser?.role === 'admin') {
         showToast('Welcome to Admin Dashboard', 'success')
         navigate('/admin/dashboard')
       } else {

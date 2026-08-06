@@ -20,5 +20,7 @@ public class UserResponse {
     private String phone;
     private String avatar;
     private RoleType role;
+    private boolean blocked;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

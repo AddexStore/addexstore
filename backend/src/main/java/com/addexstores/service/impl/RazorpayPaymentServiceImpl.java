@@ -15,11 +15,14 @@ import com.addexstores.enums.PaymentStatus;
 import com.addexstores.exception.BadRequestException;
 import com.addexstores.exception.PaymentGatewayException;
 import com.addexstores.exception.ResourceNotFoundException;
+import com.addexstores.exception.UnauthorizedException;
 import com.addexstores.mapper.PaymentMapper;
 import com.addexstores.payment.PaymentGateway;
 import com.addexstores.repository.*;
 import com.addexstores.service.CurrencyService;
+import com.addexstores.service.InventoryService;
 import com.addexstores.service.NotificationService;
+import com.addexstores.service.OrderService;
 import com.addexstores.service.ShippingService;
 import com.addexstores.service.TaxService;
 import com.razorpay.RazorpayClient;
@@ -36,12 +39,15 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class RazorpayPaymentServiceImpl implements PaymentGateway {
+
+    private static final Set<String> SUPPORTED_CURRENCIES = Set.of("USD", "EUR", "GBP", "AED", "INR");
 
     private final RazorpayConfig razorpayConfig;
     private final PaymentRepository paymentRepository;
@@ -55,6 +61,8 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
     private final TaxService taxService;
     private final ShippingService shippingService;
     private final CurrencyService currencyService;
+    private final OrderService orderService;
+    private final InventoryService inventoryService;
 
     private RazorpayClient razorpayClient;
 
@@ -94,23 +102,26 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         String targetCurrency = request.getCurrency() != null ? request.getCurrency().toUpperCase() : "INR";
-        BigDecimal subtotalInUsd = currencyService.convertToUsd(subtotal, targetCurrency);
-        BigDecimal tax = taxService.calculateTax(subtotalInUsd, request.getCountry(), request.getState());
-        BigDecimal shippingCost = shippingService.calculateShipping(subtotalInUsd, request.getCountry());
-        BigDecimal totalInUsd = subtotalInUsd.add(tax).add(shippingCost);
-        BigDecimal totalAmount = currencyService.convertFromUsd(totalInUsd, targetCurrency);
+        if (!SUPPORTED_CURRENCIES.contains(targetCurrency)) {
+            throw new BadRequestException("Unsupported currency: " + targetCurrency + ". Supported: " + SUPPORTED_CURRENCIES);
+        }
+
+        BigDecimal subtotalInUsd = subtotal;
+        BigDecimal taxUsd = taxService.calculateTax(subtotalInUsd, request.getCountry(), request.getState());
+        BigDecimal shippingUsd = shippingService.calculateShipping(subtotalInUsd, request.getCountry());
+        BigDecimal totalUsd = subtotalInUsd.add(taxUsd).add(shippingUsd);
+        BigDecimal chargeAmount = currencyService.convertFromUsd(totalUsd, targetCurrency);
 
         String orderNumber = "ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        BigDecimal taxInTarget = currencyService.convertFromUsd(tax, targetCurrency);
-        BigDecimal shippingInTarget = currencyService.convertFromUsd(shippingCost, targetCurrency);
 
         com.addexstores.entity.Order dbOrder = com.addexstores.entity.Order.builder()
                 .orderNumber(orderNumber)
                 .user(user)
                 .subtotal(subtotal)
-                .tax(taxInTarget)
-                .shippingCost(shippingInTarget)
-                .totalAmount(totalAmount)
+                .tax(taxUsd)
+                .shippingCost(shippingUsd)
+                .totalAmount(totalUsd)
+                .currency("USD")
                 .status(OrderStatus.PENDING_PAYMENT)
                 .street(request.getStreet())
                 .city(request.getCity())
@@ -125,8 +136,8 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
         List<OrderItem> orderItems = new ArrayList<>();
         for (CartItem cartItem : cart.getItems()) {
             Product product = cartItem.getProduct();
-            if (product.getStock() < cartItem.getQuantity()) {
-                throw new BadRequestException("Insufficient stock for product: " + product.getName());
+            if (product == null || product.getId() == null) {
+                throw new BadRequestException("A product in your cart is no longer available");
             }
 
             String image = null;
@@ -151,9 +162,10 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
         }
 
         dbOrder.setItems(orderItems);
+        inventoryService.reserveStock(cart.getItems());
         dbOrder = orderRepository.save(dbOrder);
 
-        long amountInPaise = totalAmount.multiply(BigDecimal.valueOf(100))
+        long amountInPaise = chargeAmount.multiply(BigDecimal.valueOf(100))
                 .setScale(0, RoundingMode.HALF_UP).longValue();
 
         String razorpayOrderId;
@@ -180,9 +192,10 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
         Payment payment = Payment.builder()
                 .userId(userId)
                 .order(dbOrder)
-                .amount(totalAmount)
+                .amount(chargeAmount)
                 .currency(targetCurrency)
-                .baseAmount(totalAmount)
+                .baseAmount(totalUsd)
+                .convertedAmount(chargeAmount)
                 .paymentMethod(PaymentMethod.RAZORPAY)
                 .status(PaymentStatus.PROCESSING)
                 .gatewayOrderId(razorpayOrderId)
@@ -217,6 +230,15 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
         return PaymentMapper.toStatusResponse(payment);
     }
 
+    public PaymentStatusResponse retrievePayment(String razorpayPaymentId, Long userId) {
+        Payment payment = paymentRepository.findByGatewayOrderId(razorpayPaymentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment", "gatewayOrderId", razorpayPaymentId));
+        if (userId != null && !payment.getUserId().equals(userId)) {
+            throw new UnauthorizedException("Payment does not belong to this user");
+        }
+        return PaymentMapper.toStatusResponse(payment);
+    }
+
     @Override
     public PaymentStatusResponse retrievePaymentByOrderId(Long orderId) {
         Payment payment = paymentRepository.findByOrderId(orderId)
@@ -230,6 +252,10 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
         Payment payment = paymentRepository.findByGatewayOrderId(razorpayPaymentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment", "gatewayOrderId", razorpayPaymentId));
 
+        if (!payment.getUserId().equals(userId)) {
+            throw new UnauthorizedException("Payment does not belong to this user");
+        }
+
         if (payment.getStatus() != PaymentStatus.PENDING && payment.getStatus() != PaymentStatus.PROCESSING) {
             throw new BadRequestException("Only pending payments can be cancelled");
         }
@@ -238,9 +264,7 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
         paymentRepository.save(payment);
 
         if (payment.getOrder() != null) {
-            com.addexstores.entity.Order dbOrder = payment.getOrder();
-            dbOrder.setStatus(OrderStatus.CANCELLED);
-            orderRepository.save(dbOrder);
+            orderService.markOrderCancelled(payment.getOrder().getId(), userId, "Payment cancelled");
         }
     }
 
@@ -254,11 +278,18 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
             throw new BadRequestException("Only completed payments can be refunded");
         }
 
-        if (payment.getGatewayOrderId() == null) {
+        if (payment.getGatewayPaymentId() == null) {
             throw new BadRequestException("No Razorpay payment ID associated with this payment");
         }
 
         BigDecimal refundAmount = request.getAmount() != null ? request.getAmount() : payment.getAmount();
+
+        if (refundAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BadRequestException("Refund amount must be positive");
+        }
+        if (refundAmount.compareTo(payment.getAmount()) > 0) {
+            throw new BadRequestException("Refund amount exceeds payment amount");
+        }
 
         BigDecimal totalRefunded = refundRepository.findByPaymentIdOrderByCreatedAtDesc(payment.getId())
                 .stream()
@@ -279,7 +310,7 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
             refundRequest.put("amount", refundAmountPaise);
             refundRequest.put("speed", "normal");
             refundRequest.put("notes", new JSONObject().put("reason", request.getReason() != null ? request.getReason() : ""));
-            razorpayRefund = razorpayClient.payments.refund(payment.getGatewayOrderId(), refundRequest);
+            razorpayRefund = razorpayClient.payments.refund(payment.getGatewayPaymentId(), refundRequest);
             log.info("Razorpay refund created: {} for payment {} amount {}", razorpayRefund.get("id"), payment.getId(), refundAmountPaise);
         } catch (RazorpayException e) {
             log.error("Razorpay refund failed: {}", e.getMessage());
@@ -312,9 +343,7 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
             paymentRepository.save(payment);
 
             if (payment.getOrder() != null) {
-                com.addexstores.entity.Order dbOrder = payment.getOrder();
-                dbOrder.setStatus(OrderStatus.REFUNDED);
-                orderRepository.save(dbOrder);
+                orderService.markOrderRefunded(payment.getOrder().getId(), adminId, request.getReason());
             }
         }
 
@@ -376,6 +405,17 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
             return payment;
         }
 
+        long expectedAmount = payment.getAmount().multiply(BigDecimal.valueOf(100))
+                .setScale(0, RoundingMode.HALF_UP).longValue();
+        long capturedAmount = paymentObj.optLong("amount", -1L);
+        String capturedCurrency = paymentObj.optString("currency", "");
+        if (capturedAmount < 0 || capturedAmount != expectedAmount
+                || !capturedCurrency.equalsIgnoreCase(payment.getCurrency())) {
+            log.error("Razorpay payment amount/currency mismatch for order {}: captured {} {}, expected {} {}",
+                    razorpayOrderId, capturedAmount, capturedCurrency, expectedAmount, payment.getCurrency());
+            return null;
+        }
+
         payment.setStatus(PaymentStatus.COMPLETED);
         payment.setGatewayPaymentId(razorpayPaymentId);
         payment.setGatewayResponse(paymentObj.toString());
@@ -383,8 +423,10 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
 
         if (payment.getOrder() != null) {
             com.addexstores.entity.Order dbOrder = payment.getOrder();
-            dbOrder.setStatus(OrderStatus.PROCESSING);
-            orderRepository.save(dbOrder);
+            if (dbOrder.getStatus() == OrderStatus.PENDING || dbOrder.getStatus() == OrderStatus.PENDING_PAYMENT) {
+                dbOrder.setStatus(OrderStatus.PROCESSING);
+                orderRepository.save(dbOrder);
+            }
 
             User orderUser = dbOrder.getUser();
             if (orderUser != null) {
@@ -396,16 +438,19 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
             }
         }
 
-        PaymentTransaction tx = PaymentTransaction.builder()
-                .payment(payment)
-                .transactionId(razorpayPaymentId)
-                .gateway("RAZORPAY")
-                .currency(payment.getCurrency())
-                .amount(payment.getAmount())
-                .status("SUCCEEDED")
-                .responsePayload(paymentObj.toString())
-                .build();
-        transactionRepository.save(tx);
+        if (!transactionRepository.existsByPaymentIdAndTransactionIdAndGateway(
+                payment.getId(), razorpayPaymentId, "RAZORPAY")) {
+            PaymentTransaction tx = PaymentTransaction.builder()
+                    .payment(payment)
+                    .transactionId(razorpayPaymentId)
+                    .gateway("RAZORPAY")
+                    .currency(payment.getCurrency())
+                    .amount(payment.getAmount())
+                    .status("SUCCEEDED")
+                    .responsePayload(paymentObj.toString())
+                    .build();
+            transactionRepository.save(tx);
+        }
 
         log.info("Razorpay payment captured: {} for order {}", razorpayPaymentId,
                 payment.getOrder() != null ? payment.getOrder().getOrderNumber() : "N/A");
@@ -427,16 +472,19 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
         payment.setGatewayResponse(paymentObj.toString());
         paymentRepository.save(payment);
 
-        PaymentTransaction tx = PaymentTransaction.builder()
-                .payment(payment)
-                .transactionId(paymentObj.optString("id", ""))
-                .gateway("RAZORPAY")
-                .currency(payment.getCurrency())
-                .amount(payment.getAmount())
-                .status("FAILED")
-                .responsePayload(paymentObj.toString())
-                .build();
-        transactionRepository.save(tx);
+        if (!transactionRepository.existsByPaymentIdAndTransactionIdAndGateway(
+                payment.getId(), paymentObj.optString("id", ""), "RAZORPAY")) {
+            PaymentTransaction tx = PaymentTransaction.builder()
+                    .payment(payment)
+                    .transactionId(paymentObj.optString("id", ""))
+                    .gateway("RAZORPAY")
+                    .currency(payment.getCurrency())
+                    .amount(payment.getAmount())
+                    .status("FAILED")
+                    .responsePayload(paymentObj.toString())
+                    .build();
+            transactionRepository.save(tx);
+        }
 
         log.info("Razorpay payment failed for order: {}", razorpayOrderId);
         return payment;
@@ -446,6 +494,7 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
         JSONObject payload = event.getJSONObject("payload");
         JSONObject refundObj = payload.getJSONObject("refund").getJSONObject("entity");
         String razorpayPaymentId = refundObj.optString("payment_id", "");
+        String refundId = refundObj.optString("id", "");
 
         Payment payment = paymentRepository.findByGatewayPaymentId(razorpayPaymentId).orElse(null);
         if (payment == null) {
@@ -453,18 +502,54 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
             return null;
         }
 
-        PaymentTransaction tx = PaymentTransaction.builder()
-                .payment(payment)
-                .transactionId(refundObj.optString("id", ""))
-                .gateway("RAZORPAY")
-                .currency(payment.getCurrency())
-                .amount(refundObj.has("amount") ? BigDecimal.valueOf(refundObj.getLong("amount")).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP) : payment.getAmount())
-                .status("REFUNDED")
-                .responsePayload(refundObj.toString())
-                .build();
-        transactionRepository.save(tx);
+        if (!transactionRepository.existsByPaymentIdAndTransactionIdAndGateway(
+                payment.getId(), refundId, "RAZORPAY")) {
+            PaymentTransaction tx = PaymentTransaction.builder()
+                    .payment(payment)
+                    .transactionId(refundId)
+                    .gateway("RAZORPAY")
+                    .currency(payment.getCurrency())
+                    .amount(refundObj.has("amount") ? BigDecimal.valueOf(refundObj.getLong("amount")).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP) : payment.getAmount())
+                    .status("REFUNDED")
+                    .responsePayload(refundObj.toString())
+                    .build();
+            transactionRepository.save(tx);
+        }
 
-        log.info("Razorpay refund created for payment: {}", razorpayPaymentId);
+        boolean refundRecorded = refundRepository.findByPaymentIdOrderByCreatedAtDesc(payment.getId())
+                .stream()
+                .anyMatch(r -> refundId.equals(r.getRefundId()));
+        if (!refundRecorded) {
+            BigDecimal webhookAmount = refundObj.has("amount")
+                    ? BigDecimal.valueOf(refundObj.getLong("amount")).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)
+                    : payment.getAmount();
+            com.addexstores.entity.Refund refundEntity = com.addexstores.entity.Refund.builder()
+                    .payment(payment)
+                    .refundId(refundId)
+                    .amount(webhookAmount)
+                    .reason("Refunded via Razorpay")
+                    .status("SUCCEEDED")
+                    .build();
+            refundRepository.save(refundEntity);
+        }
+
+        BigDecimal totalRefunded = refundRepository.findByPaymentIdOrderByCreatedAtDesc(payment.getId())
+                .stream()
+                .filter(r -> "SUCCEEDED".equals(r.getStatus()))
+                .map(com.addexstores.entity.Refund::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (totalRefunded.compareTo(payment.getAmount()) >= 0 && payment.getStatus() != PaymentStatus.REFUNDED) {
+            payment.setStatus(PaymentStatus.REFUNDED);
+            paymentRepository.save(payment);
+
+            if (payment.getOrder() != null) {
+                orderService.markOrderRefunded(payment.getOrder().getId(), null, "Refunded via Razorpay");
+            }
+        }
+
+        log.info("Razorpay refund created for payment: {} (total refunded {})",
+                razorpayPaymentId, totalRefunded);
         return payment;
     }
 }

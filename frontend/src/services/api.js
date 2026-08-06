@@ -82,6 +82,7 @@ export const api = {
   get: (endpoint) => apiClient.get(endpoint).then((res) => res.data),
   post: (endpoint, data) => apiClient.post(endpoint, data).then((res) => res.data),
   put: (endpoint, data) => apiClient.put(endpoint, data).then((res) => res.data),
+  patch: (endpoint, data) => apiClient.patch(endpoint, data).then((res) => res.data),
   delete: (endpoint) => apiClient.delete(endpoint).then((res) => res.data),
   upload: (endpoint, file) => {
     const formData = new FormData()

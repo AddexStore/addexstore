@@ -15,24 +15,26 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Slf4j
 @Service
 public class FileUploadServiceImpl implements FileUploadService {
 
-    private static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList(
-            "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp", "image/svg+xml"
-    );
-
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+    private static final byte[] PNG_MAGIC = {(byte) 0x89, 0x50, 0x4E, 0x47};
+    private static final byte[] JPEG_MAGIC = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF};
+    private static final byte[] GIF_MAGIC = {'G', 'I', 'F', '8'};
+    private static final byte[] RIFF_MAGIC = {'R', 'I', 'F', 'F'};
 
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
@@ -73,11 +75,7 @@ public class FileUploadServiceImpl implements FileUploadService {
     public String uploadFile(MultipartFile file, String directory) {
         validateFile(file);
 
-        String originalFilename = file.getOriginalFilename();
-        String extension = "";
-        if (originalFilename != null && originalFilename.contains(".")) {
-            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-        }
+        String extension = extensionFor(file);
         String uniqueFilename = UUID.randomUUID() + extension;
         String key = directory + "/" + uniqueFilename;
 
@@ -97,7 +95,6 @@ public class FileUploadServiceImpl implements FileUploadService {
                             .build(),
                     RequestBody.fromInputStream(file.getInputStream(), file.getSize())
             );
-            String url = String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, key);
             log.info("File uploaded to S3: {}", key);
             return key;
         } catch (IOException e) {
@@ -169,9 +166,104 @@ public class FileUploadServiceImpl implements FileUploadService {
         if (file.getSize() > MAX_FILE_SIZE) {
             throw new BadRequestException("File size exceeds maximum allowed size of 5MB");
         }
+
         String contentType = file.getContentType();
-        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase())) {
-            throw new BadRequestException("Invalid file type. Only JPEG, PNG, GIF, WebP, and SVG images are allowed");
+        if (contentType == null || contentType.isBlank()) {
+            throw new BadRequestException("Unable to determine file type");
+        }
+
+        String normalizedType = contentType.toLowerCase(Locale.ROOT);
+        boolean isSvg = "image/svg+xml".equals(normalizedType);
+
+        if (isSvg) {
+            if (!isValidSvg(file)) {
+                throw new BadRequestException("Invalid or unsafe SVG file");
+            }
+            return;
+        }
+
+        if (!isValidImageMagicBytes(file, normalizedType)) {
+            throw new BadRequestException("File content does not match its declared type. Only JPEG, PNG, GIF, WebP, and SVG images are allowed");
+        }
+    }
+
+    private boolean isValidSvg(MultipartFile file) {
+        try (InputStream in = file.getInputStream()) {
+            byte[] bytes = in.readNBytes((int) Math.min(file.getSize(), MAX_FILE_SIZE));
+            String content = new String(bytes, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT);
+            if (!content.contains("<svg")) {
+                return false;
+            }
+            return !content.contains("<script")
+                    && !content.contains("foreignobject")
+                    && !content.contains("javascript:")
+                    && !content.contains("vbscript:")
+                    && !content.contains("expression(")
+                    && !content.contains("onload=")
+                    && !content.contains("onclick=")
+                    && !content.contains("onerror=")
+                    && !content.contains("onmouseover=")
+                    && !content.contains("onfocus=");
+        } catch (IOException e) {
+            log.warn("Failed to validate SVG content", e);
+            return false;
+        }
+    }
+
+    private boolean isValidImageMagicBytes(MultipartFile file, String contentType) {
+        byte[] header;
+        try (InputStream in = file.getInputStream()) {
+            header = in.readNBytes(12);
+        } catch (IOException e) {
+            log.warn("Failed to read file header", e);
+            return false;
+        }
+
+        switch (contentType) {
+            case "image/png":
+                return startsWith(header, PNG_MAGIC);
+            case "image/jpeg":
+            case "image/jpg":
+                return startsWith(header, JPEG_MAGIC);
+            case "image/gif":
+                return startsWith(header, GIF_MAGIC);
+            case "image/webp":
+                return startsWith(header, RIFF_MAGIC) && header.length > 11
+                        && header[8] == 'W' && header[9] == 'E' && header[10] == 'B' && header[11] == 'P';
+            default:
+                return false;
+        }
+    }
+
+    private boolean startsWith(byte[] data, byte[] magic) {
+        if (data.length < magic.length) {
+            return false;
+        }
+        for (int i = 0; i < magic.length; i++) {
+            if (data[i] != magic[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private String extensionFor(MultipartFile file) {
+        String contentType = file.getContentType() == null
+                ? "" : file.getContentType().toLowerCase(Locale.ROOT);
+        switch (contentType) {
+            case "image/jpeg":
+            case "image/jpg":
+                return ".jpg";
+            case "image/png":
+                return ".png";
+            case "image/gif":
+                return ".gif";
+            case "image/webp":
+                return ".webp";
+            case "image/svg+xml":
+                return ".svg";
+            default:
+                throw new BadRequestException("Unsupported image type");
         }
     }
 }

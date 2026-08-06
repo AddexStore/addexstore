@@ -2,10 +2,9 @@ package com.addexstores.controller;
 
 import com.addexstores.dto.response.ApiResponse;
 import com.addexstores.dto.response.PaymentStatusResponse;
-import com.addexstores.enums.PaymentMethod;
-import com.addexstores.payment.PaymentGateway;
-import com.addexstores.payment.PaymentGatewayFactory;
+import com.addexstores.exception.BadRequestException;
 import com.addexstores.security.CurrentUser;
+import com.addexstores.service.impl.RazorpayPaymentServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +18,7 @@ import java.util.Map;
 @Tag(name = "Razorpay Payments")
 public class RazorpayPaymentController {
 
-    private final PaymentGatewayFactory gatewayFactory;
+    private final RazorpayPaymentServiceImpl razorpayPaymentService;
 
     @PostMapping("/verify")
     @Operation(summary = "Verify Razorpay payment")
@@ -30,8 +29,11 @@ public class RazorpayPaymentController {
         String razorpayOrderId = request.get("razorpay_order_id");
         String razorpaySignature = request.get("razorpay_signature");
 
-        PaymentGateway gateway = gatewayFactory.getGateway(PaymentMethod.RAZORPAY);
-        PaymentStatusResponse response = gateway.retrievePayment(razorpayOrderId);
+        if (razorpayOrderId == null || razorpayOrderId.isBlank()) {
+            throw new BadRequestException("razorpay_order_id is required");
+        }
+
+        PaymentStatusResponse response = razorpayPaymentService.retrievePayment(razorpayOrderId, userId);
         return ApiResponse.success(response);
     }
 }

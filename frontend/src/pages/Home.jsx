@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useRecentlyViewed } from '../hooks/useRecentlyViewed'
 import { productService } from '../services/productService'
@@ -7,11 +7,6 @@ import { mapProduct, mapCategory } from '../services/mappers'
 import HeroBanner from '../components/HeroBanner'
 import CategoryCard from '../components/CategoryCard'
 import ProductCard from '../components/ProductCard'
-
-function getRandomProducts(arr, count) {
-  const shuffled = [...arr].sort(() => Math.random() - 0.5)
-  return shuffled.slice(0, count)
-}
 
 function CountdownTimer() {
   const [timeLeft, setTimeLeft] = useState({
@@ -80,34 +75,32 @@ function SectionHeader({ title, linkTo, linkText }) {
 
 export default function Home() {
   const { getRecentlyViewed } = useRecentlyViewed()
-  const recentlyViewed = getRecentlyViewed()
-  const [products, setProducts] = useState([])
+  const [featured, setFeatured] = useState([])
+  const [trending, setTrending] = useState([])
+  const [sales, setSales] = useState([])
+  const [newArrivals, setNewArrivals] = useState([])
   const [categories, setCategories] = useState([])
+  const [recentlyViewedProducts, setRecentlyViewedProducts] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const recentlyViewedIds = getRecentlyViewed().slice(0, 4).map((rv) => rv.id)
     Promise.all([
-      productService.getProducts({ page: 0, size: 50 }).then((r) => (r.content || r.data?.content || r.data || []).map(mapProduct)),
-      categoryService.getAll().then((r) => (r.data || []).map(mapCategory)),
-    ]).then(([prods, cats]) => {
-      setProducts(prods)
+      productService.getFeatured(0, 8).then((r) => (r.data?.content || r.content || []).map(mapProduct)).catch(() => []),
+      productService.getTrending(0, 8).then((r) => (r.data?.content || r.content || []).map(mapProduct)).catch(() => []),
+      productService.getSales(0, 4).then((r) => (r.data?.content || r.content || []).map(mapProduct)).catch(() => []),
+      productService.getNewArrivals(0, 4).then((r) => (r.data?.content || r.content || []).map(mapProduct)).catch(() => []),
+      categoryService.getAll().then((r) => (r.data || []).map(mapCategory)).catch(() => []),
+      ...recentlyViewedIds.map((rvId) => productService.getProduct(rvId).then((r) => mapProduct(r.data)).catch(() => null)),
+    ]).then(([f, t, s, n, cats, ...rvProds]) => {
+      setFeatured(f)
+      setTrending(t)
+      setSales(s)
+      setNewArrivals(n)
       setCategories(cats)
+      setRecentlyViewedProducts(rvProds.filter(Boolean))
     }).catch(() => {}).finally(() => setLoading(false))
   }, [])
-
-  const flashSaleProducts = useMemo(() => products.filter((p) => p.discountPercentage > 0), [products])
-  const trendingProducts = useMemo(() => products.filter((p) => p.trending), [products])
-  const featuredProducts = useMemo(() => products.filter((p) => p.featured), [products])
-
-  const recommended = useMemo(() => getRandomProducts(products, 4), [products])
-
-  const recentlyViewedProducts = useMemo(
-    () =>
-      recentlyViewed
-        .map((rv) => products.find((p) => p.id === rv.id))
-        .filter(Boolean),
-    [recentlyViewed, products]
-  )
 
   if (loading) return null
 
@@ -134,7 +127,7 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 lg:py-20">
         <SectionHeader title="Trending Now" linkTo="/trending" linkText="View All" />
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-          {trendingProducts.slice(0, 8).map((product) => (
+          {trending.slice(0, 8).map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
@@ -143,13 +136,13 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 lg:py-20">
         <SectionHeader title="Featured Collection" linkTo="/products" linkText="View All" />
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-          {featuredProducts.slice(0, 8).map((product) => (
+          {featured.slice(0, 8).map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
       </section>
 
-      {flashSaleProducts.length > 0 && (
+      {sales.length > 0 && (
         <section className="bg-gradient-to-r from-[var(--bg-secondary)] via-[var(--bg-hover)] to-[var(--bg-secondary)] py-10 sm:py-14 lg:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 sm:gap-6 mb-6 sm:mb-10">
@@ -158,14 +151,14 @@ export default function Home() {
                   Flash Sale
                 </h2>
                 <p className="text-[var(--text-secondary)] text-xs sm:text-sm mt-1">
-                  Limited time offers Ã¢â‚¬â€ grab them before they're gone
+                  Limited time offers — grab them before they're gone
                 </p>
               </div>
               <CountdownTimer />
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-              {flashSaleProducts.slice(0, 4).map((product) => (
+              {sales.slice(0, 4).map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
@@ -176,7 +169,7 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 lg:py-20">
         <SectionHeader title="You May Also Like" />
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-          {recommended.map((product) => (
+          {newArrivals.slice(0, 4).map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>

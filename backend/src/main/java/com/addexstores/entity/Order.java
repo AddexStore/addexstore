@@ -44,6 +44,10 @@ public class Order {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
+    @Column(nullable = false, length = 3)
+    @Builder.Default
+    private String currency = "USD";
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { adminPaymentService } from '../../services/stripeService'
-import { formatDate } from '../../utils/helpers'
+import { formatDate, formatPrice, getCurrencySymbol } from '../../utils/helpers'
 
 const STATUS_COLORS = {
   PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
@@ -12,46 +12,46 @@ const STATUS_COLORS = {
   REFUNDED: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
 }
 
-const CURRENCY_SYMBOLS = {
-  USD: '$',
-  EUR: '\u20AC',
-  GBP: '\u00A3',
-  AED: '\u062F.\u0625.',
-  INR: '\u20B9',
-}
-
 export default function AdminPayments() {
   const [payments, setPayments] = useState({ content: [], totalPages: 0, totalElements: 0, page: 0, last: true })
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [page, setPage] = useState(0)
+  const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
 
-  const fetchPayments = async () => {
+  const fetchPayments = useCallback(async () => {
     setLoading(true)
+    setError('')
     try {
-      const res = await adminPaymentService.getAll({ page, size: 20, status: statusFilter || undefined, search: search || undefined })
+      const res = await adminPaymentService.getAll({
+        page,
+        size: 20,
+        status: statusFilter || undefined,
+        search: search || undefined,
+      })
       setPayments(res.data || res)
     } catch (err) {
-      console.error('Failed to fetch payments', err)
+      setError(err.message || 'Failed to fetch payments')
     } finally {
       setLoading(false)
     }
-  }
+  }, [page, statusFilter, search])
 
   useEffect(() => {
     fetchPayments()
-  }, [page])
+  }, [fetchPayments])
 
   const handleSearch = (e) => {
     e.preventDefault()
+    setSearch(searchInput.trim())
     setPage(0)
-    fetchPayments()
   }
 
-  const formatAmount = (amount, currency) => {
-    const symbol = CURRENCY_SYMBOLS[currency] || currency + ' '
-    return symbol + (amount ? Number(amount).toFixed(2) : '0.00')
+  const handleStatusChange = (value) => {
+    setStatusFilter(value)
+    setPage(0)
   }
 
   return (
@@ -66,14 +66,14 @@ export default function AdminPayments() {
           <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
-              placeholder="Search by order ID, email, or payment ID..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by order number, email, or payment ID..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="flex-1 px-4 py-2.5 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[#C6A972]"
             />
             <select
               value={statusFilter}
-              onChange={(e) => { setStatusFilter(e.target.value); setPage(0) }}
+              onChange={(e) => handleStatusChange(e.target.value)}
               className="px-4 py-2.5 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#C6A972]"
             >
               <option value="">All Statuses</option>
@@ -116,6 +116,18 @@ export default function AdminPayments() {
                     </svg>
                   </td>
                 </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={9} className="px-4 py-12">
+                    <div className="flex flex-col items-center gap-3">
+                      <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+                      <button onClick={() => fetchPayments()}
+                        className="px-4 py-2 text-sm font-medium text-[var(--text-secondary)] rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition">
+                        Retry
+                      </button>
+                    </div>
+                  </td>
+                </tr>
               ) : payments.content?.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-4 py-12 text-center text-[var(--text-secondary)]">No payments found</td>
@@ -134,7 +146,9 @@ export default function AdminPayments() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-[var(--text-primary)] text-xs max-w-[150px] truncate">{payment.customerEmail || '-'}</td>
-                    <td className="px-4 py-3 text-right text-[var(--text-primary)] font-medium">{formatAmount(payment.amount, payment.currency)}</td>
+                    <td className="px-4 py-3 text-right text-[var(--text-primary)] font-medium">
+                      {formatPrice(payment.amount, getCurrencySymbol(payment.currency))}
+                    </td>
                     <td className="px-4 py-3 text-center text-[var(--text-secondary)] text-xs">{payment.currency}</td>
                     <td className="px-4 py-3 text-center text-[var(--text-secondary)] text-xs">{payment.paymentMethod}</td>
                     <td className="px-4 py-3 text-center">

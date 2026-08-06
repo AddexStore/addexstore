@@ -91,6 +91,7 @@ public class CacheConfig implements CachingConfigurer {
                 .withCacheConfiguration("categories", RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1)))
                 .withCacheConfiguration("banners", RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(30)))
                 .withCacheConfiguration("settings", RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1)))
+                .withCacheConfiguration("dashboardOverview", RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofSeconds(60)))
                 .build();
     }
 }

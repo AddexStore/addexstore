@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface PaymentTransactionRepository extends JpaRepository<PaymentTransaction, Long> {
     List<PaymentTransaction> findByPaymentIdOrderByCreatedAtDesc(Long paymentId);
+
+    boolean existsByPaymentIdAndTransactionIdAndGateway(Long paymentId, String transactionId, String gateway);
 }

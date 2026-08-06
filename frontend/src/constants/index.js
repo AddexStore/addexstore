@@ -25,6 +25,7 @@ export const ORDER_STATUS = {
   SHIPPED: 'Shipped',
   DELIVERED: 'Delivered',
   CANCELLED: 'Cancelled',
+  REFUNDED: 'Refunded',
 };
 
 export const ADMIN_SIDEBAR_LINKS = [

@@ -7,6 +7,7 @@ import com.addexstores.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -19,6 +20,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/orders")
+@PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 @Tag(name = "Admin Orders")
 public class AdminOrderController {
@@ -29,9 +31,10 @@ public class AdminOrderController {
     @Operation(summary = "Get all orders")
     public ApiResponse<PagedResponse<OrderResponse>> getAllOrders(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String status) {
-        return ApiResponse.success(orderService.getAllOrders(page, size, status));
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String search) {
+        return ApiResponse.success(orderService.getAllOrders(page, size, status, search));
     }
 
     @PutMapping("/{id}/status")

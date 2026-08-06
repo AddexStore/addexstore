@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { categoryService } from '../../services/categoryService'
 import { getAssetUrl } from '../../services/api'
 import { mapCategory } from '../../services/mappers'
+import { isSvgMarkup } from '../../utils/sanitizeSvg'
+import SafeIcon from '../../components/SafeIcon'
 import { useToast } from '../../context/ToastContext'
 import BackButton from '../../components/BackButton'
 
@@ -9,6 +11,9 @@ export default function AdminCategories() {
   const { showToast } = useToast()
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
 
   const [showModal, setShowModal] = useState(false)
   const [editingCat, setEditingCat] = useState(null)
@@ -25,10 +30,11 @@ export default function AdminCategories() {
   const fetchCategories = async () => {
     try {
       setLoading(true)
-      const res = await categoryService.getAll()
+      setLoadError('')
+      const res = await categoryService.getAllAdmin()
       setCategories((res.data || []).map(mapCategory))
     } catch (e) {
-      showToast(e.message || 'Failed to load categories', 'error')
+      setLoadError(e.message || 'Failed to load categories')
     } finally {
       setLoading(false)
     }
@@ -84,7 +90,6 @@ export default function AdminCategories() {
     try {
       setUploading(true)
       const res = await categoryService.uploadCategoryIcon(catId, file)
-      console.log('Upload response:', JSON.stringify(res))
       if (res?.data?.icon) {
         setForm(prev => ({ ...prev, icon: res.data.icon }))
       }
@@ -158,18 +163,30 @@ export default function AdminCategories() {
   }
 
   const renderIcon = (icon, alt, className = 'w-8 h-8') => {
-    if (icon && icon.trim().startsWith('<')) {
-      return <span dangerouslySetInnerHTML={{ __html: icon }} className={className} />
+    if (isSvgMarkup(icon)) {
+      return <SafeIcon icon={icon} className={className} />
     } else if (icon) {
       return <img src={getAssetUrl(icon)} alt={alt} className={`${className} object-cover rounded-lg`} />
-    } else {
-      return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-        </svg>
-      )
+    }
+    return null
+  }
+
+  const toggleActive = async (cat) => {
+    try {
+      await categoryService.update(cat.id, { name: cat.name, active: !cat.active })
+      showToast(`Category "${cat.name}" ${cat.active ? 'deactivated' : 'activated'}`, 'success')
+      await fetchCategories()
+    } catch (e) {
+      showToast(e.message || 'Failed to update category status', 'error')
     }
   }
+
+  const filteredCategories = categories.filter((cat) => {
+    if (statusFilter === 'active' && !cat.active) return false
+    if (statusFilter === 'inactive' && cat.active) return false
+    if (search && !cat.name.toLowerCase().includes(search.toLowerCase())) return false
+    return true
+  })
 
   if (loading) {
     return (
@@ -185,6 +202,21 @@ export default function AdminCategories() {
     )
   }
 
+  if (loadError) {
+    return (
+      <div className="h-full flex flex-col gap-2 py-3">
+        <div className="flex items-center gap-3">
+          <BackButton />
+          <h1 className="text-lg font-bold text-black font-['Playfair_Display']">Categories</h1>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center gap-3">
+          <p className="text-sm text-[var(--text-secondary)]">{loadError}</p>
+          <button onClick={fetchCategories} className="px-4 py-1.5 bg-[#C6A972] text-black rounded-lg text-xs font-semibold hover:bg-[#B8965F] transition-colors">Retry</button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="h-full flex flex-col gap-2 py-3">
       <div className="flex items-center justify-between flex-shrink-0">
@@ -195,21 +227,49 @@ export default function AdminCategories() {
         <button onClick={openAdd} className="px-4 py-1.5 bg-[#C6A972] text-black rounded-lg text-xs font-semibold hover:bg-[#B8965F] transition-colors">+ Add</button>
       </div>
 
+      <div className="flex gap-2 flex-shrink-0">
+        <input
+          type="text"
+          placeholder="Search categories..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="flex-1 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-xs text-black placeholder-[var(--text-muted)] focus:outline-none focus:border-[#C6A972]"
+        />
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+          className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-xs text-[var(--text-secondary)] focus:outline-none focus:border-[#C6A972]">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+
       <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-          {categories.map((cat) => {
+        {filteredCategories.length === 0 ? (
+          <div className="h-full flex items-center justify-center">
+            <p className="text-xs text-[var(--text-muted)]">No categories found</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+          {filteredCategories.map((cat) => {
             const isExpanded = expandedId === cat.id
             const subCount = cat.subcategories?.length || 0
             return (
-              <div key={cat.id} className="bg-[var(--bg-card)] rounded-lg border border-[var(--border-color)]/50 overflow-hidden">
+              <div key={cat.id} className={`bg-[var(--bg-card)] rounded-lg border overflow-hidden ${cat.active ? 'border-[var(--border-color)]/50' : 'border-red-200'}`}>
                 <div className={`p-3 transition-all ${isExpanded ? 'border-b border-[var(--border-color)]/50' : ''}`}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="w-8 h-8 rounded-lg bg-[#C6A972]/10 text-[#C6A972] flex items-center justify-center overflow-hidden">
                       {renderIcon(cat.icon, cat.name)}
                     </div>
-                    <button onClick={() => setExpandedId(isExpanded ? null : cat.id)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
-                      <svg className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => toggleActive(cat)}
+                        title={cat.active ? 'Deactivate' : 'Activate'}
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors ${cat.active ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-600 hover:bg-red-200'}`}>
+                        {cat.active ? 'Active' : 'Inactive'}
+                      </button>
+                      <button onClick={() => setExpandedId(isExpanded ? null : cat.id)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+                        <svg className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
+                      </button>
+                    </div>
                   </div>
                   <h3 className="text-black text-sm font-semibold truncate">{cat.name}</h3>
                   <p className="text-[var(--text-secondary)] text-[10px]">{cat.productCount} products{subCount > 0 && ` · ${subCount} subcategories`}</p>
@@ -258,7 +318,8 @@ export default function AdminCategories() {
               </div>
             )
           })}
-        </div>
+          </div>
+        )}
       </div>
 
       {showModal && (

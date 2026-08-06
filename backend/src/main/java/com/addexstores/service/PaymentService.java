@@ -4,5 +4,5 @@ import com.addexstores.dto.response.PaymentResponse;
 
 public interface PaymentService {
 
-    PaymentResponse getPaymentByOrderId(Long orderId);
+    PaymentResponse getPaymentByOrderId(Long orderId, Long userId);
 }
