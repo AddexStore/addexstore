@@ -45,8 +45,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @EntityGraph(attributePaths = {"category"})
     @Query("SELECT p FROM Product p WHERE p.active = true AND " +
-           "(LOWER(p.name) LIKE LOWER(CONCAT('%', :text, '%')) OR " +
-           "LOWER(p.brand) LIKE LOWER(CONCAT('%', :text, '%')))")
+           "(LOWER(p.name) LIKE LOWER(CONCAT('%', CAST(:text AS string), '%')) OR " +
+           "LOWER(p.brand) LIKE LOWER(CONCAT('%', CAST(:text AS string), '%')))")
     Page<Product> search(@Param("text") String text, Pageable pageable);
 
     @EntityGraph(attributePaths = {"category"})
@@ -60,7 +60,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
            "(:trending IS NULL OR p.trending = :trending) AND " +
            "(:newArrival IS NULL OR p.isNewArrival = :newArrival) AND " +
            "(:onSale IS NULL OR p.isOnSale = :onSale) AND " +
-           "(:search IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(p.brand) LIKE LOWER(CONCAT('%', :search, '%')))")
+           "(:search IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) OR LOWER(p.brand) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')))")
     Page<Product> findAllFiltered(@Param("search") String search,
                                   @Param("categoryId") Long categoryId,
                                   @Param("subcategoryId") Long subcategoryId,
