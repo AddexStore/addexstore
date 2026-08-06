@@ -55,6 +55,7 @@ public class SecurityConfig {
 
                     if (isProduction) {
                         authz.requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").hasRole("ADMIN");
+                        authz.requestMatchers("/actuator/health", "/actuator/health/**").permitAll();
                         authz.requestMatchers("/actuator/**").hasRole("ADMIN");
                     } else {
                         authz.requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll();
