@@ -1,0 +1,34 @@
+# Root-level .dockerignore for Railway (build context is repo root)
+
+# Git & IDE
+.git
+.github
+.vscode
+.idea
+
+# Frontend (not needed for backend build)
+frontend
+
+# Backend build output
+backend/target
+backend/*.jar
+backend/*.war
+backend/uploads
+
+# Environment & secrets
+.env
+.env.*
+*.local
+
+# Containers
+docker-compose.yml
+
+# Logs & misc
+*.log
+*.md
+*.bak
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+Desktop.ini
