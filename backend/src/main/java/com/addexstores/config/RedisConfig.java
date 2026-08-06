@@ -58,13 +58,20 @@ public class RedisConfig {
             URI uri = new URI(url);
             String host = uri.getHost();
             int port = uri.getPort();
-            String password = uri.getUserInfo();
+            String userInfo = uri.getUserInfo();
 
             RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
             config.setHostName(host);
             config.setPort(port);
-            if (password != null && !password.isBlank()) {
-                config.setPassword(password);
+
+            if (userInfo != null && !userInfo.isBlank()) {
+                int colonIndex = userInfo.indexOf(':');
+                if (colonIndex >= 0) {
+                    config.setUsername(userInfo.substring(0, colonIndex));
+                    config.setPassword(userInfo.substring(colonIndex + 1));
+                } else {
+                    config.setPassword(userInfo);
+                }
             }
 
             boolean useSsl = "rediss".equals(uri.getScheme());
