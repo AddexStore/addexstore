@@ -14,42 +14,42 @@ import java.util.Optional;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    @EntityGraph(attributePaths = {"category", "subCategory", "images", "variants"})
+    @EntityGraph(attributePaths = {"category", "subCategory"})
     Optional<Product> findBySlug(String slug);
 
     Optional<Product> findBySku(String sku);
 
-    @EntityGraph(attributePaths = {"category", "subCategory", "images", "variants"})
+    @EntityGraph(attributePaths = {"category", "subCategory"})
     @Query("SELECT p FROM Product p WHERE p.id = :id")
     Optional<Product> findByIdWithGraph(@Param("id") Long id);
 
-    @EntityGraph(attributePaths = {"category", "images", "variants"})
+    @EntityGraph(attributePaths = {"category"})
     Page<Product> findByCategoryId(Long categoryId, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"category", "images", "variants"})
+    @EntityGraph(attributePaths = {"category"})
     Page<Product> findBySubCategoryId(Long subCategoryId, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"category", "images", "variants"})
+    @EntityGraph(attributePaths = {"category"})
     Page<Product> findByFeaturedTrue(Pageable pageable);
 
-    @EntityGraph(attributePaths = {"category", "images", "variants"})
+    @EntityGraph(attributePaths = {"category"})
     Page<Product> findByTrendingTrue(Pageable pageable);
 
-    @EntityGraph(attributePaths = {"category", "images", "variants"})
+    @EntityGraph(attributePaths = {"category"})
     Page<Product> findByIsNewArrivalTrue(Pageable pageable);
 
-    @EntityGraph(attributePaths = {"category", "images", "variants"})
+    @EntityGraph(attributePaths = {"category"})
     Page<Product> findByIsOnSaleTrue(Pageable pageable);
 
     List<Product> findByActiveTrueAndStockLessThan(int threshold);
 
-    @EntityGraph(attributePaths = {"category", "images", "variants"})
+    @EntityGraph(attributePaths = {"category"})
     @Query("SELECT p FROM Product p WHERE p.active = true AND " +
            "(LOWER(p.name) LIKE LOWER(CONCAT('%', :text, '%')) OR " +
            "LOWER(p.brand) LIKE LOWER(CONCAT('%', :text, '%')))")
     Page<Product> search(@Param("text") String text, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"category", "images", "variants"})
+    @EntityGraph(attributePaths = {"category"})
     @Query("SELECT p FROM Product p WHERE p.active = true AND " +
            "(:categoryId IS NULL OR p.category.id = :categoryId) AND " +
            "(:subcategoryId IS NULL OR p.subCategory.id = :subcategoryId) AND " +
