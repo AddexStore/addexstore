@@ -11,6 +11,13 @@ spring:
   cache:
     type: redis
 
+  # The production DB was migrated to V201 before V107-V109 existed in this
+  # repository. Allow Flyway to apply those pending, forward-only migrations
+  # out of order so the schema catches up to the code. All three use IF NOT
+  # EXISTS / idempotent statements, so this is safe to leave enabled.
+  flyway:
+    out-of-order: true
+
 logging:
   level:
     root: WARN
