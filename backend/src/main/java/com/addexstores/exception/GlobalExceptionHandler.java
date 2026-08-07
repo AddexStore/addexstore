@@ -4,6 +4,7 @@ import com.addexstores.util.ApiResponseBuilder;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -84,6 +85,13 @@ public class GlobalExceptionHandler {
         log.warn("Concurrent modification detected: {}", ex.getMessage());
         return ApiResponseBuilder.error(HttpStatus.CONFLICT,
                 "This record was modified by another request. Please refresh and try again.");
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        log.warn("Data integrity violation: {}", ex.getMessage());
+        return ApiResponseBuilder.error(HttpStatus.CONFLICT,
+                "This record conflicts with existing data (duplicate or missing required field).");
     }
 
     @ExceptionHandler(Exception.class)
