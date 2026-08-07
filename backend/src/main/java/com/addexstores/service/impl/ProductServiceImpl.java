@@ -348,6 +348,7 @@ public class ProductServiceImpl implements ProductService {
             List<ProductImage> currentImages = product.getImages() != null
                     ? new ArrayList<>(product.getImages())
                     : new ArrayList<>();
+
             for (ProductImage existing : currentImages) {
                 if (!urls.contains(existing.getImageUrl())) {
                     try {
@@ -358,31 +359,42 @@ public class ProductServiceImpl implements ProductService {
                 }
             }
 
-            List<ProductImage> images = new ArrayList<>();
+            List<ProductImage> kept = new ArrayList<>();
             int index = 0;
             for (String url : urls) {
-                images.add(ProductImage.builder()
-                        .product(product)
-                        .imageUrl(url)
-                        .isPrimary(index == 0)
-                        .sortOrder(index)
-                        .build());
+                ProductImage image = currentImages.stream()
+                        .filter(existing -> existing.getImageUrl().equals(url))
+                        .findFirst()
+                        .orElse(null);
+                if (image == null) {
+                    image = ProductImage.builder().product(product).imageUrl(url).build();
+                    product.getImages().add(image);
+                }
+                image.setSortOrder(index);
+                image.setPrimary(index == 0);
+                kept.add(image);
                 index++;
             }
-            product.getImages().clear();
-            product.getImages().addAll(images);
+            for (ProductImage existing : currentImages) {
+                if (!kept.contains(existing)) {
+                    product.getImages().remove(existing);
+                }
+            }
         }
 
         if (request.getVariants() != null) {
+            List<ProductVariant> currentVariants = product.getVariants() != null
+                    ? new ArrayList<>(product.getVariants())
+                    : new ArrayList<>();
+
             Map<Long, ProductVariant> existingById = new HashMap<>();
-            if (product.getVariants() != null) {
-                for (ProductVariant variant : product.getVariants()) {
-                    if (variant.getId() != null) {
-                        existingById.put(variant.getId(), variant);
-                    }
+            for (ProductVariant variant : currentVariants) {
+                if (variant.getId() != null) {
+                    existingById.put(variant.getId(), variant);
                 }
             }
-            List<ProductVariant> variants = new ArrayList<>();
+
+            List<ProductVariant> kept = new ArrayList<>();
             for (ProductVariantRequest varReq : request.getVariants()) {
                 ProductVariant variant = varReq.getId() != null && existingById.containsKey(varReq.getId())
                         ? existingById.get(varReq.getId())
@@ -392,10 +404,16 @@ public class ProductServiceImpl implements ProductService {
                 variant.setStock(varReq.getStock());
                 variant.setPriceOverride(varReq.getPriceOverride());
                 variant.setSku(trimToNull(varReq.getSku()));
-                variants.add(variant);
+                if (variant.getId() == null) {
+                    product.getVariants().add(variant);
+                }
+                kept.add(variant);
             }
-            product.getVariants().clear();
-            product.getVariants().addAll(variants);
+            for (ProductVariant existing : currentVariants) {
+                if (!kept.contains(existing)) {
+                    product.getVariants().remove(existing);
+                }
+            }
         }
 
         product = productRepository.save(product);
