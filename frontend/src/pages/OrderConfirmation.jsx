@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { orderService } from '../services/orderService'
 import { mapOrder } from '../services/mappers'
-import { formatPrice } from '../utils/helpers'
+import { formatPrice, getCurrencySymbol } from '../utils/helpers'
 import { getAssetUrl } from '../services/api'
 import BackButton from '../components/BackButton'
 
@@ -116,7 +116,7 @@ export default function OrderConfirmation() {
                   <p className="text-sm font-medium text-[var(--text-primary)] truncate">{item.name}</p>
                   <p className="text-xs text-[var(--text-secondary)]">Qty: {item.quantity} {item.size && `| ${item.size}`}</p>
                 </div>
-                <span className="text-sm font-medium text-[var(--text-primary)]">{formatPrice(item.price * item.quantity)}</span>
+                <span className="text-sm font-medium text-[var(--text-primary)]">{formatPrice(item.price * item.quantity, getCurrencySymbol(order.currency))}</span>
               </div>
             ))}
           </div>
@@ -124,19 +124,19 @@ export default function OrderConfirmation() {
           <div className="border-t border-[var(--border-color)] pt-4 space-y-2 text-sm">
             <div className="flex justify-between text-[var(--text-secondary)]">
               <span>Subtotal</span>
-              <span>{formatPrice(order.subtotal)}</span>
+              <span>{formatPrice(order.subtotal, getCurrencySymbol(order.currency))}</span>
             </div>
             <div className="flex justify-between text-[var(--text-secondary)]">
               <span>Shipping</span>
-              <span>{order.shippingCost === 0 ? <span className="text-[#2F855A] font-medium">Free</span> : formatPrice(order.shippingCost)}</span>
+              <span>{order.shippingCost === 0 ? <span className="text-[#2F855A] font-medium">Free</span> : formatPrice(order.shippingCost, getCurrencySymbol(order.currency))}</span>
             </div>
             <div className="flex justify-between text-[var(--text-secondary)]">
               <span>Tax</span>
-              <span>{formatPrice(order.tax)}</span>
+              <span>{formatPrice(order.tax, getCurrencySymbol(order.currency))}</span>
             </div>
             <div className="flex justify-between text-lg font-bold text-[var(--text-primary)] border-t border-[var(--border-color)] pt-3">
               <span>Total</span>
-              <span>{formatPrice(order.totalAmount)}</span>
+              <span>{formatPrice(order.totalAmount, getCurrencySymbol(order.currency))}</span>
             </div>
           </div>
         </div>

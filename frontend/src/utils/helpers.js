@@ -1,14 +1,8 @@
-export const formatPrice = (price, symbol) => {
-  if (price === null || price === undefined) return '$0.00';
-  const sym = symbol || '$';
-  return sym + Number(price).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-};
+import { formatCurrency, getCurrencySymbol as resolveSymbol } from './currency';
 
-export const getCurrencySymbol = (currency) => {
-  const symbols = { USD: '$', EUR: '€', GBP: '£', AED: 'د.إ', INR: '₹' };
-  const code = (currency || 'USD').toUpperCase();
-  return symbols[code] || `${code} `;
-};
+export const formatPrice = (price, symbol) => formatCurrency(price, symbol);
+
+export const getCurrencySymbol = (currency) => resolveSymbol(currency);
 
 export const getDiscountPrice = (price, discount) => {
   if (!discount || discount <= 0) return price;

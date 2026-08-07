@@ -4,6 +4,7 @@ import { CartProvider } from './context/CartContext'
 import { WishlistProvider } from './context/WishlistContext'
 import { ToastProvider } from './context/ToastContext'
 import { ThemeProvider } from './context/ThemeContext'
+import { SettingsProvider } from './context/SettingsContext'
 import { NotificationProvider } from './context/NotificationContext'
 import { CelebrationProvider } from './context/CelebrationContext'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -16,15 +17,17 @@ function App() {
         <ToastProvider>
           <AuthProvider>
             <ThemeProvider>
-              <CelebrationProvider>
-                <CartProvider>
-                  <WishlistProvider>
-                    <NotificationProvider>
-                      <AppRoutes />
-                    </NotificationProvider>
-                  </WishlistProvider>
-                </CartProvider>
-              </CelebrationProvider>
+              <SettingsProvider>
+                <CelebrationProvider>
+                  <CartProvider>
+                    <WishlistProvider>
+                      <NotificationProvider>
+                        <AppRoutes />
+                      </NotificationProvider>
+                    </WishlistProvider>
+                  </CartProvider>
+                </CelebrationProvider>
+              </SettingsProvider>
             </ThemeProvider>
           </AuthProvider>
         </ToastProvider>

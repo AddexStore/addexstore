@@ -1,7 +1,6 @@
 package com.addexstores.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,7 +27,6 @@ public class CreatePaymentRequest {
     @NotBlank
     private String country;
 
-    @NotNull
     private String currency;
 
     private String paymentMethod;

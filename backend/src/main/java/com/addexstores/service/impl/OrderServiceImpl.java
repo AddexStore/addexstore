@@ -16,6 +16,7 @@ import com.addexstores.service.OrderService;
 import com.addexstores.service.TaxService;
 import com.addexstores.service.ShippingService;
 import com.addexstores.service.InventoryService;
+import com.addexstores.service.CurrencyService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -51,6 +52,7 @@ public class OrderServiceImpl implements OrderService {
     private final TaxService taxService;
     private final ShippingService shippingService;
     private final InventoryService inventoryService;
+    private final CurrencyService currencyService;
     private final OrderMapper orderMapper;
 
     @Override
@@ -74,8 +76,8 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal shippingCost = shippingService.calculateShipping(subtotal, request.getCountry());
         BigDecimal totalAmount = subtotal.add(tax).add(shippingCost);
         String currency = request.getCurrency() != null && !request.getCurrency().isBlank()
-                ? request.getCurrency().toUpperCase()
-                : "USD";
+                ? request.getCurrency().trim().toUpperCase()
+                : currencyService.getBaseCurrency();
 
         String orderNumber = "ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 

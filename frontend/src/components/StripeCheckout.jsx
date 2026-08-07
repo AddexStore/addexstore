@@ -5,6 +5,7 @@ import { checkoutService } from '../services/checkoutService'
 import { cartService } from '../services/cartService'
 import StripePaymentElement from './StripePaymentElement'
 import { useToast } from '../context/ToastContext'
+import { getStoreCurrency } from '../utils/currency'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '')
 
@@ -16,20 +17,6 @@ export default function StripeCheckout({ shipping, onSuccess, onError, onSyncCar
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const initiated = useRef(false)
-
-  const getCurrencyForCountry = (country) => {
-    const currencyMap = {
-      US: 'USD',
-      UK: 'GBP',
-      GB: 'GBP',
-      CA: 'USD',
-      AE: 'AED',
-      FR: 'EUR',
-      IT: 'EUR',
-      IN: 'INR',
-    }
-    return currencyMap[country] || 'USD'
-  }
 
   useEffect(() => {
     if (initiated.current) return
@@ -45,7 +32,7 @@ export default function StripeCheckout({ shipping, onSuccess, onError, onSyncCar
           state: shipping.state,
           zipCode: shipping.zip,
           country: shipping.country,
-          currency: getCurrencyForCountry(shipping.country),
+          currency: getStoreCurrency(),
           paymentMethod: 'STRIPE',
         })
         const data = res.data || res

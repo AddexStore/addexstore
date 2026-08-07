@@ -47,7 +47,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RazorpayPaymentServiceImpl implements PaymentGateway {
 
-    private static final Set<String> SUPPORTED_CURRENCIES = Set.of("USD", "EUR", "GBP", "AED", "INR");
+    private static final Set<String> SUPPORTED_CURRENCIES = Set.of("USD", "EUR", "GBP", "AED", "INR", "AUD", "SAR", "CAD", "JPY");
 
     private final RazorpayConfig razorpayConfig;
     private final PaymentRepository paymentRepository;
@@ -101,7 +101,9 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
                 .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        String targetCurrency = request.getCurrency() != null ? request.getCurrency().toUpperCase() : "INR";
+        String targetCurrency = request.getCurrency() != null && !request.getCurrency().isBlank()
+                ? request.getCurrency().trim().toUpperCase()
+                : currencyService.getBaseCurrency();
         if (!SUPPORTED_CURRENCIES.contains(targetCurrency)) {
             throw new BadRequestException("Unsupported currency: " + targetCurrency + ". Supported: " + SUPPORTED_CURRENCIES);
         }
@@ -110,7 +112,7 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
         BigDecimal taxUsd = taxService.calculateTax(subtotalInUsd, request.getCountry(), request.getState());
         BigDecimal shippingUsd = shippingService.calculateShipping(subtotalInUsd, request.getCountry());
         BigDecimal totalUsd = subtotalInUsd.add(taxUsd).add(shippingUsd);
-        BigDecimal chargeAmount = currencyService.convertFromUsd(totalUsd, targetCurrency);
+        BigDecimal chargeAmount = currencyService.convertBaseCurrency(totalUsd, targetCurrency);
 
         String orderNumber = "ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
@@ -121,7 +123,7 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
                 .tax(taxUsd)
                 .shippingCost(shippingUsd)
                 .totalAmount(totalUsd)
-                .currency("USD")
+                .currency(currencyService.getBaseCurrency())
                 .status(OrderStatus.PENDING_PAYMENT)
                 .street(request.getStreet())
                 .city(request.getCity())

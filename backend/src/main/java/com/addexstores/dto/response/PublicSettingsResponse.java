@@ -11,20 +11,15 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SettingsResponse {
+public class PublicSettingsResponse {
 
-    private Long id;
     private String siteName;
     private String siteDescription;
     private String logo;
     private String favicon;
-    private String email;
-    private String phone;
-    private String address;
     private String currency;
     private String currencySymbol;
     private BigDecimal taxRate;
     private BigDecimal shippingCost;
     private BigDecimal freeShippingThreshold;
-    private String socialLinks;
 }

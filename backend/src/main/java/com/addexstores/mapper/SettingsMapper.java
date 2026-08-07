@@ -1,5 +1,6 @@
 package com.addexstores.mapper;
 
+import com.addexstores.dto.response.PublicSettingsResponse;
 import com.addexstores.dto.response.SettingsResponse;
 import com.addexstores.entity.Settings;
 
@@ -21,6 +22,20 @@ public class SettingsMapper {
                 .shippingCost(settings.getShippingCost())
                 .freeShippingThreshold(settings.getFreeShippingThreshold())
                 .socialLinks(settings.getSocialLinks())
+                .build();
+    }
+
+    public static PublicSettingsResponse toPublicSettingsResponse(Settings settings) {
+        if (settings == null) return null;
+        return PublicSettingsResponse.builder()
+                .siteName(settings.getSiteName())
+                .siteDescription(settings.getSiteDescription())
+                .logo(settings.getLogo())
+                .favicon(settings.getFavicon())
+                .currency(settings.getCurrency())
+                .taxRate(settings.getTaxRate())
+                .shippingCost(settings.getShippingCost())
+                .freeShippingThreshold(settings.getFreeShippingThreshold())
                 .build();
     }
 }

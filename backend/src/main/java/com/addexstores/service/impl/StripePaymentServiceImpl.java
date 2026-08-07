@@ -52,7 +52,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class StripePaymentServiceImpl implements StripePaymentService, PaymentGateway {
 
-    private static final Set<String> SUPPORTED_CURRENCIES = Set.of("USD", "EUR", "GBP", "AED", "INR");
+    private static final Set<String> SUPPORTED_CURRENCIES = Set.of("USD", "EUR", "GBP", "AED", "INR", "AUD", "SAR", "CAD", "JPY");
 
     private final PaymentRepository paymentRepository;
     private final PaymentTransactionRepository transactionRepository;
@@ -90,7 +90,9 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
                 .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        String targetCurrency = request.getCurrency() != null ? request.getCurrency().toUpperCase() : "USD";
+        String targetCurrency = request.getCurrency() != null && !request.getCurrency().isBlank()
+                ? request.getCurrency().trim().toUpperCase()
+                : currencyService.getBaseCurrency();
         if (!SUPPORTED_CURRENCIES.contains(targetCurrency)) {
             throw new BadRequestException("Unsupported currency: " + targetCurrency + ". Supported: " + SUPPORTED_CURRENCIES);
         }
@@ -98,7 +100,7 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
         BigDecimal tax = taxService.calculateTax(subtotal, request.getCountry(), request.getState());
         BigDecimal shippingCost = shippingService.calculateShipping(subtotal, request.getCountry());
         BigDecimal totalAmount = subtotal.add(tax).add(shippingCost);
-        BigDecimal chargeAmount = currencyService.convertFromUsd(totalAmount, targetCurrency);
+        BigDecimal chargeAmount = currencyService.convertBaseCurrency(totalAmount, targetCurrency);
 
         String orderNumber = "ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
@@ -109,7 +111,7 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
                 .tax(tax)
                 .shippingCost(shippingCost)
                 .totalAmount(totalAmount)
-                .currency("USD")
+                .currency(currencyService.getBaseCurrency())
                 .status(OrderStatus.PENDING_PAYMENT)
                 .street(request.getStreet())
                 .city(request.getCity())
@@ -230,7 +232,9 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
             throw new UnauthorizedException("Order does not belong to this user");
         }
 
-        String currencyUpper = currency.toUpperCase();
+        String currencyUpper = (currency == null || currency.isBlank())
+                ? currencyService.getBaseCurrency()
+                : currency.trim().toUpperCase();
         if (!SUPPORTED_CURRENCIES.contains(currencyUpper)) {
             throw new BadRequestException("Unsupported currency: " + currency + ". Supported: " + SUPPORTED_CURRENCIES);
         }
@@ -245,7 +249,7 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
         }
 
         BigDecimal appAmount = order.getTotalAmount();
-        BigDecimal chargeAmount = currencyService.convertFromUsd(appAmount, currencyUpper);
+        BigDecimal chargeAmount = currencyService.convertBaseCurrency(appAmount, currencyUpper);
         String stripeCurrency = currencyUpper.toLowerCase();
 
         long stripeAmount = convertToSmallestUnit(chargeAmount, currencyUpper);

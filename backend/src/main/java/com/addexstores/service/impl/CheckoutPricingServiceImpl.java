@@ -25,8 +25,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CheckoutPricingServiceImpl implements CheckoutPricingService {
 
-    private static final String DEFAULT_CURRENCY = "USD";
-
     private final TaxService taxService;
     private final ShippingService shippingService;
     private final CurrencyService currencyService;
@@ -37,7 +35,9 @@ public class CheckoutPricingServiceImpl implements CheckoutPricingService {
     @Override
     @Transactional(readOnly = true)
     public CheckoutQuoteResponse calculateQuote(CheckoutQuoteRequest request, Long userId) {
-        String currencyCode = request.getCurrency() != null ? request.getCurrency().toUpperCase() : DEFAULT_CURRENCY;
+        String currencyCode = request.getCurrency() != null && !request.getCurrency().isBlank()
+                ? request.getCurrency().trim().toUpperCase()
+                : currencyService.getBaseCurrency();
         CurrencyRate currencyRate = currencyService.getCurrencyRate(currencyCode);
 
         BigDecimal subtotal;
@@ -64,20 +64,25 @@ public class CheckoutPricingServiceImpl implements CheckoutPricingService {
             taxRate = taxRate.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
         }
         String taxName = taxService.getTaxRule(request.getCountry(), request.getState()).getName();
-        BigDecimal tax = currencyService.convertFromUsd(taxUsd, currencyCode);
+        BigDecimal tax = currencyService.convertBaseCurrency(taxUsd, currencyCode);
 
         ShippingRule shippingRule = shippingService.getShippingRule(request.getCountry());
         boolean freeShipping = shippingUsd.compareTo(BigDecimal.ZERO) == 0;
         String shippingName = freeShipping ? "Free Shipping" : shippingRule.getName();
-        BigDecimal shippingCost = currencyService.convertFromUsd(shippingUsd, currencyCode);
+        BigDecimal shippingCost = currencyService.convertBaseCurrency(shippingUsd, currencyCode);
 
-        BigDecimal subtotalInTarget = currencyService.convertFromUsd(subtotal, currencyCode);
-        BigDecimal total = currencyService.convertFromUsd(totalUsd, currencyCode);
+        BigDecimal subtotalInTarget = currencyService.convertBaseCurrency(subtotal, currencyCode);
+        BigDecimal total = currencyService.convertBaseCurrency(totalUsd, currencyCode);
+
+        boolean isBaseCurrency = currencyCode.equalsIgnoreCase(currencyService.getBaseCurrency());
+        BigDecimal conversionRate = isBaseCurrency
+                ? BigDecimal.ONE
+                : currencyService.convertBaseCurrency(BigDecimal.ONE, currencyCode);
 
         return CheckoutQuoteResponse.builder()
                 .currency(currencyCode)
                 .currencySymbol(currencyRate.getSymbol())
-                .conversionRate(currencyRate.getRateToUsd())
+                .conversionRate(conversionRate)
                 .subtotal(subtotalInTarget)
                 .subtotalInUsd(subtotal)
                 .taxRate(taxRate)

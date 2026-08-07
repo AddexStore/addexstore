@@ -4,6 +4,7 @@ import { productService } from '../../services/productService'
 import { mapProduct, mapCategory } from '../../services/mappers'
 import { useToast } from '../../context/ToastContext'
 import { formatPrice } from '../../utils/helpers'
+import { getStoreSymbol } from '../../utils/currency'
 import { getAssetUrl } from '../../services/api'
 import BackButton from '../../components/BackButton'
 
@@ -587,16 +588,16 @@ export default function AdminProducts() {
                     <td className="py-2 px-2 text-[var(--text-secondary)] hidden lg:table-cell">{product.category || '—'}</td>
                     <td className="py-2 px-2 text-right whitespace-nowrap">
                       {originalPrice != null
-                        ? <span className="text-[var(--text-secondary)] line-through">{formatPrice(originalPrice, '₹')}</span>
+                        ? <span className="text-[var(--text-secondary)] line-through">{formatPrice(originalPrice)}</span>
                         : <span className="text-[var(--text-muted)]">—</span>}
                     </td>
                     <td className="py-2 px-2 text-right whitespace-nowrap">
                       {discountPct > 0 ? <span className="text-[#EF4444] font-semibold">-{discountPct}%</span> : <span className="text-[var(--text-muted)]">—</span>}
                     </td>
                     <td className="py-2 px-2 text-right whitespace-nowrap">
-                      {discountAmt > 0 ? <span className="text-[#EF4444]">{formatPrice(discountAmt, '₹')}</span> : <span className="text-[var(--text-muted)]">—</span>}
+                      {discountAmt > 0 ? <span className="text-[#EF4444]">{formatPrice(discountAmt)}</span> : <span className="text-[var(--text-muted)]">—</span>}
                     </td>
-                    <td className="py-2 px-2 text-right whitespace-nowrap text-[var(--text-primary)] font-semibold">{formatPrice(product.price, '₹')}</td>
+                    <td className="py-2 px-2 text-right whitespace-nowrap text-[var(--text-primary)] font-semibold">{formatPrice(product.price)}</td>
                     <td className="py-2 px-2 text-right"><StockBadge stock={product.stock} /></td>
                     <td className="py-2 px-2">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${product.active === false ? 'bg-red-500/10 text-red-600' : 'bg-green-500/10 text-green-600'}`}>
@@ -760,13 +761,13 @@ export default function AdminProducts() {
                   className="w-full bg-[var(--bg-input)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#C6A972]" />
               </div>
               <div className="col-span-2 sm:col-span-1">
-                <label className="block text-xs text-[var(--text-secondary)] mb-1">Selling Price (₹) *</label>
+                <label className="block text-xs text-[var(--text-secondary)] mb-1">Selling Price ({getStoreSymbol()}) *</label>
                 <input type="number" min="0" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })}
                   className="w-full bg-[var(--bg-input)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#C6A972]" />
                 {formErrors.price && <p className="text-[10px] text-red-500 mt-0.5">{formErrors.price}</p>}
               </div>
               <div className="col-span-2 sm:col-span-1">
-                <label className="block text-xs text-[var(--text-secondary)] mb-1">Compare-at Price (₹)</label>
+                <label className="block text-xs text-[var(--text-secondary)] mb-1">Compare-at Price ({getStoreSymbol()})</label>
                 <input type="number" min="0" step="0.01" value={form.originalPrice} onChange={(e) => setForm({ ...form, originalPrice: e.target.value })}
                   className="w-full bg-[var(--bg-input)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#C6A972]" />
                 {formErrors.originalPrice && <p className="text-[10px] text-red-500 mt-0.5">{formErrors.originalPrice}</p>}

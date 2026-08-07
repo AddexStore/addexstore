@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { checkoutService } from '../services/checkoutService'
 import { useToast } from '../context/ToastContext'
+import { getStoreCurrency } from '../utils/currency'
 
 function loadRazorpayScript() {
   return new Promise((resolve) => {
@@ -24,14 +25,6 @@ export default function RazorpayCheckout({ shipping, onSuccess, onError, onSyncC
   const [orderData, setOrderData] = useState(null)
   const initiated = useRef(false)
   const scriptLoaded = useRef(false)
-
-  const getCurrencyForCountry = (country) => {
-    const currencyMap = {
-      US: 'USD', UK: 'GBP', GB: 'GBP', CA: 'USD',
-      AE: 'AED', FR: 'EUR', IT: 'EUR', IN: 'INR',
-    }
-    return currencyMap[country] || 'INR'
-  }
 
   useEffect(() => {
     if (initiated.current) return
@@ -61,7 +54,7 @@ export default function RazorpayCheckout({ shipping, onSuccess, onError, onSyncC
           state: shipping.state,
           zipCode: shipping.zip,
           country: shipping.country,
-          currency: getCurrencyForCountry(shipping.country),
+          currency: getStoreCurrency(),
           paymentMethod: 'RAZORPAY',
         })
         const data = res.data || res
@@ -88,7 +81,7 @@ export default function RazorpayCheckout({ shipping, onSuccess, onError, onSyncC
     const options = {
       key: razorpayKey,
       amount: orderData.amount,
-      currency: orderData.currency || 'INR',
+      currency: orderData.currency || getStoreCurrency(),
       name: import.meta.env.VITE_APP_NAME || 'AddexStores',
       order_id: orderData.paymentIntentId,
       prefill: {

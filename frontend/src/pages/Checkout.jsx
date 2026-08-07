@@ -7,6 +7,7 @@ import { api } from '../services/api'
 import { cartService } from '../services/cartService'
 import { checkoutService } from '../services/checkoutService'
 import { formatPrice } from '../utils/helpers'
+import { getStoreCurrency, getStoreSymbol } from '../utils/currency'
 import StripeCheckout from '../components/StripeCheckout'
 import RazorpayCheckout from '../components/RazorpayCheckout'
 
@@ -46,15 +47,7 @@ export default function Checkout() {
 
   const [quote, setQuote] = useState(null)
   const [quoteLoading, setQuoteLoading] = useState(false)
-  const cs = quote?.currencySymbol || '$'
-
-  const getCurrencyForCountry = (country) => {
-    const currencyMap = {
-      US: 'USD', UK: 'GBP', GB: 'GBP', CA: 'USD',
-      AE: 'AED', FR: 'EUR', IT: 'EUR', IN: 'INR',
-    }
-    return currencyMap[country] || 'USD'
-  }
+  const cs = quote?.currencySymbol || getStoreSymbol()
 
   const subtotal = quote ? Number(quote.subtotal) : getCartTotal()
   const shippingCost = quote ? Number(quote.shippingCost) : (getCartTotal() >= 100 ? 0 : 15)
@@ -79,7 +72,7 @@ export default function Checkout() {
       const res = await checkoutService.getQuote({
         country: shipping.country,
         state: shipping.state,
-        currency: getCurrencyForCountry(shipping.country),
+        currency: getStoreCurrency(),
         items,
       })
       setQuote(res.data || res)

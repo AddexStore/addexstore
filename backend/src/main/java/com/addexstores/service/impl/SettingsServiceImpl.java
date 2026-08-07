@@ -1,13 +1,18 @@
 package com.addexstores.service.impl;
 
 import com.addexstores.dto.request.SettingsRequest;
+import com.addexstores.dto.response.PublicSettingsResponse;
 import com.addexstores.dto.response.SettingsResponse;
 import com.addexstores.entity.Settings;
+import com.addexstores.exception.BadRequestException;
 import com.addexstores.mapper.SettingsMapper;
 import com.addexstores.repository.SettingsRepository;
+import com.addexstores.service.CurrencyService;
 import com.addexstores.service.SettingsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +20,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
+import java.util.Locale;
 
 @Slf4j
 @Service
@@ -22,15 +28,29 @@ import java.math.BigDecimal;
 public class SettingsServiceImpl implements SettingsService {
 
     private final SettingsRepository settingsRepository;
+    private final CurrencyService currencyService;
 
     @Override
+    @Cacheable(cacheNames = "settings", key = "'admin'")
     public SettingsResponse getSettings() {
         Settings settings = getSettingsEntity();
-        return SettingsMapper.toSettingsResponse(settings);
+        SettingsResponse response = SettingsMapper.toSettingsResponse(settings);
+        response.setCurrencySymbol(currencyService.getSymbol(response.getCurrency()));
+        return response;
+    }
+
+    @Override
+    @Cacheable(cacheNames = "settings", key = "'public'")
+    public PublicSettingsResponse getPublicSettings() {
+        Settings settings = getSettingsEntity();
+        PublicSettingsResponse response = SettingsMapper.toPublicSettingsResponse(settings);
+        response.setCurrencySymbol(currencyService.getSymbol(response.getCurrency()));
+        return response;
     }
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "settings", allEntries = true)
     public SettingsResponse updateSettings(SettingsRequest request) {
         Settings settings = getSettingsEntity();
 
@@ -41,7 +61,15 @@ public class SettingsServiceImpl implements SettingsService {
         if (request.getEmail() != null) settings.setEmail(request.getEmail());
         if (request.getPhone() != null) settings.setPhone(request.getPhone());
         if (request.getAddress() != null) settings.setAddress(request.getAddress());
-        if (request.getCurrency() != null) settings.setCurrency(request.getCurrency());
+        if (request.getCurrency() != null) {
+            String currency = request.getCurrency().trim();
+            if (!currency.isEmpty()) {
+                if (!currencyService.isSupportedCurrency(currency)) {
+                    throw new BadRequestException("Unsupported currency: " + currency);
+                }
+                settings.setCurrency(currency.toUpperCase(Locale.ROOT));
+            }
+        }
         if (request.getTaxRate() != null) settings.setTaxRate(request.getTaxRate());
         if (request.getShippingCost() != null) settings.setShippingCost(request.getShippingCost());
         if (request.getFreeShippingThreshold() != null) settings.setFreeShippingThreshold(request.getFreeShippingThreshold());
@@ -55,7 +83,9 @@ public class SettingsServiceImpl implements SettingsService {
 
         settings = settingsRepository.save(settings);
         log.info("Settings updated");
-        return SettingsMapper.toSettingsResponse(settings);
+        SettingsResponse response = SettingsMapper.toSettingsResponse(settings);
+        response.setCurrencySymbol(currencyService.getSymbol(response.getCurrency()));
+        return response;
     }
 
     @Override

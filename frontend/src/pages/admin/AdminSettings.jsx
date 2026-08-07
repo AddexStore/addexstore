@@ -1,28 +1,88 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useToast } from '../../context/ToastContext'
+import { useSettings } from '../../context/SettingsContext'
+import { settingsService } from '../../services/settingsService'
+import { CURRENCY_OPTIONS } from '../../utils/currency'
 import BackButton from '../../components/BackButton'
 
-const defaultSettings = {
-  general: { siteName: 'AddexStores', tagline: 'Luxury Redefined', currency: 'USD', taxRate: '8.5' },
-  shipping: { freeThreshold: '150', standardCost: '12.99', expressCost: '24.99' },
-  payment: { creditCard: true, paypal: true, bankTransfer: true, crypto: false },
+const emptySettings = {
+  siteName: '',
+  siteDescription: '',
+  currency: 'INR',
+  taxRate: '',
+  shippingCost: '',
+  freeShippingThreshold: '',
 }
 
 export default function AdminSettings() {
   const { showToast } = useToast()
-  const [settings, setSettings] = useState(defaultSettings)
+  const { refresh: refreshStoreSettings } = useSettings()
+  const [settings, setSettings] = useState(emptySettings)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [activeSection, setActiveSection] = useState('general')
 
   const sections = [
     { id: 'general', label: 'General' },
-    { id: 'shipping', label: 'Shipping' }, { id: 'payment', label: 'Payment' },
+    { id: 'shipping', label: 'Shipping' },
   ]
 
-  const updateGeneral = (key, value) => setSettings((prev) => ({ ...prev, general: { ...prev.general, [key]: value } }))
-  const updateShipping = (key, value) => setSettings((prev) => ({ ...prev, shipping: { ...prev.shipping, [key]: value } }))
-  const togglePayment = (key) => setSettings((prev) => ({ ...prev, payment: { ...prev.payment, [key]: !prev.payment[key] } }))
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await settingsService.getAdmin()
+      const data = res?.data || res
+      setSettings({
+        siteName: data.siteName || '',
+        siteDescription: data.siteDescription || '',
+        currency: data.currency || 'INR',
+        taxRate: data.taxRate ?? '',
+        shippingCost: data.shippingCost ?? '',
+        freeShippingThreshold: data.freeShippingThreshold ?? '',
+      })
+    } catch (err) {
+      showToast(err.message || 'Failed to load settings', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }, [showToast])
 
-  const handleSave = () => { showToast('Settings saved successfully', 'success') }
+  useEffect(() => {
+    load()
+  }, [load])
+
+  const update = (key, value) => setSettings((prev) => ({ ...prev, [key]: value }))
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      const res = await settingsService.update({
+        siteName: settings.siteName,
+        siteDescription: settings.siteDescription,
+        currency: settings.currency,
+        taxRate: settings.taxRate === '' ? null : Number(settings.taxRate),
+        shippingCost: settings.shippingCost === '' ? null : Number(settings.shippingCost),
+        freeShippingThreshold: settings.freeShippingThreshold === '' ? null : Number(settings.freeShippingThreshold),
+      })
+      const data = res?.data || res
+      setSettings({
+        siteName: data.siteName || '',
+        siteDescription: data.siteDescription || '',
+        currency: data.currency || 'INR',
+        taxRate: data.taxRate ?? '',
+        shippingCost: data.shippingCost ?? '',
+        freeShippingThreshold: data.freeShippingThreshold ?? '',
+      })
+      await refreshStoreSettings()
+      showToast('Settings saved successfully', 'success')
+    } catch (err) {
+      showToast(err.message || 'Failed to save settings', 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const selectedCurrency = CURRENCY_OPTIONS.find((c) => c.code === settings.currency) || CURRENCY_OPTIONS[0]
 
   return (
     <div className="h-full flex flex-col gap-2 py-3">
@@ -31,7 +91,13 @@ export default function AdminSettings() {
           <BackButton />
           <h1 className="text-lg font-bold text-white font-['Playfair_Display']">Settings</h1>
         </div>
-        <button onClick={handleSave} className="px-4 py-1.5 bg-[#C6A972] text-white rounded-lg text-xs font-semibold hover:bg-[#B8965F] transition-colors">Save</button>
+        <button
+          onClick={handleSave}
+          disabled={saving || loading}
+          className="px-4 py-1.5 bg-[#C6A972] text-white rounded-lg text-xs font-semibold hover:bg-[#B8965F] transition-colors disabled:opacity-50"
+        >
+          {saving ? 'Saving...' : 'Save'}
+        </button>
       </div>
 
       <div className="flex gap-1 flex-shrink-0">
@@ -44,70 +110,57 @@ export default function AdminSettings() {
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto bg-[var(--bg-card)] rounded-lg border border-[#2A2A2A]/50 p-4">
-        {activeSection === 'general' && (
-          <div className="space-y-3 max-w-lg">
-            <div>
-              <label className="block text-xs text-[var(--text-secondary)] mb-1">Site Name</label>
-              <input value={settings.general.siteName} onChange={(e) => updateGeneral('siteName', e.target.value)} className="w-full bg-[var(--bg-card)] border border-[#2A2A2A] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C6A972]" />
-            </div>
-            <div>
-              <label className="block text-xs text-[var(--text-secondary)] mb-1">Tagline</label>
-              <input value={settings.general.tagline} onChange={(e) => updateGeneral('tagline', e.target.value)} className="w-full bg-[var(--bg-card)] border border-[#2A2A2A] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C6A972]" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs text-[var(--text-secondary)] mb-1">Currency</label>
-                <select value={settings.general.currency} onChange={(e) => updateGeneral('currency', e.target.value)} className="w-full bg-[var(--bg-card)] border border-[#2A2A2A] rounded-lg px-3 py-2 text-sm text-[var(--text-secondary)] focus:outline-none focus:border-[#C6A972]">
-                  <option value="USD">USD ($)</option><option value="EUR">EUR (€)</option><option value="GBP">GBP (£)</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs text-[var(--text-secondary)] mb-1">Tax Rate (%)</label>
-                <input type="number" value={settings.general.taxRate} onChange={(e) => updateGeneral('taxRate', e.target.value)} className="w-full bg-[var(--bg-card)] border border-[#2A2A2A] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C6A972]" />
-              </div>
-            </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <svg className="w-6 h-6 animate-spin text-[#C6A972]" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
           </div>
-        )}
-
-        {activeSection === 'shipping' && (
-          <div className="space-y-3 max-w-lg">
-            <div>
-              <label className="block text-xs text-[var(--text-secondary)] mb-1">Free Shipping Threshold ($)</label>
-              <input type="number" value={settings.shipping.freeThreshold} onChange={(e) => updateShipping('freeThreshold', e.target.value)} className="w-full bg-[var(--bg-card)] border border-[#2A2A2A] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C6A972]" />
-              <p className="text-[10px] text-[var(--text-secondary)] mt-0.5">Orders above this get free shipping</p>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs text-[var(--text-secondary)] mb-1">Standard ($)</label>
-                <input type="number" value={settings.shipping.standardCost} onChange={(e) => updateShipping('standardCost', e.target.value)} className="w-full bg-[var(--bg-card)] border border-[#2A2A2A] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C6A972]" />
-              </div>
-              <div>
-                <label className="block text-xs text-[var(--text-secondary)] mb-1">Express ($)</label>
-                <input type="number" value={settings.shipping.expressCost} onChange={(e) => updateShipping('expressCost', e.target.value)} className="w-full bg-[var(--bg-card)] border border-[#2A2A2A] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C6A972]" />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeSection === 'payment' && (
-          <div className="space-y-2 max-w-lg">
-            {[
-              { key: 'creditCard', label: 'Credit Card', desc: 'Visa, Mastercard, Amex' },
-              { key: 'paypal', label: 'PayPal', desc: 'PayPal / Venmo' },
-              { key: 'bankTransfer', label: 'Bank Transfer', desc: 'Direct wire transfer' },
-              { key: 'crypto', label: 'Cryptocurrency', desc: 'Bitcoin, Ethereum, USDC' },
-            ].map((method) => (
-              <label key={method.key} className="flex items-center justify-between p-3 bg-[var(--bg-card)] rounded-lg border border-[#2A2A2A] cursor-pointer hover:border-[#B5B5B5] transition-colors">
+        ) : (
+          <>
+            {activeSection === 'general' && (
+              <div className="space-y-3 max-w-lg">
                 <div>
-                  <p className="text-xs text-white font-medium">{method.label}</p>
-                  <p className="text-[10px] text-[var(--text-secondary)]">{method.desc}</p>
+                  <label className="block text-xs text-[var(--text-secondary)] mb-1">Site Name</label>
+                  <input value={settings.siteName} onChange={(e) => update('siteName', e.target.value)} className="w-full bg-[var(--bg-card)] border border-[#2A2A2A] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C6A972]" />
                 </div>
-                <div onClick={() => togglePayment(method.key)} className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer ${settings.payment[method.key] ? 'bg-[#C6A972]' : 'bg-[var(--bg-hover)]'}`}>
-                  <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-[var(--bg-card)] transition-transform ${settings.payment[method.key] ? 'translate-x-5' : ''}`} />
+                <div>
+                  <label className="block text-xs text-[var(--text-secondary)] mb-1">Tagline</label>
+                  <input value={settings.siteDescription} onChange={(e) => update('siteDescription', e.target.value)} className="w-full bg-[var(--bg-card)] border border-[#2A2A2A] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C6A972]" />
                 </div>
-              </label>
-            ))}
-          </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-[var(--text-secondary)] mb-1">Store Currency</label>
+                    <select value={settings.currency} onChange={(e) => update('currency', e.target.value)} className="w-full bg-[var(--bg-card)] border border-[#2A2A2A] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C6A972]">
+                      {CURRENCY_OPTIONS.map((c) => (
+                        <option key={c.code} value={c.code}>{c.code} ({c.symbol})</option>
+                      ))}
+                    </select>
+                    <p className="text-[10px] text-[var(--text-secondary)] mt-1">Every price across the store, cart, and checkout uses {selectedCurrency.symbol} ({selectedCurrency.code}).</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-[var(--text-secondary)] mb-1">Tax Rate (%)</label>
+                    <input type="number" step="0.01" value={settings.taxRate} onChange={(e) => update('taxRate', e.target.value)} className="w-full bg-[var(--bg-card)] border border-[#2A2A2A] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C6A972]" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeSection === 'shipping' && (
+              <div className="space-y-3 max-w-lg">
+                <div>
+                  <label className="block text-xs text-[var(--text-secondary)] mb-1">Free Shipping Threshold ({selectedCurrency.symbol})</label>
+                  <input type="number" step="0.01" value={settings.freeShippingThreshold} onChange={(e) => update('freeShippingThreshold', e.target.value)} className="w-full bg-[var(--bg-card)] border border-[#2A2A2A] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C6A972]" />
+                  <p className="text-[10px] text-[var(--text-secondary)] mt-0.5">Orders above this get free shipping</p>
+                </div>
+                <div>
+                  <label className="block text-xs text-[var(--text-secondary)] mb-1">Standard Shipping Cost ({selectedCurrency.symbol})</label>
+                  <input type="number" step="0.01" value={settings.shippingCost} onChange={(e) => update('shippingCost', e.target.value)} className="w-full bg-[var(--bg-card)] border border-[#2A2A2A] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#C6A972]" />
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
