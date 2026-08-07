@@ -21,17 +21,18 @@ import java.util.stream.IntStream;
 public class BannerServiceImpl implements BannerService {
 
     private final BannerRepository bannerRepository;
+    private final BannerMapper bannerMapper;
 
     @Override
     public List<BannerResponse> getActiveBanners() {
         List<Banner> banners = bannerRepository.findByActiveTrueOrderBySortOrderAsc();
-        return BannerMapper.toBannerResponseList(banners);
+        return bannerMapper.toBannerResponseList(banners);
     }
 
     @Override
     public List<BannerResponse> getAllBanners() {
         List<Banner> banners = bannerRepository.findAll();
-        return BannerMapper.toBannerResponseList(banners);
+        return bannerMapper.toBannerResponseList(banners);
     }
 
     @Override
@@ -48,7 +49,7 @@ public class BannerServiceImpl implements BannerService {
 
         banner = bannerRepository.save(banner);
         log.info("Banner created: {}", banner.getTitle());
-        return BannerMapper.toBannerResponse(banner);
+        return bannerMapper.toBannerResponse(banner);
     }
 
     @Override
@@ -66,7 +67,7 @@ public class BannerServiceImpl implements BannerService {
 
         banner = bannerRepository.save(banner);
         log.info("Banner updated: {}", banner.getTitle());
-        return BannerMapper.toBannerResponse(banner);
+        return bannerMapper.toBannerResponse(banner);
     }
 
     @Override

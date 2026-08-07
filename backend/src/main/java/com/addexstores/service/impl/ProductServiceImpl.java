@@ -52,6 +52,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final SubCategoryRepository subCategoryRepository;
+    private final ProductMapper productMapper;
 
     @Override
     @Cacheable(value = "products", key = "'all_' + #page + '_' + #size + '_' + #sort + '_' + #category + '_' + #subcategory + '_' + #brand + '_' + #minPrice + '_' + #maxPrice + '_' + #stockStatus + '_' + #featured + '_' + #trending + '_' + #newArrival + '_' + #onSale + '_' + #search")
@@ -81,7 +82,7 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse getProductById(Long id) {
         Product product = productRepository.findByIdWithGraph(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", id));
-        return ProductMapper.toProductResponse(product);
+        return productMapper.toProductResponse(product);
     }
 
     @Override
@@ -89,7 +90,7 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse getProductBySlug(String slug) {
         Product product = productRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "slug", slug));
-        return ProductMapper.toProductResponse(product);
+        return productMapper.toProductResponse(product);
     }
 
     @Override
@@ -216,7 +217,7 @@ public class ProductServiceImpl implements ProductService {
             refreshSubCategoryProductCount(subCategory.getId());
         }
 
-        return ProductMapper.toProductResponse(product);
+        return productMapper.toProductResponse(product);
     }
 
     @Override
@@ -344,7 +345,7 @@ public class ProductServiceImpl implements ProductService {
         }
         subCategoryIds.forEach(this::refreshSubCategoryProductCount);
 
-        return ProductMapper.toProductResponse(product);
+        return productMapper.toProductResponse(product);
     }
 
     @Override
@@ -514,7 +515,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private PagedResponse<ProductResponse> buildPagedResponse(Page<Product> page) {
-        List<ProductResponse> content = ProductMapper.toProductResponseList(page.getContent());
+        List<ProductResponse> content = productMapper.toProductResponseList(page.getContent());
         return PagedResponse.<ProductResponse>builder()
                 .content(content)
                 .page(page.getNumber())

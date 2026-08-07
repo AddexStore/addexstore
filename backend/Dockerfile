@@ -15,8 +15,10 @@ RUN mvn clean package -DskipTests -B --no-transfer-progress
 
 # ============================================================
 # STAGE 2: Runtime (lightweight JRE)
+# Use the glibc (non-alpine) Temurin image: the AWS SDK v2
+# (S3) relies on glibc-native bindings which fail on musl.
 # ============================================================
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jre
 
 LABEL org.opencontainers.image.title="AddexStores Backend" \
       org.opencontainers.image.description="E-commerce platform backend API" \
@@ -26,7 +28,7 @@ LABEL org.opencontainers.image.title="AddexStores Backend" \
       org.opencontainers.image.licenses="MIT"
 
 # Create non-root user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN groupadd -r appgroup && useradd -r -g appgroup -d /app -s /sbin/nologin appuser
 
 WORKDIR /app
 

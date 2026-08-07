@@ -4,25 +4,27 @@ import com.addexstores.exception.BadRequestException;
 import com.addexstores.service.FileUploadService;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
-import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.time.Duration;
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -36,25 +38,28 @@ public class FileUploadServiceImpl implements FileUploadService {
     private static final byte[] GIF_MAGIC = {'G', 'I', 'F', '8'};
     private static final byte[] RIFF_MAGIC = {'R', 'I', 'F', 'F'};
 
+    private static final String S3_UPLOADS_PREFIX = "/uploads/";
+
+    private static final Set<String> ACL_BLOCKED_ERROR_CODES = Set.of(
+            "AccessControlListNotSupported", "InvalidArgument", "InvalidRequest",
+            "AccessControlListNotSupportedError");
+
     private final S3Client s3Client;
-    private final S3Presigner s3Presigner;
     private final String bucketName;
     private final String region;
     private final Path uploadDir;
     private final boolean useS3;
 
     public FileUploadServiceImpl(
-            S3Client s3Client,
-            S3Presigner s3Presigner,
+            ObjectProvider<S3Client> s3ClientProvider,
             @Value("${aws.s3.bucket:}") String bucketName,
             @Value("${aws.s3.region:us-east-1}") String region,
             @Value("${app.upload.dir:./uploads}") String uploadDirPath) {
-        this.s3Client = s3Client;
-        this.s3Presigner = s3Presigner;
+        this.s3Client = s3ClientProvider.getIfAvailable();
         this.bucketName = bucketName;
         this.region = region;
         this.uploadDir = Paths.get(uploadDirPath).toAbsolutePath().normalize();
-        this.useS3 = s3Client != null && !bucketName.isBlank();
+        this.useS3 = this.s3Client != null && !bucketName.isBlank();
     }
 
     @PostConstruct
@@ -79,28 +84,60 @@ public class FileUploadServiceImpl implements FileUploadService {
         String uniqueFilename = UUID.randomUUID() + extension;
         String key = directory + "/" + uniqueFilename;
 
+        String storedReference;
         if (useS3) {
-            return uploadToS3(file, key);
+            storedReference = uploadToS3(file, key);
+        } else {
+            storedReference = uploadToLocal(file, directory, uniqueFilename);
         }
-        return uploadToLocal(file, directory, uniqueFilename);
+        return getFileUrl(storedReference);
     }
 
     private String uploadToS3(MultipartFile file, String key) {
         try {
-            s3Client.putObject(
-                    PutObjectRequest.builder()
-                            .bucket(bucketName)
-                            .key(key)
-                            .contentType(file.getContentType())
-                            .build(),
-                    RequestBody.fromInputStream(file.getInputStream(), file.getSize())
-            );
-            log.info("File uploaded to S3: {}", key);
+            try {
+                s3Client.putObject(
+                        PutObjectRequest.builder()
+                                .bucket(bucketName)
+                                .key(key)
+                                .contentType(file.getContentType())
+                                .acl(ObjectCannedACL.PUBLIC_READ)
+                                .build(),
+                        RequestBody.fromInputStream(file.getInputStream(), file.getSize())
+                );
+                log.info("File uploaded to S3 with public-read ACL: {}", key);
+            } catch (S3Exception e) {
+                if (isAclNotSupported(e)) {
+                    log.warn("Bucket does not support object ACLs; retrying without ACL. "
+                            + "Ensure the bucket policy grants public read access. {}", e.getMessage());
+                    s3Client.putObject(
+                            PutObjectRequest.builder()
+                                    .bucket(bucketName)
+                                    .key(key)
+                                    .contentType(file.getContentType())
+                                    .build(),
+                            RequestBody.fromInputStream(file.getInputStream(), file.getSize())
+                    );
+                } else {
+                    throw e;
+                }
+            }
             return key;
         } catch (IOException e) {
             log.error("Failed to upload file to S3", e);
             throw new BadRequestException("Failed to upload file: " + e.getMessage());
         }
+    }
+
+    private boolean isAclNotSupported(S3Exception e) {
+        String errorCode = e.awsErrorDetails() != null ? e.awsErrorDetails().errorCode() : null;
+        if (errorCode != null && ACL_BLOCKED_ERROR_CODES.contains(errorCode)) {
+            return true;
+        }
+        int status = e.statusCode();
+        String message = e.getMessage() == null ? "" : e.getMessage().toLowerCase(Locale.ROOT);
+        return (status == 400 || status == 403)
+                && (message.contains("acl") || message.contains("access control"));
     }
 
     private String uploadToLocal(MultipartFile file, String directory, String uniqueFilename) {
@@ -120,43 +157,79 @@ public class FileUploadServiceImpl implements FileUploadService {
 
     @Override
     public void deleteFile(String fileUrl) {
+        if (fileUrl == null || fileUrl.isBlank()) {
+            return;
+        }
+        String key = extractKey(fileUrl);
         if (useS3) {
             s3Client.deleteObject(DeleteObjectRequest.builder()
                     .bucket(bucketName)
-                    .key(fileUrl)
+                    .key(key)
                     .build());
-            log.info("File deleted from S3: {}", fileUrl);
+            log.info("File deleted from S3: {}", key);
         } else {
             try {
-                Path filePath = uploadDir.resolve(fileUrl).normalize();
+                Path filePath = uploadDir.resolve(key).normalize();
                 if (!filePath.startsWith(uploadDir)) {
                     throw new BadRequestException("Invalid file path");
                 }
                 Files.deleteIfExists(filePath);
-                log.info("File deleted locally: {}", fileUrl);
+                log.info("File deleted locally: {}", key);
             } catch (IOException e) {
-                log.warn("Failed to delete file: {}", fileUrl, e);
+                log.warn("Failed to delete file: {}", key, e);
             }
         }
     }
 
     @Override
     public String getFileUrl(String relativePath) {
-        if (useS3) {
-            if (s3Presigner != null) {
-                PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(
-                        builder -> builder
-                                .signatureDuration(Duration.ofMinutes(60))
-                                .getObjectRequest(req -> req
-                                        .bucket(bucketName)
-                                        .key(relativePath)
-                                        .build())
-                                .build());
-                return presignedRequest.url().toString();
-            }
-            return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, relativePath);
+        if (relativePath == null || relativePath.isBlank()) {
+            return null;
         }
-        return "/uploads/" + relativePath.replace("\\", "/");
+        String value = relativePath.trim();
+
+        if (value.startsWith("http://") || value.startsWith("https://")) {
+            return value;
+        }
+        if (value.startsWith("<") || value.startsWith("data:")) {
+            return value;
+        }
+        if (value.startsWith("/assets/")) {
+            return value;
+        }
+        if (value.startsWith(S3_UPLOADS_PREFIX)) {
+            value = value.substring(S3_UPLOADS_PREFIX.length());
+        } else if (value.startsWith("/")) {
+            return value;
+        }
+
+        String key = value.replace("\\", "/");
+        if (useS3) {
+            return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, key);
+        }
+        return "/uploads/" + key;
+    }
+
+    private String extractKey(String urlOrPath) {
+        String value = urlOrPath.trim();
+        if (value.startsWith("http://") || value.startsWith("https://")) {
+            try {
+                URI uri = URI.create(value);
+                String path = uri.getPath();
+                if (path != null) {
+                    return path.startsWith("/") ? path.substring(1) : path;
+                }
+            } catch (IllegalArgumentException ignored) {
+                log.warn("Could not parse file URL, using raw value: {}", value);
+            }
+        }
+        if (value.startsWith(S3_UPLOADS_PREFIX)) {
+            return value.substring(S3_UPLOADS_PREFIX.length());
+        }
+        if (value.startsWith("/")) {
+            return value.substring(1);
+        }
+        return value;
     }
 
     private void validateFile(MultipartFile file) {

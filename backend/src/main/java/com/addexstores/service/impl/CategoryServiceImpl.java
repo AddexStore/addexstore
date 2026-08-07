@@ -34,13 +34,14 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final SubCategoryRepository subCategoryRepository;
+    private final CategoryMapper categoryMapper;
 
     @Override
     @Transactional(readOnly = true)
     @Cacheable(value = "categories", key = "'all'")
     public List<CategoryResponse> getAllCategories() {
         List<Category> categories = categoryRepository.findAllByActiveTrueOrderByNameAsc();
-        return CategoryMapper.toCategoryResponseList(categories);
+        return categoryMapper.toCategoryResponseList(categories);
     }
 
     @Override
@@ -48,7 +49,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Cacheable(value = "categories", key = "'all-admin'")
     public List<CategoryResponse> getAllAdminCategories() {
         List<Category> categories = categoryRepository.findAllByOrderByNameAsc();
-        return CategoryMapper.toCategoryResponseList(categories);
+        return categoryMapper.toCategoryResponseList(categories);
     }
 
     @Override
@@ -57,7 +58,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse getCategoryBySlug(String slug) {
         Category category = categoryRepository.findBySlugAndActiveTrue(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Category", "slug", slug));
-        return CategoryMapper.toCategoryResponse(category);
+        return categoryMapper.toCategoryResponse(category);
     }
 
     @Override
@@ -79,7 +80,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         category = categoryRepository.save(category);
         log.info("Category created: {}", category.getName());
-        return CategoryMapper.toCategoryResponse(category);
+        return categoryMapper.toCategoryResponse(category);
     }
 
     @Override
@@ -118,7 +119,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         category = categoryRepository.save(category);
         log.info("Category updated: {}", category.getName());
-        return CategoryMapper.toCategoryResponse(category);
+        return categoryMapper.toCategoryResponse(category);
     }
 
     @Override
@@ -154,7 +155,7 @@ public class CategoryServiceImpl implements CategoryService {
         subCategory = subCategoryRepository.save(subCategory);
         log.info("SubCategory created: {} for category: {}", subCategory.getName(), category.getName());
 
-        return CategoryMapper.toSubCategoryResponse(subCategory);
+        return categoryMapper.toSubCategoryResponse(subCategory);
     }
 
     @Override
@@ -179,7 +180,7 @@ public class CategoryServiceImpl implements CategoryService {
         subCategory = subCategoryRepository.save(subCategory);
         log.info("SubCategory updated: {}", subCategory.getName());
 
-        return CategoryMapper.toSubCategoryResponse(subCategory);
+        return categoryMapper.toSubCategoryResponse(subCategory);
     }
 
     @Override

@@ -27,12 +27,14 @@ public class WishlistServiceImpl implements WishlistService {
     private final WishlistRepository wishlistRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final ProductMapper productMapper;
 
     @Override
     public List<ProductResponse> getUserWishlist(Long userId) {
         List<Wishlist> wishlistItems = wishlistRepository.findByUserId(userId);
         return wishlistItems.stream()
-                .map(item -> ProductMapper.toProductResponse(item.getProduct()))
+                .map(Wishlist::getProduct)
+                .map(productMapper::toProductResponse)
                 .collect(Collectors.toList());
     }
 

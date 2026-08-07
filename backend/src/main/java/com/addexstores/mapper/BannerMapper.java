@@ -2,19 +2,26 @@ package com.addexstores.mapper;
 
 import com.addexstores.dto.response.BannerResponse;
 import com.addexstores.entity.Banner;
+import com.addexstores.service.FileUploadService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Component
+@RequiredArgsConstructor
 public class BannerMapper {
 
-    public static BannerResponse toBannerResponse(Banner banner) {
+    private final FileUploadService fileUploadService;
+
+    public BannerResponse toBannerResponse(Banner banner) {
         if (banner == null) return null;
         return BannerResponse.builder()
                 .id(banner.getId())
                 .title(banner.getTitle())
                 .subtitle(banner.getSubtitle())
-                .imageUrl(banner.getImageUrl())
+                .imageUrl(fileUploadService.getFileUrl(banner.getImageUrl()))
                 .linkUrl(banner.getLinkUrl())
                 .sortOrder(banner.getSortOrder())
                 .active(banner.isActive())
@@ -22,9 +29,9 @@ public class BannerMapper {
                 .build();
     }
 
-    public static List<BannerResponse> toBannerResponseList(List<Banner> banners) {
+    public List<BannerResponse> toBannerResponseList(List<Banner> banners) {
         return banners.stream()
-                .map(BannerMapper::toBannerResponse)
+                .map(this::toBannerResponse)
                 .collect(Collectors.toList());
     }
 }

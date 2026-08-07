@@ -51,6 +51,7 @@ public class OrderServiceImpl implements OrderService {
     private final TaxService taxService;
     private final ShippingService shippingService;
     private final InventoryService inventoryService;
+    private final OrderMapper orderMapper;
 
     @Override
     @Transactional
@@ -143,7 +144,7 @@ public class OrderServiceImpl implements OrderService {
                         .build());
 
         log.info("Order created: {} for user {}", orderNumber, userId);
-        return OrderMapper.toOrderResponse(order);
+        return orderMapper.toOrderResponse(order);
     }
 
     @Override
@@ -152,7 +153,7 @@ public class OrderServiceImpl implements OrderService {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Order> orders = orderRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
 
-        List<OrderResponse> content = OrderMapper.toOrderResponseList(orders.getContent());
+        List<OrderResponse> content = orderMapper.toOrderResponseList(orders.getContent());
         return PagedResponse.<OrderResponse>builder()
                 .content(content)
                 .page(orders.getNumber())
@@ -172,7 +173,7 @@ public class OrderServiceImpl implements OrderService {
         if (!order.getUser().getId().equals(userId)) {
             throw new UnauthorizedException("Order does not belong to this user");
         }
-        return OrderMapper.toOrderResponse(order);
+        return orderMapper.toOrderResponse(order);
     }
 
     @Override
@@ -183,7 +184,7 @@ public class OrderServiceImpl implements OrderService {
         if (userId != null && !order.getUser().getId().equals(userId)) {
             throw new UnauthorizedException("Order does not belong to this user");
         }
-        return OrderMapper.toOrderResponse(order);
+        return orderMapper.toOrderResponse(order);
     }
 
     @Override
@@ -205,7 +206,7 @@ public class OrderServiceImpl implements OrderService {
             orders = orderRepository.findAll(pageable);
         }
 
-        List<OrderResponse> content = OrderMapper.toOrderResponseList(orders.getContent());
+        List<OrderResponse> content = orderMapper.toOrderResponseList(orders.getContent());
         return PagedResponse.<OrderResponse>builder()
                 .content(content)
                 .page(orders.getNumber())
@@ -268,7 +269,7 @@ public class OrderServiceImpl implements OrderService {
 
         log.info("Order {} status {} -> {} (triggered by {})",
                 order.getOrderNumber(), current, target, triggeredBy);
-        return OrderMapper.toOrderResponse(order);
+        return orderMapper.toOrderResponse(order);
     }
 
     private boolean canTransition(OrderStatus from, OrderStatus to) {

@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { orderService } from '../services/orderService'
 import { mapOrder } from '../services/mappers'
 import { formatPrice } from '../utils/helpers'
+import { getAssetUrl } from '../services/api'
 import BackButton from '../components/BackButton'
 
 const MAX_POLLS = 5
@@ -110,7 +111,7 @@ export default function OrderConfirmation() {
           <div className="space-y-3 mb-6">
             {order.items.map((item, i) => (
               <div key={i} className="flex items-center gap-3">
-                <img src={item.image} alt={item.name} className="w-14 h-14 rounded-lg object-cover bg-[var(--bg-card)]" />
+                <img src={getAssetUrl(item.image)} alt={item.name} className="w-14 h-14 rounded-lg object-cover bg-[var(--bg-card)]" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-[var(--text-primary)] truncate">{item.name}</p>
                   <p className="text-xs text-[var(--text-secondary)]">Qty: {item.quantity} {item.size && `| ${item.size}`}</p>

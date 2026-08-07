@@ -1,11 +1,13 @@
 package com.addexstores.mapper;
 
-import com.addexstores.dto.response.CategoryResponse;
 import com.addexstores.dto.response.ProductResponse;
 import com.addexstores.dto.response.SubCategoryResponse;
 import com.addexstores.entity.Product;
 import com.addexstores.entity.ProductImage;
 import com.addexstores.entity.ProductVariant;
+import com.addexstores.service.FileUploadService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -13,9 +15,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Component
+@RequiredArgsConstructor
 public class ProductMapper {
 
-    public static ProductResponse toProductResponse(Product product) {
+    private final CategoryMapper categoryMapper;
+    private final FileUploadService fileUploadService;
+
+    public ProductResponse toProductResponse(Product product) {
         if (product == null) return null;
 
         Integer discount = product.getDiscountPercentage();
@@ -53,7 +60,7 @@ public class ProductMapper {
                 .saleEndDate(product.getSaleEndDate())
                 .active(product.isActive())
                 .category(product.getCategory() != null
-                        ? CategoryMapper.toCategoryResponse(product.getCategory())
+                        ? categoryMapper.toCategoryResponse(product.getCategory())
                         : null)
                 .subCategory(product.getSubCategory() != null
                         ? SubCategoryResponse.builder()
@@ -65,29 +72,29 @@ public class ProductMapper {
                         : null)
                 .images(product.getImages() != null
                         ? product.getImages().stream()
-                            .map(ProductMapper::toImageResponse)
+                            .map(this::toImageResponse)
                             .collect(Collectors.toList())
                         : Collections.emptyList())
                 .variants(product.getVariants() != null
                         ? product.getVariants().stream()
-                            .map(ProductMapper::toVariantResponse)
+                            .map(this::toVariantResponse)
                             .collect(Collectors.toList())
                         : Collections.emptyList())
                 .createdAt(product.getCreatedAt())
                 .build();
     }
 
-    public static ProductResponse.ImageResponse toImageResponse(ProductImage image) {
+    public ProductResponse.ImageResponse toImageResponse(ProductImage image) {
         if (image == null) return null;
         return ProductResponse.ImageResponse.builder()
                 .id(image.getId())
-                .imageUrl(image.getImageUrl())
+                .imageUrl(fileUploadService.getFileUrl(image.getImageUrl()))
                 .isPrimary(image.isPrimary())
                 .sortOrder(image.getSortOrder())
                 .build();
     }
 
-    public static ProductResponse.VariantResponse toVariantResponse(ProductVariant variant) {
+    public ProductResponse.VariantResponse toVariantResponse(ProductVariant variant) {
         if (variant == null) return null;
         return ProductResponse.VariantResponse.builder()
                 .id(variant.getId())
@@ -99,10 +106,10 @@ public class ProductMapper {
                 .build();
     }
 
-    public static List<ProductResponse> toProductResponseList(List<Product> products) {
+    public List<ProductResponse> toProductResponseList(List<Product> products) {
         if (products == null) return Collections.emptyList();
         return products.stream()
-                .map(ProductMapper::toProductResponse)
+                .map(this::toProductResponse)
                 .collect(Collectors.toList());
     }
 }

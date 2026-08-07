@@ -341,7 +341,7 @@ export default function CategoryProducts() {
         <div className="relative rounded-2xl overflow-hidden mb-10">
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent z-10" />
           <img
-            src={category.image}
+            src={getAssetUrl(category.image)}
             alt={category.name}
             className="w-full h-48 sm:h-64 object-cover"
           />
@@ -428,7 +428,7 @@ export default function CategoryProducts() {
       <div className="relative rounded-2xl overflow-hidden mb-10">
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent z-10" />
         <img
-          src={category.image}
+          src={getAssetUrl(category.image)}
           alt={category.name}
           className="w-full h-48 sm:h-64 object-cover"
         />

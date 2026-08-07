@@ -6,7 +6,8 @@ const API_BASE_URL = `${API_ORIGIN}/api`
 
 export function getAssetUrl(path) {
   if (!path) return ''
-  if (path.startsWith('http') || path.startsWith('/assets/')) return path
+  if (/^(https?:|data:|blob:)/.test(path) || path.startsWith('<')) return path
+  if (path.startsWith('/assets/')) return path
   if (path.startsWith('/uploads/')) return `${ASSET_ORIGIN}${path}`
   return `${ASSET_ORIGIN}/uploads/${path}`
 }

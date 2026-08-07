@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { orderService } from '../services/orderService'
 import { mapOrder } from '../services/mappers'
 import { formatPrice, formatDate, getCurrencySymbol } from '../utils/helpers'
+import { getAssetUrl } from '../services/api'
 import { ORDER_STATUS } from '../constants'
 import ImageWithFallback from '../components/ImageWithFallback'
 import EmptyState from '../components/EmptyState'
@@ -159,7 +160,7 @@ export default function Orders() {
                           <div className="flex -space-x-2">
                             {order.items.slice(0, 3).map((item, i) => (
                               <div key={i} className="w-8 h-8 rounded-full border-2 border-[var(--border-color)] overflow-hidden bg-[var(--bg-secondary)]">
-                                <ImageWithFallback src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                <ImageWithFallback src={getAssetUrl(item.image)} alt={item.name} className="w-full h-full object-cover" />
                               </div>
                             ))}
                             {order.items.length > 3 && (
@@ -261,7 +262,7 @@ export default function Orders() {
                           {order.items.map((item, i) => (
                             <div key={i} className="flex items-center gap-4">
                               <div className="w-16 h-16 rounded-xl overflow-hidden bg-[var(--bg-secondary)] flex-shrink-0">
-                                <ImageWithFallback src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                <ImageWithFallback src={getAssetUrl(item.image)} alt={item.name} className="w-full h-full object-cover" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-[var(--text-primary)] truncate">{item.name}</p>

@@ -31,12 +31,13 @@ public class CartServiceImpl implements CartService {
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final CartMapper cartMapper;
 
     @Override
     @Transactional(readOnly = true)
     public CartResponse getCart(Long userId) {
         Cart cart = getOrCreateCart(userId);
-        return CartMapper.toCartResponse(cart);
+        return cartMapper.toCartResponse(cart);
     }
 
     @Override
@@ -67,7 +68,7 @@ public class CartServiceImpl implements CartService {
         }
 
         log.info("Added product {} to cart for user {}", request.getProductId(), userId);
-        return CartMapper.toCartResponse(cartRepository.findById(cart.getId())
+        return cartMapper.toCartResponse(cartRepository.findById(cart.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Cart", cart.getId())));
     }
 
@@ -87,7 +88,7 @@ public class CartServiceImpl implements CartService {
         cartItemRepository.save(item);
 
         log.info("Updated cart item {} quantity to {}", itemId, request.getQuantity());
-        return CartMapper.toCartResponse(cart);
+        return cartMapper.toCartResponse(cart);
     }
 
     @Override
@@ -139,7 +140,7 @@ public class CartServiceImpl implements CartService {
 
         cart = cartRepository.save(cart);
         log.info("Cart synced for user {} with {} items", userId, requests.size());
-        return CartMapper.toCartResponse(cart);
+        return cartMapper.toCartResponse(cart);
     }
 
     private Cart getOrCreateCart(Long userId) {

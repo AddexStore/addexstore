@@ -3,6 +3,7 @@ import { useWishlist } from '../context/WishlistContext'
 import { useCart } from '../context/CartContext'
 import { useToast } from '../context/ToastContext'
 import { formatPrice } from '../utils/helpers'
+import { getAssetUrl } from '../services/api'
 import ImageWithFallback from '../components/ImageWithFallback'
 import StarRating from '../components/StarRating'
 import EmptyState from '../components/EmptyState'
@@ -83,7 +84,7 @@ export default function Wishlist() {
                 className="block aspect-square overflow-hidden bg-[var(--bg-secondary)] relative"
               >
                 <ImageWithFallback
-                  src={item.image}
+                  src={getAssetUrl(item.image)}
                   alt={item.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { getAssetUrl } from '../services/api'
 
 const STORAGE_KEY = 'sifr_banners'
 
@@ -125,7 +126,7 @@ export default function HeroBanner({ slides: propSlides }) {
         >
           <div className="absolute inset-0">
             <img
-              src={s.image}
+              src={getAssetUrl(s.image)}
               alt={s.title}
               className="w-full h-full object-cover opacity-40"
               loading={index === 0 ? 'eager' : 'lazy'}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import BackButton from '../../components/BackButton'
+import { getAssetUrl } from '../../services/api'
 
 const STORAGE_KEY = 'sifr_banners'
 
@@ -266,7 +267,7 @@ export default function AdminBanners() {
             />
             {(preview || form.image) && (
               <img
-                src={preview || form.image}
+                src={preview || getAssetUrl(form.image)}
                 alt="Preview"
                 className="mt-2 h-20 w-auto rounded object-cover"
                 onError={(e) => { e.target.style.display = 'none' }}
@@ -344,7 +345,7 @@ function BannerCard({ banner, index, total, onEdit, onDelete, onToggleActive, on
       <div className="flex gap-3 p-3">
         <div className="w-24 h-16 sm:w-32 sm:h-20 rounded-md overflow-hidden flex-shrink-0 bg-[var(--bg-input)]">
           <img
-            src={banner.image}
+            src={getAssetUrl(banner.image)}
             alt={banner.title}
             className="w-full h-full object-cover"
             onError={(e) => { e.target.style.display = 'none' }}

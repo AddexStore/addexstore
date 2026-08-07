@@ -4,27 +4,21 @@ import com.addexstores.dto.response.OrderItemResponse;
 import com.addexstores.dto.response.OrderResponse;
 import com.addexstores.entity.Order;
 import com.addexstores.entity.OrderItem;
+import com.addexstores.service.FileUploadService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Component
+@RequiredArgsConstructor
 public class OrderMapper {
 
-    private static class ShippingAddressMapper {
-        static OrderResponse.ShippingAddress toShippingAddress(Order order) {
-            if (order == null) return null;
-            return OrderResponse.ShippingAddress.builder()
-                    .street(order.getStreet())
-                    .city(order.getCity())
-                    .state(order.getState())
-                    .zip(order.getZipCode())
-                    .country(order.getCountry())
-                    .build();
-        }
-    }
+    private final FileUploadService fileUploadService;
 
-    public static OrderResponse toOrderResponse(Order order) {
+    public OrderResponse toOrderResponse(Order order) {
         if (order == null) return null;
 
         return OrderResponse.builder()
@@ -39,12 +33,12 @@ public class OrderMapper {
                 .totalAmount(order.getTotalAmount())
                 .currency(order.getCurrency())
                 .status(order.getStatus())
-                .shippingAddress(ShippingAddressMapper.toShippingAddress(order))
+                .shippingAddress(toShippingAddress(order))
                 .paymentMethod(order.getPaymentMethod())
                 .notes(order.getNotes())
                 .items(order.getItems() != null
                         ? order.getItems().stream()
-                            .map(OrderMapper::toOrderItemResponse)
+                            .map(this::toOrderItemResponse)
                             .collect(Collectors.toList())
                         : Collections.emptyList())
                 .createdAt(order.getCreatedAt())
@@ -52,23 +46,34 @@ public class OrderMapper {
                 .build();
     }
 
-    public static OrderItemResponse toOrderItemResponse(OrderItem item) {
+    public OrderItemResponse toOrderItemResponse(OrderItem item) {
         if (item == null) return null;
         return OrderItemResponse.builder()
                 .id(item.getId())
                 .productId(item.getProduct().getId())
                 .productName(item.getProductName())
-                .productImage(item.getProductImage())
+                .productImage(fileUploadService.getFileUrl(item.getProductImage()))
                 .quantity(item.getQuantity())
                 .price(item.getPrice())
                 .subtotal(item.getSubtotal())
                 .build();
     }
 
-    public static List<OrderResponse> toOrderResponseList(List<Order> orders) {
+    private OrderResponse.ShippingAddress toShippingAddress(Order order) {
+        if (order == null) return null;
+        return OrderResponse.ShippingAddress.builder()
+                .street(order.getStreet())
+                .city(order.getCity())
+                .state(order.getState())
+                .zip(order.getZipCode())
+                .country(order.getCountry())
+                .build();
+    }
+
+    public List<OrderResponse> toOrderResponseList(List<Order> orders) {
         if (orders == null) return Collections.emptyList();
         return orders.stream()
-                .map(OrderMapper::toOrderResponse)
+                .map(this::toOrderResponse)
                 .collect(Collectors.toList());
     }
 }

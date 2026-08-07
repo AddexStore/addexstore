@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { formatPrice } from '../utils/helpers'
+import { getAssetUrl } from '../services/api'
 import ImageWithFallback from '../components/ImageWithFallback'
 import QuantitySelector from '../components/QuantitySelector'
 import EmptyState from '../components/EmptyState'
@@ -66,7 +67,7 @@ export default function Cart() {
                     className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden bg-[var(--bg-secondary)] flex-shrink-0"
                   >
                     <ImageWithFallback
-                      src={item.image}
+                      src={getAssetUrl(item.image)}
                       alt={item.name}
                       className="w-full h-full object-cover"
                     />

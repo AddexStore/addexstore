@@ -7,6 +7,7 @@ import com.addexstores.repository.CartRepository;
 import com.addexstores.repository.ProductRepository;
 import com.addexstores.service.CheckoutPricingService;
 import com.addexstores.service.CurrencyService;
+import com.addexstores.service.FileUploadService;
 import com.addexstores.service.ShippingService;
 import com.addexstores.service.TaxService;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class CheckoutPricingServiceImpl implements CheckoutPricingService {
     private final CurrencyService currencyService;
     private final CartRepository cartRepository;
     private final ProductRepository productRepository;
+    private final FileUploadService fileUploadService;
 
     @Override
     @Transactional(readOnly = true)
@@ -102,11 +104,12 @@ public class CheckoutPricingServiceImpl implements CheckoutPricingService {
 
             String image = null;
             if (product.getImages() != null && !product.getImages().isEmpty()) {
-                image = product.getImages().stream()
+                String rawImage = product.getImages().stream()
                         .filter(ProductImage::isPrimary)
                         .findFirst()
                         .map(ProductImage::getImageUrl)
                         .orElse(product.getImages().get(0).getImageUrl());
+                image = fileUploadService.getFileUrl(rawImage);
             }
 
             details.add(CheckoutQuoteResponse.QuoteItemDetail.builder()
@@ -131,11 +134,12 @@ public class CheckoutPricingServiceImpl implements CheckoutPricingService {
 
             String image = null;
             if (product.getImages() != null && !product.getImages().isEmpty()) {
-                image = product.getImages().stream()
+                String rawImage = product.getImages().stream()
                         .filter(ProductImage::isPrimary)
                         .findFirst()
                         .map(ProductImage::getImageUrl)
                         .orElse(product.getImages().get(0).getImageUrl());
+                image = fileUploadService.getFileUrl(rawImage);
             }
 
             details.add(CheckoutQuoteResponse.QuoteItemDetail.builder()
