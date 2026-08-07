@@ -17,8 +17,6 @@ public class BannerRequest {
 
     private String linkUrl;
 
-    private String backgroundColor;
-
     private String textColor;
 
     private Integer sortOrder;

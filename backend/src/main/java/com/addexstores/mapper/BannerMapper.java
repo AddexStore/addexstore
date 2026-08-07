@@ -24,7 +24,6 @@ public class BannerMapper {
                 .cta(banner.getCta())
                 .imageUrl(fileUploadService.getFileUrl(banner.getImageUrl()))
                 .linkUrl(banner.getLinkUrl())
-                .backgroundColor(banner.getBackgroundColor())
                 .sortOrder(banner.getSortOrder())
                 .active(banner.isActive())
                 .createdAt(banner.getCreatedAt())

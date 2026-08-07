@@ -19,7 +19,6 @@ public class BannerResponse {
     private String cta;
     private String imageUrl;
     private String linkUrl;
-    private String backgroundColor;
     private int sortOrder;
     private boolean active;
     private LocalDateTime createdAt;

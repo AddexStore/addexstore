@@ -51,7 +51,6 @@ public class BannerServiceImpl implements BannerService {
                 .cta(request.getCta())
                 .imageUrl(request.getImageUrl())
                 .linkUrl(request.getLinkUrl())
-                .backgroundColor(request.getBackgroundColor())
                 .sortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0)
                 .active(request.getActive() != null ? request.getActive() : true)
                 .build();
@@ -73,7 +72,6 @@ public class BannerServiceImpl implements BannerService {
         if (request.getCta() != null) banner.setCta(request.getCta());
         if (request.getImageUrl() != null) banner.setImageUrl(request.getImageUrl());
         if (request.getLinkUrl() != null) banner.setLinkUrl(request.getLinkUrl());
-        if (request.getBackgroundColor() != null) banner.setBackgroundColor(request.getBackgroundColor());
         if (request.getSortOrder() != null) banner.setSortOrder(request.getSortOrder());
         if (request.getActive() != null) banner.setActive(request.getActive());
 

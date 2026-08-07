@@ -9,7 +9,6 @@ const fallbackSlides = [
     subtitle: 'Discover premium styles only at AddexStores',
     cta: 'Shop Now',
     ctaLink: '/new-arrivals',
-    bgColor: '#F5F2ED',
     image: '/assets/placeholders/banner.svg',
   },
   {
@@ -17,7 +16,6 @@ const fallbackSlides = [
     subtitle: 'Elevate your lifestyle',
     cta: 'Explore',
     ctaLink: '/products',
-    bgColor: '#F5F2ED',
     image: '/assets/placeholders/banner.svg',
   },
   {
@@ -25,7 +23,6 @@ const fallbackSlides = [
     subtitle: 'Handpicked for you',
     cta: 'View All',
     ctaLink: '/trending',
-    bgColor: '#F5F2ED',
     image: '/assets/placeholders/banner.svg',
   },
 ]
@@ -36,7 +33,6 @@ function toSlide(b) {
     subtitle: b.subtitle || '',
     cta: b.cta || 'Shop Now',
     ctaLink: b.linkUrl || '/',
-    bgColor: b.backgroundColor || '#F5F2ED',
     image: b.imageUrl || '',
   }
 }
@@ -131,13 +127,12 @@ export default function HeroBanner({ slides: propSlides }) {
           className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${
             index === current ? 'opacity-100 z-10' : 'opacity-0 z-0'
           }`}
-          style={{ backgroundColor: s.bgColor || '#F5F2ED' }}
         >
           <div className="absolute inset-0">
             <img
               src={getAssetUrl(s.image)}
               alt={s.title}
-              className="w-full h-full object-cover opacity-40"
+              className="w-full h-full object-cover"
               loading={index === 0 ? 'eager' : 'lazy'}
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/20 to-transparent" />

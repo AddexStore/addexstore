@@ -33,9 +33,6 @@ public class Banner {
     @Column(name = "cta_link")
     private String linkUrl;
 
-    @Column(name = "bg_color")
-    private String backgroundColor;
-
     @Column(nullable = false)
     @Builder.Default
     private int sortOrder = 0;

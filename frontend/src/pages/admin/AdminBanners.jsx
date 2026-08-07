@@ -9,7 +9,6 @@ const emptyForm = {
   subtitle: '',
   cta: 'Shop Now',
   ctaLink: '/products',
-  bgColor: '#F5F2ED',
   image: '',
   active: true,
 }
@@ -21,7 +20,6 @@ function bannerToForm(b) {
     subtitle: b.subtitle || '',
     cta: b.cta || 'Shop Now',
     ctaLink: b.linkUrl || '/products',
-    bgColor: b.backgroundColor || '#F5F2ED',
     image: b.imageUrl || '',
     active: b.active,
     sortOrder: b.sortOrder ?? 0,
@@ -35,7 +33,6 @@ function formToPayload(form) {
     cta: form.cta,
     imageUrl: form.image,
     linkUrl: form.ctaLink,
-    backgroundColor: form.bgColor,
     active: form.active,
     sortOrder: form.sortOrder,
   }
@@ -47,7 +44,6 @@ function isSameForm(a, b) {
     a.subtitle === b.subtitle &&
     a.cta === b.cta &&
     a.ctaLink === b.ctaLink &&
-    a.bgColor === b.bgColor &&
     a.image === b.image &&
     a.active === b.active
   )
@@ -126,7 +122,6 @@ export default function AdminBanners() {
       subtitle: banner.subtitle,
       cta: banner.cta,
       ctaLink: banner.ctaLink,
-      bgColor: banner.bgColor,
       image: banner.image,
       active: banner.active,
     })
@@ -253,18 +248,6 @@ export default function AdminBanners() {
                 className="w-full px-3 py-2 rounded-md bg-[var(--bg-input)] border border-[var(--border-color)] text-[var(--text-primary)] text-xs focus:outline-none focus:border-[#C6A972] transition"
                 placeholder="/products"
               />
-            </div>
-            <div>
-              <label className="block text-[10px] text-[var(--text-secondary)] font-medium uppercase tracking-wider mb-1">Background Color</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={form.bgColor}
-                  onChange={(e) => setForm({ ...form, bgColor: e.target.value })}
-                  className="w-8 h-8 rounded cursor-pointer bg-transparent border-0"
-                />
-                <span className="text-[10px] text-[var(--text-secondary)] font-mono">{form.bgColor}</span>
-              </div>
             </div>
             <div className="flex items-end">
               <label className="flex items-center gap-2 cursor-pointer">
