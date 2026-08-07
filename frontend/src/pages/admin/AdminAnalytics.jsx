@@ -1,87 +1,10 @@
 import { useState, useEffect } from 'react'
 import { adminService } from '../../services/adminService'
 import { formatPrice } from '../../utils/helpers'
-import { colors } from '../../constants/theme'
-import PageHeader from '../../components/ui/PageHeader'
-import Tabs from '../../components/ui/Tabs'
+import BackButton from '../../components/BackButton'
 
 const ranges = ['This Week', 'This Month', 'This Year']
 const monthLabels = ['J','F','M','A','M','J','J','A','S','O','N','D']
-
-function StatCard({ label, value, progress, barClass }) {
-  return (
-    <div className="rounded-card border border-line bg-surface px-4 py-3.5 shadow-sm transition-colors hover:border-gold-500/40">
-      <p className="text-[11px] font-medium uppercase tracking-wider text-sub">{label}</p>
-      <p className="mt-1 text-xl font-bold leading-tight text-ink">{value}</p>
-      <div className="mt-2 h-1 w-full rounded-full bg-subtle">
-        <div className={`h-1 rounded-full ${barClass}`} style={{ width: progress }} />
-      </div>
-    </div>
-  )
-}
-
-function Card({ title, children }) {
-  return (
-    <section className="flex flex-col rounded-card border border-line bg-surface p-4 shadow-sm min-h-0">
-      <h2 className="mb-3 flex-shrink-0 text-xs font-semibold uppercase tracking-wider text-ink">{title}</h2>
-      <div className="flex min-h-0 flex-1 flex-col">{children}</div>
-    </section>
-  )
-}
-
-function BarChart({ data, max, gradient }) {
-  if (!data.length) {
-    return <p className="flex flex-1 items-center justify-center text-xs text-sub">No data</p>
-  }
-  return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex min-h-0 flex-1 items-end gap-1.5">
-        {data.map((item) => (
-          <div key={item.month} className="flex min-w-0 flex-1 flex-col items-center justify-end self-stretch">
-            <div
-              className="w-full rounded-t-sm"
-              style={{
-                height: `${(item.value / max) * 100}%`,
-                minHeight: item.value > 0 ? '4px' : 0,
-                background: gradient,
-              }}
-            />
-          </div>
-        ))}
-      </div>
-      <div className="mt-1 flex gap-1.5">
-        {data.map((m) => (
-          <span key={m.month} className="flex-1 text-center text-[10px] text-sub">
-            {m.month}
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function TopProducts({ data }) {
-  if (!data.length) {
-    return <p className="py-4 text-center text-xs text-sub">No sales data yet</p>
-  }
-  return (
-    <ol className="flex flex-col justify-center gap-2.5">
-      {data.map((p, i) => (
-        <li key={p.productId || i} className="flex items-center gap-2.5">
-          <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-subtle text-[10px] font-semibold text-sub">
-            {i + 1}
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-baseline justify-between gap-2">
-              <p className="truncate text-xs font-medium text-ink">{p.productName}</p>
-              <span className="whitespace-nowrap text-[10px] text-sub">{p.totalQuantity} sold</span>
-            </div>
-          </div>
-        </li>
-      ))}
-    </ol>
-  )
-}
 
 export default function AdminAnalytics() {
   const [activeRange, setActiveRange] = useState('This Year')
@@ -106,13 +29,16 @@ export default function AdminAnalytics() {
 
   if (loading) {
     return (
-      <div className="flex h-full flex-col gap-4 py-4">
-        <h1 className="heading-display text-2xl text-ink">Analytics</h1>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="h-full flex flex-col gap-2 py-3">
+        <div className="flex items-center gap-3">
+          <BackButton />
+          <h1 className="text-lg font-bold text-[var(--text-primary)] font-['Playfair_Display']">Analytics</h1>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 flex-shrink-0">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="animate-pulse rounded-card border border-line bg-surface px-4 py-3.5">
-              <div className="mb-2 h-3 w-16 rounded bg-line" />
-              <div className="h-5 w-20 rounded bg-line" />
+            <div key={i} className="bg-[var(--bg-card)] rounded-lg p-3 border border-[var(--border-color)]/50 animate-pulse">
+              <div className="h-3 w-14 bg-[var(--border-color)] rounded mb-2" />
+              <div className="h-6 w-24 bg-[var(--border-color)] rounded" />
             </div>
           ))}
         </div>
@@ -141,44 +67,97 @@ export default function AdminAnalytics() {
   const maxGrowth = growthChart.length > 0 ? Math.max(...growthChart.map((m) => m.value)) : 1
 
   return (
-    <div className="flex h-full flex-col gap-4 py-4">
-      <PageHeader
-        title="Analytics"
-        description="Revenue, orders, and top-selling products across your store."
-      />
-
-      <div className="flex-shrink-0">
-        <Tabs tabs={ranges.map((r) => ({ key: r, label: r }))} activeKey={activeRange} onChange={setActiveRange} />
+    <div className="h-full flex flex-col gap-2 py-3">
+      <div className="flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <BackButton />
+          <h1 className="text-lg font-bold text-[var(--text-primary)] font-['Playfair_Display']">Analytics</h1>
+        </div>
+        <div className="flex gap-1">
+          {ranges.map((r) => (
+            <button key={r} onClick={() => setActiveRange(r)}
+              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${activeRange === r ? 'bg-[#C6A972] text-white' : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>{r}</button>
+          ))}
+        </div>
       </div>
 
-      <div className="grid flex-shrink-0 grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Sales" value={formatPrice(totalRevenue)} progress="78%" barClass="bg-gold-500" />
-        <StatCard label="Revenue" value={formatPrice(totalRevenue * 0.72)} progress="72%" barClass="bg-success" />
-        <StatCard label="Orders" value={totalOrders} progress="65%" barClass="bg-info" />
-        <StatCard label="Conversion" value="3.42%" progress="34%" barClass="bg-chart-purple" />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 flex-shrink-0">
+        <div className="bg-[var(--bg-card)] rounded-lg p-3 border border-[var(--border-color)]/50">
+          <p className="text-[var(--text-secondary)] text-[10px] font-medium uppercase tracking-wider">Sales</p>
+          <p className="text-lg font-bold text-[var(--text-primary)] mt-0.5">{formatPrice(totalRevenue)}</p>
+          <div className="mt-1 w-full bg-[#2A2A2A] rounded-full h-1"><div className="bg-[#C6A972] h-1 rounded-full" style={{ width: '78%' }} /></div>
+        </div>
+        <div className="bg-[var(--bg-card)] rounded-lg p-3 border border-[var(--border-color)]/50">
+          <p className="text-[var(--text-secondary)] text-[10px] font-medium uppercase tracking-wider">Revenue</p>
+          <p className="text-lg font-bold text-[var(--text-primary)] mt-0.5">{formatPrice(totalRevenue * 0.72)}</p>
+          <div className="mt-1 w-full bg-[#2A2A2A] rounded-full h-1"><div className="bg-[#2F855A] h-1 rounded-full" style={{ width: '72%' }} /></div>
+        </div>
+        <div className="bg-[var(--bg-card)] rounded-lg p-3 border border-[var(--border-color)]/50">
+          <p className="text-[var(--text-secondary)] text-[10px] font-medium uppercase tracking-wider">Orders</p>
+          <p className="text-lg font-bold text-[var(--text-primary)] mt-0.5">{totalOrders}</p>
+          <div className="mt-1 w-full bg-[#2A2A2A] rounded-full h-1"><div className="bg-[#4A5568] h-1 rounded-full" style={{ width: '65%' }} /></div>
+        </div>
+        <div className="bg-[var(--bg-card)] rounded-lg p-3 border border-[var(--border-color)]/50">
+          <p className="text-[var(--text-secondary)] text-[10px] font-medium uppercase tracking-wider">Conversion</p>
+          <p className="text-lg font-bold text-[var(--text-primary)] mt-0.5">3.42%</p>
+          <div className="mt-1 w-full bg-[#2A2A2A] rounded-full h-1"><div className="bg-purple-400 h-1 rounded-full" style={{ width: '34%' }} /></div>
+        </div>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
-        <Card title="Sales">
-          <BarChart
-            data={monthlySalesChart}
-            max={maxSales}
-            gradient={`linear-gradient(to top, ${colors.chart.gold}, ${colors.gold[300]})`}
-          />
-        </Card>
-        <Card title="Orders by Month">
-          <BarChart
-            data={growthChart}
-            max={maxGrowth}
-            gradient={`linear-gradient(to top, ${colors.chart.purple}, ${colors.chart.purple}59)`}
-          />
-        </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1 min-h-0">
+        <div className="bg-[var(--bg-card)] rounded-lg p-3 border border-[var(--border-color)]/50 flex flex-col">
+          <h3 className="text-[var(--text-primary)] text-xs font-semibold mb-1">Sales</h3>
+          {monthlySalesChart.length > 0 ? (
+            <>
+              <div className="flex-1 flex gap-[2px]">
+                {monthlySalesChart.map((item) => (
+                  <div key={item.month} className="flex-1 self-stretch flex flex-col justify-end items-center">
+                    <div className="w-full rounded-sm" style={{ height: `${(item.value / maxSales) * 100}%`, background: 'linear-gradient(to top, #C6A972, #f0d060)', minHeight: item.value > 0 ? '4px' : 0 }} />
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between mt-1">{monthlySalesChart.map((m) => <span key={m.month} className="text-[8px] text-[var(--text-secondary)] flex-1 text-center">{m.month}</span>)}</div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-xs text-[var(--text-secondary)]">No data</div>
+          )}
+        </div>
+        <div className="bg-[var(--bg-card)] rounded-lg p-3 border border-[var(--border-color)]/50 flex flex-col">
+          <h3 className="text-[var(--text-primary)] text-xs font-semibold mb-1">Orders by Month</h3>
+          {growthChart.length > 0 ? (
+            <>
+              <div className="flex-1 flex gap-[2px]">
+                {growthChart.map((item) => (
+                  <div key={item.month} className="flex-1 self-stretch flex flex-col justify-end items-center">
+                    <div className="w-full rounded-sm" style={{ height: `${(item.value / maxGrowth) * 100}%`, background: 'linear-gradient(to top, #8B5CF6, #a78bfa)', minHeight: item.value > 0 ? '4px' : 0 }} />
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between mt-1">{growthChart.map((m) => <span key={m.month} className="text-[8px] text-[var(--text-secondary)] flex-1 text-center">{m.month}</span>)}</div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-xs text-[var(--text-secondary)]">No data</div>
+          )}
+        </div>
       </div>
 
-      <div className="flex-shrink-0">
-        <Card title="Top Products">
-          <TopProducts data={topSelling} />
-        </Card>
+      <div className="bg-[var(--bg-card)] rounded-lg p-3 border border-[var(--border-color)]/50 flex-shrink-0">
+        <h3 className="text-[var(--text-primary)] text-xs font-semibold mb-2">Top Products</h3>
+        {topSelling.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            {topSelling.map((product, i) => (
+              <div key={product.productId || i} className="flex items-center gap-2">
+                <span className="text-[10px] text-[var(--text-secondary)] w-4 font-medium">{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-[var(--text-primary)] truncate">{product.productName}</p>
+                  <p className="text-[10px] text-[var(--text-secondary)]">{product.totalQuantity} sold</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-[var(--text-secondary)] py-2">No sales data yet</p>
+        )}
       </div>
     </div>
   )

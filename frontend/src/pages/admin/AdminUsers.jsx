@@ -3,18 +3,14 @@ import { adminService } from '../../services/adminService'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { formatDate } from '../../utils/helpers'
-import Badge from '../../components/ui/Badge'
-import Button from '../../components/ui/Button'
-import Icon from '../../components/ui/Icon'
-import Spinner from '../../components/ui/Spinner'
-import EmptyState from '../../components/EmptyState'
-import Modal, { ConfirmDialog } from '../../components/ui/Modal'
-import PageHeader from '../../components/ui/PageHeader'
-import Pagination from '../../components/ui/Pagination'
-import { Table, THead, TBody, TR, TH, TD } from '../../components/ui/Table'
+import BackButton from '../../components/BackButton'
 
 const ROLE_LABELS = { ADMIN: 'Admin', CUSTOMER: 'Customer' }
-const ROLE_TONES = { ADMIN: 'gold', CUSTOMER: 'info' }
+
+const ROLE_BADGE_STYLES = {
+  ADMIN: 'bg-[#C6A972]/20 text-[#C6A972]',
+  CUSTOMER: 'bg-blue-500/20 text-blue-400',
+}
 
 const SORT_FIELDS = {
   name: 'name',
@@ -24,19 +20,45 @@ const SORT_FIELDS = {
   blocked: 'blocked',
 }
 
+function Spinner({ label }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-2 py-10 text-[var(--text-secondary)]">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--border-color)] border-t-[#C6A972]" aria-hidden="true" />
+      <span className="text-xs">{label}</span>
+    </div>
+  )
+}
+
 function ErrorState({ message, onRetry }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 px-4 py-10 text-center">
-      <div className="flex items-start gap-3 rounded-card border border-danger/30 bg-danger/8 p-4 text-sm text-danger">
-        <Icon name="AlertCircle" size="sm" className="mt-0.5 shrink-0" />
-        <div className="text-left">
-          <p className="font-medium text-ink">Failed to load users</p>
-          <p className="mt-0.5 max-w-md text-xs text-sub">{message}</p>
-        </div>
-      </div>
-      <Button size="sm" icon="RefreshCw" onClick={onRetry}>
+    <div className="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center">
+      <p className="text-sm font-medium text-[var(--text-primary)]">Failed to load users</p>
+      <p className="max-w-md text-xs text-[var(--text-secondary)]">{message}</p>
+      <button
+        onClick={onRetry}
+        className="mt-1 rounded-lg bg-[#C6A972] px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#B8965F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6A972]"
+      >
         Retry
-      </Button>
+      </button>
+    </div>
+  )
+}
+
+function EmptyState({ hasFilters, onClear }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center">
+      <p className="text-sm font-medium text-[var(--text-primary)]">No users found</p>
+      <p className="max-w-md text-xs text-[var(--text-secondary)]">
+        {hasFilters ? 'Try adjusting your search or filters.' : 'Users who register on the store will appear here.'}
+      </p>
+      {hasFilters && (
+        <button
+          onClick={onClear}
+          className="mt-1 rounded-lg bg-[#C6A972] px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#B8965F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6A972]"
+        >
+          Clear filters
+        </button>
+      )}
     </div>
   )
 }
@@ -44,97 +66,166 @@ function ErrorState({ message, onRetry }) {
 function SortableTh({ label, sortKey, sortBy, sortDir, onSort }) {
   const isActive = sortBy === sortKey
   return (
-    <TH>
+    <th scope="col" className="py-2 px-2 text-left font-medium text-[var(--text-secondary)]">
       <button
         type="button"
         onClick={() => onSort(sortKey)}
-        className={`inline-flex items-center gap-1 rounded transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500 ${
-          isActive ? 'text-ink' : 'text-sub'
-        }`}
+        className={`inline-flex items-center gap-1 rounded transition-colors hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6A972] ${isActive ? 'text-[var(--text-primary)]' : ''}`}
       >
         {label}
-        <Icon
-          name="ArrowUp"
-          size={11}
-          className={`transition-transform ${isActive && sortDir === 'desc' ? 'rotate-180' : ''} ${isActive ? 'text-gold-600' : 'opacity-40'}`}
-        />
+        <svg
+          className={`h-2.5 w-2.5 transition-transform ${isActive && sortDir === 'asc' ? '' : 'rotate-180'}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 5l7 7h-14z" />
+        </svg>
       </button>
-    </TH>
+    </th>
+  )
+}
+
+function ConfirmDialog({ title, description, confirmLabel, busy, onConfirm, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-sm rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] p-5"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+      >
+        <h2 className="text-base font-semibold text-[var(--text-primary)]">{title}</h2>
+        <p className="mt-1 text-xs text-[var(--text-secondary)]">{description}</p>
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={busy}
+            className="rounded-lg border border-[var(--border-color)] px-4 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={busy}
+            className="rounded-lg bg-[#C6A972] px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#B8965F] disabled:opacity-50"
+          >
+            {busy ? 'Working...' : confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
 function UserDetailModal({ user, currentUserId, busy, onUpdateRole, onToggleBlock, onClose }) {
   const isSelf = Number(user.id) === Number(currentUserId)
-
-  const detailTiles = [
-    { label: 'Role', value: ROLE_LABELS[user.role] || user.role, capitalize: true },
-    {
-      label: 'Status',
-      value: user.blocked ? 'Blocked' : 'Active',
-      className: user.blocked ? 'text-danger' : 'text-success',
-    },
-    { label: 'Phone', value: user.phone || '-' },
-    { label: 'Joined', value: formatDate(user.createdAt) },
-    { label: 'Last updated', value: formatDate(user.updatedAt) },
-    { label: 'User ID', value: `#${user.id}`, mono: true },
-  ]
+  const roleLabels = Object.entries(ROLE_LABELS)
 
   return (
-    <Modal open onClose={onClose} title="" size="lg" hideCloseButton>
-      <div className="flex items-center gap-4">
-        {user.avatar ? (
-          <img src={user.avatar} alt={user.name} className="h-14 w-14 rounded-full bg-surface object-cover" />
-        ) : (
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-gold-100 to-gold-200 text-xl font-semibold text-gold-700 dark:from-gold-500/20 dark:to-gold-500/5 dark:text-gold-300">
-            {user.name?.charAt(0)?.toUpperCase() || '?'}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
+      <div
+        className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)]"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${user.name} details`}
+      >
+        <div className="flex items-center justify-between border-b border-[var(--border-color)] p-4">
+          <div className="flex items-center gap-3">
+            {user.avatar ? (
+              <img src={user.avatar} alt={user.name} className="h-10 w-10 rounded-full bg-[var(--bg-card)]" />
+            ) : (
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--bg-hover)] text-sm font-semibold text-[var(--text-secondary)]">
+                {user.name?.charAt(0)?.toUpperCase() || '?'}
+              </div>
+            )}
+            <div>
+              <h2 className="text-base font-semibold text-[var(--text-primary)]">{user.name}</h2>
+              <p className="text-xs text-[var(--text-secondary)]">{user.email}</p>
+            </div>
           </div>
-        )}
-        <div className="min-w-0">
-          <h2 className="heading-display text-xl text-ink">{user.name}</h2>
-          <p className="text-sm text-sub">{user.email}</p>
+          <button
+            onClick={onClose}
+            className="rounded p-1 text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+            aria-label="Close details"
+          >
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
         </div>
-      </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-3">
-        {detailTiles.map((tile) => (
-          <div key={tile.label} className="rounded-card border border-line bg-inset p-3">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-sub">{tile.label}</p>
-            <p className={`mt-0.5 text-sm text-ink ${tile.mono ? 'font-mono' : ''} ${tile.capitalize ? 'capitalize' : ''} ${tile.className || ''}`}>
-              {tile.value}
+        <div className="grid grid-cols-2 gap-2 p-4">
+          <div className="rounded-lg bg-[var(--bg-input)] p-3">
+            <p className="text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">Role</p>
+            <p className="mt-0.5 text-sm text-[var(--text-primary)] capitalize">{ROLE_LABELS[user.role] || user.role}</p>
+          </div>
+          <div className="rounded-lg bg-[var(--bg-input)] p-3">
+            <p className="text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">Status</p>
+            <p className={`mt-0.5 text-sm ${user.blocked ? 'text-red-600' : 'text-green-600'}`}>
+              {user.blocked ? 'Blocked' : 'Active'}
             </p>
           </div>
-        ))}
-      </div>
+          <div className="rounded-lg bg-[var(--bg-input)] p-3">
+            <p className="text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">Phone</p>
+            <p className="mt-0.5 text-sm text-[var(--text-primary)]">{user.phone || '-'}</p>
+          </div>
+          <div className="rounded-lg bg-[var(--bg-input)] p-3">
+            <p className="text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">Joined</p>
+            <p className="mt-0.5 text-sm text-[var(--text-primary)]">{formatDate(user.createdAt)}</p>
+          </div>
+          <div className="rounded-lg bg-[var(--bg-input)] p-3">
+            <p className="text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">Last updated</p>
+            <p className="mt-0.5 text-sm text-[var(--text-primary)]">{formatDate(user.updatedAt)}</p>
+          </div>
+          <div className="rounded-lg bg-[var(--bg-input)] p-3">
+            <p className="text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">User ID</p>
+            <p className="mt-0.5 font-mono text-sm text-[var(--text-primary)]">#{user.id}</p>
+          </div>
+        </div>
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
-        <label className="flex items-center gap-2 text-sm text-sub">
-          Role
-          <select
-            value={user.role}
+        <div className="flex flex-wrap items-center gap-2 border-t border-[var(--border-color)] p-4">
+          <label className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+            Role
+            <select
+              value={user.role}
+              disabled={busy || isSelf}
+              onChange={(e) => onUpdateRole(e.target.value)}
+              className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)] px-2 py-1.5 text-xs text-[var(--text-primary)] focus:border-[#C6A972] focus:outline-none disabled:opacity-50"
+              title={isSelf ? 'You cannot change your own role' : 'Change role'}
+            >
+              {roleLabels.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            onClick={onToggleBlock}
             disabled={busy || isSelf}
-            onChange={(e) => onUpdateRole(e.target.value)}
-            className="h-11 cursor-pointer rounded-field border border-line bg-inset px-3 text-sm text-ink focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/25 disabled:opacity-50"
-            title={isSelf ? 'You cannot change your own role' : 'Change role'}
+            className={`ml-auto rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
+              user.blocked
+                ? 'bg-green-500/20 text-green-600 hover:bg-green-500/30'
+                : 'bg-red-500/20 text-red-600 hover:bg-red-500/30'
+            }`}
+            title={isSelf ? 'You cannot modify your own account' : user.blocked ? 'Unblock user' : 'Block user'}
           >
-            {Object.entries(ROLE_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <Button
-          variant={user.blocked ? 'success' : 'danger'}
-          size="sm"
-          icon={user.blocked ? 'UserCheck' : 'Ban'}
-          onClick={onToggleBlock}
-          disabled={busy || isSelf}
-          title={isSelf ? 'You cannot modify your own account' : user.blocked ? 'Unblock user' : 'Block user'}
-        >
-          {user.blocked ? 'Unblock user' : 'Block user'}
-        </Button>
+            {user.blocked ? 'Unblock user' : 'Block user'}
+          </button>
+        </div>
       </div>
-    </Modal>
+    </div>
   )
 }
 
@@ -284,6 +375,7 @@ export default function AdminUsers() {
   const from = totalElements === 0 ? 0 : page * size + 1
   const to = Math.min((page + 1) * size, totalElements)
   const hasFilters = Boolean(search || roleFilter || statusFilter)
+  const pageRange = size > 0 && totalPages > 0 ? Math.max(0, Math.min(page, totalPages - 1)) : 0
 
   const clearFilters = () => {
     setSearchInput('')
@@ -294,77 +386,84 @@ export default function AdminUsers() {
   }
 
   return (
-    <div className="flex h-full flex-col gap-4 py-4">
-      <PageHeader
-        title="Users"
-        description="Manage customers and staff, control access, and moderate accounts."
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            {refreshing && <span className="text-[11px] text-sub">Refreshing...</span>}
-            <div className="relative">
-              <Icon name="Search" size="sm" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-faint" />
-              <input
-                type="text"
-                placeholder="Search by name or email..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="h-11 w-56 rounded-field border border-line bg-inset pl-10 pr-9 text-sm text-ink placeholder-faint transition-colors focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/25"
-              />
-              {searchInput && (
-                <button
-                  type="button"
-                  onClick={() => setSearchInput('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-soft p-1 text-sub transition-colors hover:text-ink"
-                  aria-label="Clear search"
-                >
-                  <Icon name="X" size="sm" />
-                </button>
-              )}
-            </div>
-            <select
-              value={roleFilter}
-              onChange={(e) => handleFilterChange(setRoleFilter, e.target.value)}
-              className="h-11 cursor-pointer rounded-field border border-line bg-inset px-3 text-sm text-sub focus:border-gold-500 focus:outline-none"
-              aria-label="Filter by role"
-            >
-              <option value="">All roles</option>
-              <option value="ADMIN">Admins</option>
-              <option value="CUSTOMER">Customers</option>
-            </select>
-            <select
-              value={statusFilter}
-              onChange={(e) => handleFilterChange(setStatusFilter, e.target.value)}
-              className="h-11 cursor-pointer rounded-field border border-line bg-inset px-3 text-sm text-sub focus:border-gold-500 focus:outline-none"
-              aria-label="Filter by status"
-            >
-              <option value="">All statuses</option>
-              <option value="false">Active</option>
-              <option value="true">Blocked</option>
-            </select>
-            <Button
-              variant="ghost"
-              size="iconSm"
-              icon="RefreshCw"
-              onClick={() => load(false)}
-              disabled={refreshing}
-              aria-label="Refresh users"
-              title="Refresh users"
+    <div className="flex h-full flex-col gap-3 py-4">
+      <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <BackButton />
+          <h1 className="text-lg font-bold text-[var(--text-primary)] font-['Playfair_Display']">Users</h1>
+          {refreshing && <span className="text-[11px] text-[var(--text-secondary)]">Refreshing...</span>}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-48 rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)] px-3 py-1.5 pr-8 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[#C6A972] focus:outline-none"
             />
+            {searchInput && (
+              <button
+                type="button"
+                onClick={() => setSearchInput('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                aria-label="Clear search"
+              >
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            )}
           </div>
-        }
-      />
+          <select
+            value={roleFilter}
+            onChange={(e) => handleFilterChange(setRoleFilter, e.target.value)}
+            className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)] px-3 py-1.5 text-xs text-[var(--text-secondary)] focus:border-[#C6A972] focus:outline-none"
+            aria-label="Filter by role"
+          >
+            <option value="">All roles</option>
+            <option value="ADMIN">Admins</option>
+            <option value="CUSTOMER">Customers</option>
+          </select>
+          <select
+            value={statusFilter}
+            onChange={(e) => handleFilterChange(setStatusFilter, e.target.value)}
+            className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)] px-3 py-1.5 text-xs text-[var(--text-secondary)] focus:border-[#C6A972] focus:outline-none"
+            aria-label="Filter by status"
+          >
+            <option value="">All statuses</option>
+            <option value="false">Active</option>
+            <option value="true">Blocked</option>
+          </select>
+          <button
+            type="button"
+            onClick={() => load(false)}
+            disabled={refreshing}
+            className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)] p-2 text-[var(--text-secondary)] transition-colors hover:border-[#C6A972]/50 hover:text-[var(--text-primary)] disabled:opacity-50"
+            aria-label="Refresh users"
+            title="Refresh users"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M23 4v6h-6" />
+              <path d="M1 20v-6h6" />
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+            </svg>
+          </button>
+        </div>
+      </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-line bg-surface shadow-sm">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-[var(--border-color)]/50 bg-[var(--bg-card)]">
         {error && <ErrorState message={error} onRetry={() => load()} />}
 
         {!error && loading && (
-          <div className="space-y-2 p-4">
+          <div className="space-y-2 p-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="flex animate-pulse items-center gap-3 rounded-card bg-subtle p-3">
-                <div className="h-8 w-8 rounded-full bg-line" />
-                <div className="flex-1 space-y-1.5">
-                  <div className="h-3 w-1/3 rounded bg-line" />
-                  <div className="h-2.5 w-1/2 rounded bg-line" />
+              <div key={i} className="flex animate-pulse items-center gap-3 rounded-lg bg-[var(--bg-hover)] p-3">
+                <div className="h-7 w-7 rounded-full bg-[var(--border-color)]" />
+                <div className="flex-1 space-y-1">
+                  <div className="h-3 w-1/3 rounded bg-[var(--border-color)]" />
+                  <div className="h-2.5 w-1/2 rounded bg-[var(--border-color)]" />
                 </div>
               </div>
             ))}
@@ -375,113 +474,135 @@ export default function AdminUsers() {
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="min-h-0 flex-1 overflow-auto">
               {users.length === 0 ? (
-                <EmptyState
-                  compact
-                  icon="Users"
-                  title="No users found"
-                  message={hasFilters ? 'Try adjusting your search or filters.' : 'Users who register on the store will appear here.'}
-                  actionLabel={hasFilters ? 'Clear filters' : undefined}
-                  onAction={hasFilters ? clearFilters : undefined}
-                />
+                <EmptyState hasFilters={hasFilters} onClear={clearFilters} />
               ) : (
-                <Table>
-                  <THead>
-                    <TR className="border-0">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="sticky top-0 z-10 border-b border-[var(--border-color)] bg-[var(--bg-card)]">
                       <SortableTh label="User" sortKey="name" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
                       <SortableTh label="Email" sortKey="email" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
-                      <TH className="hidden sm:table-cell">Phone</TH>
+                      <th scope="col" className="hidden py-2 px-2 text-left font-medium text-[var(--text-secondary)] sm:table-cell">
+                        Phone
+                      </th>
                       <SortableTh label="Role" sortKey="role" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
                       <SortableTh label="Status" sortKey="blocked" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
                       <SortableTh label="Joined" sortKey="createdAt" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
-                      <TH className="text-right">Actions</TH>
-                    </TR>
-                  </THead>
-                  <TBody>
+                      <th scope="col" className="w-28 py-2 px-2 text-right font-medium text-[var(--text-secondary)]">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {users.map((user) => {
                       const isSelf = Number(user.id) === Number(currentUserId)
                       return (
-                        <TR key={user.id} className="hover:bg-subtle">
-                          <TD>
-                            <div className="flex items-center gap-2.5">
+                        <tr
+                          key={user.id}
+                          className="border-b border-[var(--border-color)]/30 transition-colors last:border-0 hover:bg-[var(--bg-hover)]"
+                        >
+                          <td className="py-2 px-2">
+                            <div className="flex items-center gap-2">
                               {user.avatar ? (
-                                <img src={user.avatar} alt={user.name} className="h-8 w-8 rounded-full bg-surface object-cover" />
+                                <img src={user.avatar} alt={user.name} className="h-7 w-7 rounded-full bg-[var(--bg-card)]" />
                               ) : (
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gold-100 text-xs font-semibold text-gold-700 dark:bg-gold-500/15 dark:text-gold-300">
+                                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--bg-hover)] text-xs font-semibold text-[var(--text-secondary)]">
                                   {user.name?.charAt(0)?.toUpperCase() || '?'}
                                 </div>
                               )}
                               <div className="min-w-0">
-                                <p className="truncate font-medium text-ink">
+                                <p className="truncate font-medium text-[var(--text-primary)]">
                                   {user.name}
-                                  {isSelf && <span className="ml-1.5 text-[10px] font-normal text-gold-600">(you)</span>}
+                                  {isSelf && <span className="ml-1.5 text-[10px] font-normal text-[#C6A972]">(you)</span>}
                                 </p>
-                                <p className="truncate font-mono text-[10px] text-sub">#{user.id}</p>
+                                <p className="truncate font-mono text-[10px] text-[var(--text-secondary)]">#{user.id}</p>
                               </div>
                             </div>
-                          </TD>
-                          <TD className="text-sub">{user.email}</TD>
-                          <TD className="hidden text-sub sm:table-cell">{user.phone || '-'}</TD>
-                          <TD>
-                            <Badge tone={ROLE_TONES[user.role] || 'neutral'} size="sm">
+                          </td>
+                          <td className="py-2 px-2 text-[var(--text-secondary)]">{user.email}</td>
+                          <td className="hidden py-2 px-2 text-[var(--text-secondary)] sm:table-cell">{user.phone || '-'}</td>
+                          <td className="py-2 px-2">
+                            <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${ROLE_BADGE_STYLES[user.role] || 'bg-gray-500/20 text-gray-500'}`}>
                               {ROLE_LABELS[user.role] || user.role}
-                            </Badge>
-                          </TD>
-                          <TD>
-                            <Badge tone={user.blocked ? 'danger' : 'success'} size="sm">
+                            </span>
+                          </td>
+                          <td className="py-2 px-2">
+                            <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${user.blocked ? 'bg-red-500/20 text-red-600' : 'bg-green-500/20 text-green-600'}`}>
                               {user.blocked ? 'Blocked' : 'Active'}
-                            </Badge>
-                          </TD>
-                          <TD className="text-sub">{formatDate(user.createdAt)}</TD>
-                          <TD>
-                            <div className="flex items-center justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="iconSm"
-                                icon="Eye"
+                            </span>
+                          </td>
+                          <td className="py-2 px-2 text-[var(--text-secondary)]">{formatDate(user.createdAt)}</td>
+                          <td className="py-2 px-2">
+                            <div className="flex items-center justify-end gap-0.5">
+                              <button
+                                type="button"
                                 onClick={() => setViewingUser(user)}
+                                className="rounded p-1 text-[var(--text-secondary)] transition-colors hover:bg-[#C6A972]/10 hover:text-[#C6A972]"
                                 title="Details"
                                 aria-label={`View ${user.name} details`}
-                              />
-                              <Button
-                                variant="ghost"
-                                size="iconSm"
-                                icon={user.blocked ? 'UserCheck' : 'Ban'}
+                              >
+                                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                  <circle cx="12" cy="12" r="3" />
+                                </svg>
+                              </button>
+                              <button
+                                type="button"
                                 onClick={() => setConfirmState({ type: user.blocked ? 'unblock' : 'block', user })}
                                 disabled={isSelf}
-                                className={user.blocked ? '!text-success' : '!text-danger'}
+                                className={`rounded p-1 transition-colors disabled:opacity-30 ${
+                                  user.blocked
+                                    ? 'text-green-600 hover:bg-green-500/10'
+                                    : 'text-[var(--text-secondary)] hover:bg-red-500/10 hover:text-red-600'
+                                }`}
                                 title={isSelf ? 'You cannot modify your own account' : user.blocked ? 'Unblock' : 'Block'}
                                 aria-label={user.blocked ? `Unblock ${user.name}` : `Block ${user.name}`}
-                              />
-                              <Button
-                                variant="ghost"
-                                size="iconSm"
-                                icon="Trash2"
+                              >
+                                {user.blocked ? (
+                                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                    <polyline points="9 12 11 14 15 10" />
+                                  </svg>
+                                ) : (
+                                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                  </svg>
+                                )}
+                              </button>
+                              <button
+                                type="button"
                                 onClick={() => setConfirmState({ type: 'delete', user })}
                                 disabled={isSelf}
-                                className="!text-danger"
+                                className="rounded p-1 text-[var(--text-secondary)] transition-colors hover:bg-red-500/10 hover:text-red-600 disabled:opacity-30"
                                 title={isSelf ? 'You cannot delete your own account' : 'Delete'}
                                 aria-label={`Delete ${user.name}`}
-                              />
+                              >
+                                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="3 6 5 6 21 6" />
+                                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                  <path d="M10 11v6M14 11v6" />
+                                </svg>
+                              </button>
                             </div>
-                          </TD>
-                        </TR>
+                          </td>
+                        </tr>
                       )
                     })}
-                  </TBody>
-                </Table>
+                  </tbody>
+                </table>
               )}
             </div>
 
             {users.length > 0 && (
-              <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-3 border-t border-line px-4 py-3">
-                <div className="flex items-center gap-3 text-[11px] text-sub">
+              <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-2 border-t border-[var(--border-color)] px-3 py-2">
+                <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
                   <select
                     value={size}
                     onChange={(e) => {
                       setSize(Number(e.target.value))
                       setPage(0)
                     }}
-                    className="cursor-pointer rounded-field border border-line bg-inset px-2.5 py-1.5 text-[11px] text-ink focus:border-gold-500 focus:outline-none"
+                    className="rounded border border-[var(--border-color)] bg-[var(--bg-card)] px-1.5 py-1 text-[11px] text-[var(--text-primary)] focus:border-[#C6A972] focus:outline-none"
                     aria-label="Rows per page"
                   >
                     {[10, 25, 50].map((n) => (
@@ -494,7 +615,27 @@ export default function AdminUsers() {
                     Showing {from}-{to} of {totalElements}
                   </span>
                 </div>
-                <Pagination page={page + 1} totalPages={Math.max(1, totalPages)} onPageChange={(p) => setPage(p - 1)} />
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.max(p - 1, 0))}
+                    disabled={page <= 0}
+                    className="rounded-lg border border-[var(--border-color)] px-2.5 py-1 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-40"
+                  >
+                    Prev
+                  </button>
+                  <span className="px-2 text-[11px] text-[var(--text-secondary)]">
+                    Page {pageRange + 1} of {Math.max(totalPages, 1)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.min(p + 1, totalPages - 1))}
+                    disabled={page >= totalPages - 1}
+                    className="rounded-lg border border-[var(--border-color)] px-2.5 py-1 text-[11px] font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-40"
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -514,8 +655,6 @@ export default function AdminUsers() {
 
       {confirmState && (
         <ConfirmDialog
-          open
-          danger={confirmState.type === 'delete' || confirmState.type === 'block'}
           title={
             confirmState.type === 'delete'
               ? 'Delete user'
@@ -523,7 +662,7 @@ export default function AdminUsers() {
                 ? 'Block user'
                 : 'Unblock user'
           }
-          message={
+          description={
             confirmState.type === 'delete'
               ? `This will permanently delete ${confirmState.user.name} and all their data. This action cannot be undone.`
               : confirmState.type === 'block'
@@ -537,7 +676,7 @@ export default function AdminUsers() {
                 ? 'Block'
                 : 'Unblock'
           }
-          loading={busy}
+          busy={busy}
           onConfirm={confirmState.type === 'delete' ? handleDelete : handleToggleBlock}
           onClose={() => setConfirmState(null)}
         />

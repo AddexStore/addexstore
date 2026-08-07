@@ -5,8 +5,7 @@ import { getAssetUrl } from '../services/api'
 import { mapCategory } from '../services/mappers'
 import { isSvgMarkup } from '../utils/sanitizeSvg'
 import SafeIcon from '../components/SafeIcon'
-import PageHeader from '../components/ui/PageHeader'
-import SkeletonLoader from '../components/SkeletonLoader'
+import BackButton from '../components/BackButton'
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState([])
@@ -21,39 +20,47 @@ export default function CategoriesPage() {
 
   const renderIcon = (icon, alt) => {
     if (isSvgMarkup(icon)) {
-      return <SafeIcon icon={icon} className="h-10 w-10 text-gold-600 sm:h-12 sm:w-12" />
+      return <SafeIcon icon={icon} className="w-10 h-10 sm:w-12 sm:h-12" />
     } else if (icon) {
-      return <img src={getAssetUrl(icon)} alt={alt} className="h-14 w-14 rounded-full object-cover sm:h-16 sm:w-16" />
+      return <img src={getAssetUrl(icon)} alt={alt} className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover" />
     }
     return null
   }
 
   return (
-    <div className="min-h-screen bg-page pb-16 lg:pb-0">
-      <div className="container-lux py-8 sm:py-12 lg:py-16">
-        <PageHeader
-          eyebrow="Collections"
-          title="Categories"
-          description="Explore our premium collections."
-        />
+    <div className="min-h-screen bg-[var(--bg-page)] pb-16 lg:pb-0">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+        <div className="mb-8 sm:mb-10">
+          <div className="flex items-center gap-3">
+            <BackButton />
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-playfair-display font-bold text-[var(--text-primary)]">
+              Categories
+            </h1>
+          </div>
+          <p className="text-[var(--text-secondary)] text-sm sm:text-base mt-2">
+            Explore our premium collections
+          </p>
+        </div>
 
         {loading ? (
-          <SkeletonLoader type="category" count={10} />
+          <div className="flex items-center justify-center py-20">
+            <div className="w-8 h-8 border-2 border-[#C6A972] border-t-transparent rounded-full animate-spin" />
+          </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5 lg:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6">
             {categories.map((cat) => (
               <Link
                 key={cat.id}
                 to={`/category/${cat.slug}`}
-                className="group flex flex-col items-center rounded-card border border-line bg-surface p-6 shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-gold-500/40 hover:shadow-card-hover active:scale-[0.98] sm:p-8"
+                className="flex flex-col items-center p-6 sm:p-8 bg-[var(--bg-card)] rounded-2xl border border-transparent shadow-lg shadow-black/5 hover:border-[#C6A972]/30 hover:-translate-y-1 transition-all duration-300 group active:scale-[0.98]"
               >
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gold-100 text-gold-600 transition-colors duration-300 group-hover:bg-gold-500 group-hover:text-white sm:h-20 sm:w-20">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center text-[var(--text-secondary)] group-hover:text-[#C6A972] transition-colors duration-300">
                   {renderIcon(cat.icon, cat.name)}
                 </div>
-                <h3 className="mt-4 text-center text-sm font-semibold text-ink transition-colors group-hover:text-gold-600 sm:text-base">
+                <h3 className="mt-4 text-sm sm:text-base font-semibold text-[var(--text-primary)] group-hover:text-[#C6A972] transition text-center">
                   {cat.name}
                 </h3>
-                <p className="mt-1 text-xs text-sub sm:text-sm">
+                <p className="mt-1 text-xs sm:text-sm text-[var(--text-secondary)]">
                   {cat.productCount} Products
                 </p>
               </Link>

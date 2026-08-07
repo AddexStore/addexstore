@@ -5,14 +5,7 @@ import { mapCategory } from '../../services/mappers'
 import { isSvgMarkup } from '../../utils/sanitizeSvg'
 import SafeIcon from '../../components/SafeIcon'
 import { useToast } from '../../context/ToastContext'
-import Icon from '../../components/ui/Icon'
-import Button from '../../components/ui/Button'
-import Badge from '../../components/ui/Badge'
-import Modal, { ConfirmDialog } from '../../components/ui/Modal'
-import { Field, Input, Textarea } from '../../components/ui/Input'
-import PageHeader from '../../components/ui/PageHeader'
-import EmptyState from '../../components/EmptyState'
-import Spinner from '../../components/ui/Spinner'
+import BackButton from '../../components/BackButton'
 
 export default function AdminCategories() {
   const { showToast } = useToast()
@@ -197,10 +190,13 @@ export default function AdminCategories() {
 
   if (loading) {
     return (
-      <div className="flex h-full flex-col gap-4 py-4">
-        <PageHeader title="Categories" />
-        <div className="flex flex-1 items-center justify-center">
-          <Spinner label="Loading categories" />
+      <div className="h-full flex flex-col gap-2 py-3">
+        <div className="flex items-center gap-3">
+          <BackButton />
+          <h1 className="text-lg font-bold text-black font-['Playfair_Display']">Categories</h1>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-[#C6A972] border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     )
@@ -208,274 +204,219 @@ export default function AdminCategories() {
 
   if (loadError) {
     return (
-      <div className="flex h-full flex-col gap-4 py-4">
-        <PageHeader title="Categories" />
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-card border border-danger/30 bg-danger/8 px-4 py-6 text-center">
-          <p className="text-sm text-sub">{loadError}</p>
-          <Button size="sm" icon="RefreshCw" onClick={fetchCategories}>Retry</Button>
+      <div className="h-full flex flex-col gap-2 py-3">
+        <div className="flex items-center gap-3">
+          <BackButton />
+          <h1 className="text-lg font-bold text-black font-['Playfair_Display']">Categories</h1>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center gap-3">
+          <p className="text-sm text-[var(--text-secondary)]">{loadError}</p>
+          <button onClick={fetchCategories} className="px-4 py-1.5 bg-[#C6A972] text-black rounded-lg text-xs font-semibold hover:bg-[#B8965F] transition-colors">Retry</button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex h-full flex-col gap-4 py-4">
-      <PageHeader
-        title="Categories"
-        description="Organize your storefront with categories and subcategories."
-        actions={
-          <Button variant="primary" size="sm" icon="Plus" onClick={openAdd}>
-            Add Category
-          </Button>
-        }
-      />
-
-      <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
-        <div className="relative w-full sm:w-72">
-          <Icon name="Search" size="sm" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-faint" />
-          <input
-            type="text"
-            placeholder="Search categories..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-11 w-full rounded-field border border-line bg-inset pl-10 pr-4 text-sm text-ink placeholder-faint focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/25"
-          />
+    <div className="h-full flex flex-col gap-2 py-3">
+      <div className="flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <BackButton />
+          <h1 className="text-lg font-bold text-black font-['Playfair_Display']">Categories</h1>
         </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="h-11 rounded-field border border-line bg-inset px-3 text-sm text-sub focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/25"
-        >
+        <button onClick={openAdd} className="px-4 py-1.5 bg-[#C6A972] text-black rounded-lg text-xs font-semibold hover:bg-[#B8965F] transition-colors">+ Add</button>
+      </div>
+
+      <div className="flex gap-2 flex-shrink-0">
+        <input
+          type="text"
+          placeholder="Search categories..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="flex-1 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-xs text-black placeholder-[var(--text-muted)] focus:outline-none focus:border-[#C6A972]"
+        />
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+          className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-xs text-[var(--text-secondary)] focus:outline-none focus:border-[#C6A972]">
           <option value="">All Status</option>
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
         </select>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {filteredCategories.length === 0 ? (
-          <EmptyState
-            compact
-            icon="LayoutGrid"
-            title="No categories found"
-            message="Try adjusting your filters or add a new category."
-          />
+          <div className="h-full flex items-center justify-center">
+            <p className="text-xs text-[var(--text-muted)]">No categories found</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {filteredCategories.map((cat) => {
-              const isExpanded = expandedId === cat.id
-              const subCount = cat.subcategories?.length || 0
-              return (
-                <div
-                  key={cat.id}
-                  className={`overflow-hidden rounded-card border bg-surface shadow-card transition-all hover:shadow-card-hover ${cat.active ? 'border-line' : 'border-danger/30'}`}
-                >
-                  <div className={`p-3 ${isExpanded ? 'border-b border-line' : ''}`}>
-                    <div className="mb-2 flex items-center justify-between">
-                      <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-soft bg-gold-100 text-gold-600">
-                        {renderIcon(cat.icon, cat.name)}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => toggleActive(cat)}
-                          title={cat.active ? 'Deactivate' : 'Activate'}
-                          className="transition-opacity hover:opacity-80"
-                        >
-                          <Badge tone={cat.active ? 'success' : 'danger'} size="sm">
-                            {cat.active ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </button>
-                        <button
-                          onClick={() => setExpandedId(isExpanded ? null : cat.id)}
-                          aria-label="Toggle subcategories"
-                          className="rounded-soft p-1 text-sub transition-colors hover:text-gold-600"
-                        >
-                          <Icon name="ChevronDown" size="sm" className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                        </button>
-                      </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+          {filteredCategories.map((cat) => {
+            const isExpanded = expandedId === cat.id
+            const subCount = cat.subcategories?.length || 0
+            return (
+              <div key={cat.id} className={`bg-[var(--bg-card)] rounded-lg border overflow-hidden ${cat.active ? 'border-[var(--border-color)]/50' : 'border-red-200'}`}>
+                <div className={`p-3 transition-all ${isExpanded ? 'border-b border-[var(--border-color)]/50' : ''}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="w-8 h-8 rounded-lg bg-[#C6A972]/10 text-[#C6A972] flex items-center justify-center overflow-hidden">
+                      {renderIcon(cat.icon, cat.name)}
                     </div>
-                    <h3 className="truncate text-sm font-semibold text-ink">{cat.name}</h3>
-                    <p className="text-[10px] text-sub">
-                      {cat.productCount} products{subCount > 0 && ` · ${subCount} subcategories`}
-                    </p>
-                    <div className="mt-2 flex gap-1 border-t border-line pt-2">
-                      <button
-                        onClick={() => openEdit(cat)}
-                        className="flex-1 rounded-soft py-1 text-[10px] font-medium text-sub transition-colors hover:bg-gold-100 hover:text-gold-700"
-                      >
-                        Edit
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => toggleActive(cat)}
+                        title={cat.active ? 'Deactivate' : 'Activate'}
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-semibold transition-colors ${cat.active ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-600 hover:bg-red-200'}`}>
+                        {cat.active ? 'Active' : 'Inactive'}
                       </button>
-                      <button
-                        onClick={() => setDeleteConfirm(cat.id)}
-                        className="flex-1 rounded-soft py-1 text-[10px] font-medium text-sub transition-colors hover:bg-danger/10 hover:text-danger"
-                      >
-                        Delete
+                      <button onClick={() => setExpandedId(isExpanded ? null : cat.id)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+                        <svg className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
                       </button>
                     </div>
                   </div>
-                  {isExpanded && (
-                    <div className="px-3 pb-3">
-                      <div className="mb-2 flex items-center justify-between">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-sub">
-                          Subcategories ({subCount})
-                        </span>
-                        <button
-                          onClick={() => openAddSub(cat.id)}
-                          className="inline-flex items-center gap-1 text-[10px] font-medium text-gold-600 transition-colors hover:text-gold-700"
-                        >
-                          <Icon name="Plus" size="xs" />
-                          Add
-                        </button>
-                      </div>
-                      {subCount === 0 ? (
-                        <p className="text-[10px] italic text-faint">No subcategories yet</p>
-                      ) : (
-                        <div className="space-y-1">
-                          {cat.subcategories.map((sub) => (
-                            <div key={sub.id} className="flex items-center justify-between rounded-soft bg-inset px-2 py-1.5">
-                              <div className="flex min-w-0 items-center gap-2">
-                                <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center overflow-hidden rounded bg-gold-100 text-gold-600">
-                                  {renderIcon(sub.icon, sub.name, 'w-3 h-3')}
-                                </div>
-                                <span className="truncate text-xs text-ink">{sub.name}</span>
-                                <span className="flex-shrink-0 text-[10px] text-faint">({sub.productCount})</span>
-                              </div>
-                              <div className="ml-2 flex flex-shrink-0 items-center gap-1">
-                                <label
-                                  className="cursor-pointer p-1 text-sub transition-colors hover:text-gold-600"
-                                  title="Upload icon"
-                                >
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={(e) => { const f = e.target.files[0]; if (f) handleSubIconUpload(sub.id, f); e.target.value = '' }}
-                                  />
-                                  <Icon name="Upload" size="sm" />
-                                </label>
-                                <button
-                                  onClick={() => openEditSub(cat.id, sub)}
-                                  className="p-1 text-sub transition-colors hover:text-gold-600"
-                                  title="Edit"
-                                >
-                                  <Icon name="Pencil" size="sm" />
-                                </button>
-                                <button
-                                  onClick={() => setDeleteSubConfirm({ catId: cat.id, subId: sub.id, name: sub.name })}
-                                  className="p-1 text-sub transition-colors hover:text-danger"
-                                  title="Delete"
-                                >
-                                  <Icon name="Trash2" size="sm" />
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  <h3 className="text-black text-sm font-semibold truncate">{cat.name}</h3>
+                  <p className="text-[var(--text-secondary)] text-[10px]">{cat.productCount} products{subCount > 0 && ` · ${subCount} subcategories`}</p>
+                  <div className="flex gap-1 mt-2 pt-2 border-t border-[var(--border-color)]/50">
+                    <button onClick={() => openEdit(cat)} className="flex-1 py-1 rounded text-[10px] font-medium text-[var(--text-secondary)] hover:text-[#C6A972] hover:bg-[#C6A972]/10 transition-colors">Edit</button>
+                    <button onClick={() => setDeleteConfirm(cat.id)} className="flex-1 py-1 rounded text-[10px] font-medium text-[var(--text-secondary)] hover:text-red-600 hover:bg-red-500/10 transition-colors">Delete</button>
+                  </div>
                 </div>
-              )
-            })}
+                {isExpanded && (
+                  <div className="px-3 pb-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] text-[var(--text-secondary)] font-semibold uppercase tracking-wider">Subcategories ({subCount})</span>
+                      <button onClick={() => openAddSub(cat.id)} className="text-[10px] text-[#C6A972] hover:text-[#B8965F] font-medium transition-colors">+ Add</button>
+                    </div>
+                    {subCount === 0 ? (
+                      <p className="text-[10px] text-[var(--text-muted)] italic">No subcategories yet</p>
+                    ) : (
+                      <div className="space-y-1">
+                        {cat.subcategories.map((sub) => (
+                          <div key={sub.id} className="flex items-center justify-between bg-[var(--bg-input)] rounded px-2 py-1.5">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="w-5 h-5 rounded bg-[#C6A972]/10 text-[#C6A972] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                {renderIcon(sub.icon, sub.name, 'w-3 h-3')}
+                              </div>
+                              <span className="text-xs text-black truncate">{sub.name}</span>
+                              <span className="text-[10px] text-[var(--text-muted)] flex-shrink-0">({sub.productCount})</span>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                              <label className="cursor-pointer text-[var(--text-secondary)] hover:text-[#C6A972] transition-colors p-1" title="Upload icon">
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files[0]; if (f) handleSubIconUpload(sub.id, f); e.target.value = '' }} />
+                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                              </label>
+                              <button onClick={() => openEditSub(cat.id, sub)} className="text-[var(--text-secondary)] hover:text-[#C6A972] transition-colors p-1" title="Edit">
+                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                              </button>
+                              <button onClick={() => setDeleteSubConfirm({ catId: cat.id, subId: sub.id, name: sub.name })} className="text-[var(--text-secondary)] hover:text-red-600 transition-colors p-1" title="Delete">
+                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
           </div>
         )}
       </div>
 
-      <Modal
-        open={showModal}
-        onClose={() => setShowModal(false)}
-        title={editingCat ? 'Edit Category' : 'Add Category'}
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setShowModal(false)}>Cancel</Button>
-            <Button variant="primary" onClick={handleSave}>{editingCat ? 'Update' : 'Save'}</Button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          <Field label="Name" required>
-            <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Category name" />
-          </Field>
-          <Field label="Description">
-            <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} />
-          </Field>
-          <Field label="Icon (SVG or Image URL)">
-            <div className="flex gap-2">
-              <Input value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} placeholder="Paste SVG or image URL" />
-              {editingCat && (
-                <label
-                  className={`inline-flex h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-gold-500/50 px-4 text-xs font-medium text-gold-600 transition-colors hover:bg-gold-500 hover:text-white ${uploading ? 'pointer-events-none opacity-50' : ''}`}
-                >
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (e) => { const f = e.target.files[0]; if (f) await handleCategoryIconUpload(editingCat.id, f); e.target.value = '' }}
-                  />
-                  {uploading ? '...' : 'Upload'}
-                </label>
-              )}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setShowModal(false)}>
+          <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-[var(--border-color)]">
+              <h2 className="text-base font-semibold text-black">{editingCat ? 'Edit Category' : 'Add Category'}</h2>
+              <button onClick={() => setShowModal(false)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
             </div>
-          </Field>
-        </div>
-      </Modal>
-
-      <Modal
-        open={showSubModal}
-        onClose={() => setShowSubModal(false)}
-        title={editingSub ? 'Edit Subcategory' : 'Add Subcategory'}
-        size="sm"
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setShowSubModal(false)}>Cancel</Button>
-            <Button variant="primary" onClick={handleSaveSub}>{editingSub ? 'Update' : 'Save'}</Button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          <Field label="Subcategory Name" required>
-            <Input value={subForm.name} onChange={(e) => setSubForm({ ...subForm, name: e.target.value })} placeholder="e.g. Casual Shoes" />
-          </Field>
-          <Field label="Icon (SVG or Image URL)">
-            <div className="flex gap-2">
-              <Input value={subForm.icon} onChange={(e) => setSubForm({ ...subForm, icon: e.target.value })} placeholder="Paste SVG or image URL" />
-              {editingSub && (
-                <label
-                  className={`inline-flex h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-gold-500/50 px-4 text-xs font-medium text-gold-600 transition-colors hover:bg-gold-500 hover:text-white ${uploading ? 'pointer-events-none opacity-50' : ''}`}
-                >
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (e) => { const f = e.target.files[0]; if (f) await handleSubIconUpload(editingSub.id, f); e.target.value = '' }}
-                  />
-                  {uploading ? '...' : 'Upload'}
-                </label>
-              )}
+            <div className="p-4 space-y-3">
+              <div>
+                <label className="block text-xs text-[var(--text-secondary)] mb-1">Name *</label>
+                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm text-black focus:outline-none focus:border-[#C6A972]" />
+              </div>
+              <div>
+                <label className="block text-xs text-[var(--text-secondary)] mb-1">Description</label>
+                <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm text-black focus:outline-none focus:border-[#C6A972] resize-none" />
+              </div>
+              <div>
+                <label className="block text-xs text-[var(--text-secondary)] mb-1">Icon (SVG or Image URL)</label>
+                <div className="flex gap-2">
+                  <input value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} placeholder="Paste SVG or image URL" className="flex-1 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm text-black focus:outline-none focus:border-[#C6A972]" />
+                  {editingCat && (
+                    <label className={`flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium text-black bg-[#C6A972] hover:bg-[#B8965F] cursor-pointer transition-colors ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                      <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files[0]; if (f) await handleCategoryIconUpload(editingCat.id, f); e.target.value = '' }} />
+                      {uploading ? '...' : 'Upload'}
+                    </label>
+                  )}
+                </div>
+              </div>
             </div>
-          </Field>
+            <div className="flex justify-end gap-2 p-4 border-t border-[var(--border-color)]">
+              <button onClick={() => setShowModal(false)} className="px-4 py-1.5 rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] transition-colors">Cancel</button>
+              <button onClick={handleSave} className="px-4 py-1.5 rounded-lg text-xs font-semibold text-black bg-[#C6A972] hover:bg-[#B8965F] transition-colors">{editingCat ? 'Update' : 'Save'}</button>
+            </div>
+          </div>
         </div>
-      </Modal>
+      )}
 
-      <ConfirmDialog
-        open={!!deleteConfirm}
-        onClose={() => setDeleteConfirm(null)}
-        onConfirm={() => handleDelete(deleteConfirm)}
-        title="Delete Category?"
-        message="This will also remove all subcategories under this category."
-        confirmLabel="Delete"
-        danger
-      />
+      {showSubModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setShowSubModal(false)}>
+          <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-[var(--border-color)]">
+              <h2 className="text-base font-semibold text-black">{editingSub ? 'Edit Subcategory' : 'Add Subcategory'}</h2>
+              <button onClick={() => setShowSubModal(false)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+            <div className="p-4 space-y-3">
+              <div>
+                <label className="block text-xs text-[var(--text-secondary)] mb-1">Subcategory Name *</label>
+                <input value={subForm.name} onChange={(e) => setSubForm({ ...subForm, name: e.target.value })} placeholder="e.g. Casual Shoes" className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm text-black focus:outline-none focus:border-[#C6A972]" />
+              </div>
+              <div>
+                <label className="block text-xs text-[var(--text-secondary)] mb-1">Icon (SVG or Image URL)</label>
+                <div className="flex gap-2">
+                  <input value={subForm.icon} onChange={(e) => setSubForm({ ...subForm, icon: e.target.value })} placeholder="Paste SVG or image URL" className="flex-1 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm text-black focus:outline-none focus:border-[#C6A972]" />
+                  {editingSub && (
+                    <label className={`flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium text-black bg-[#C6A972] hover:bg-[#B8965F] cursor-pointer transition-colors ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                      <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files[0]; if (f) await handleSubIconUpload(editingSub.id, f); e.target.value = '' }} />
+                      {uploading ? '...' : 'Upload'}
+                    </label>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 p-4 border-t border-[var(--border-color)]">
+              <button onClick={() => setShowSubModal(false)} className="px-4 py-1.5 rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] transition-colors">Cancel</button>
+              <button onClick={handleSaveSub} className="px-4 py-1.5 rounded-lg text-xs font-semibold text-black bg-[#C6A972] hover:bg-[#B8965F] transition-colors">{editingSub ? 'Update' : 'Save'}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      <ConfirmDialog
-        open={!!deleteSubConfirm}
-        onClose={() => setDeleteSubConfirm(null)}
-        onConfirm={() => handleDeleteSub(deleteSubConfirm.catId, deleteSubConfirm.subId)}
-        title="Delete Subcategory?"
-        message={<>Are you sure you want to delete <span className="font-medium text-ink">{deleteSubConfirm?.name}</span>?</>}
-        confirmLabel="Delete"
-        danger
-      />
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setDeleteConfirm(null)}>
+          <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] p-5 w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-semibold text-black mb-2">Delete Category?</h3>
+            <p className="text-xs text-[var(--text-secondary)] mb-4">This will also remove all subcategories under this category.</p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setDeleteConfirm(null)} className="px-4 py-1.5 rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] transition-colors">Cancel</button>
+              <button onClick={() => handleDelete(deleteConfirm)} className="px-4 py-1.5 rounded-lg text-xs font-semibold text-black bg-red-500 hover:bg-red-600 transition-colors">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteSubConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setDeleteSubConfirm(null)}>
+          <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] p-5 w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-semibold text-black mb-2">Delete Subcategory?</h3>
+            <p className="text-xs text-[var(--text-secondary)] mb-4">Are you sure you want to delete <span className="text-black font-medium">{deleteSubConfirm.name}</span>?</p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setDeleteSubConfirm(null)} className="px-4 py-1.5 rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] transition-colors">Cancel</button>
+              <button onClick={() => handleDeleteSub(deleteSubConfirm.catId, deleteSubConfirm.subId)} className="px-4 py-1.5 rounded-lg text-xs font-semibold text-black bg-red-500 hover:bg-red-600 transition-colors">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -1,55 +1,81 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useWishlist } from '../context/WishlistContext'
-import { useCart } from '../context/CartContext'
-import Icon from './ui/Icon'
 
 const tabs = [
-  { label: 'Home', path: '/', icon: 'Home' },
-  { label: 'Categories', path: '/categories', icon: 'LayoutGrid' },
-  { label: 'Search', path: '/search', icon: 'Search' },
-  { label: 'Wishlist', path: '/wishlist', icon: 'Heart', badge: 'wishlist' },
-  { label: 'Cart', path: '/cart', icon: 'ShoppingBag', badge: 'cart' },
+  {
+    label: 'Home',
+    path: '/',
+    icon: (active) => (
+      <svg className="w-6 h-6" fill={active ? '#C6A972' : 'none'} stroke={active ? '#C6A972' : '#666666'} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Categories',
+    path: '/categories',
+    icon: (active) => (
+      <svg className="w-6 h-6" fill={active ? '#C6A972' : 'none'} stroke={active ? '#C6A972' : '#666666'} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Search',
+    path: '/search',
+    icon: (active) => (
+      <svg className="w-6 h-6" fill={active ? '#C6A972' : 'none'} stroke={active ? '#C6A972' : '#666666'} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Wishlist',
+    path: '/wishlist',
+    icon: (active) => (
+      <svg className="w-6 h-6" fill={active ? '#C53030' : 'none'} stroke={active ? '#C53030' : '#666666'} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Profile',
+    path: '/profile',
+    icon: (active) => (
+      <svg className="w-6 h-6" fill={active ? '#C6A972' : 'none'} stroke={active ? '#C6A972' : '#666666'} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      </svg>
+    ),
+  },
 ]
 
 export default function MobileBottomNav() {
   const { pathname } = useLocation()
   const { items: wishlistItems } = useWishlist()
-  const { cartItems } = useCart()
 
   const wishlistCount = wishlistItems?.length || 0
-  const cartCount = cartItems?.reduce((sum, item) => sum + (item.quantity || 1), 0) || 0
 
   return (
-    <nav
-      className="fixed bottom-0 left-0 right-0 z-40 border-t border-line bg-surface/95 backdrop-blur-xl shadow-overlay lg:hidden"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
-      aria-label="Primary"
-    >
-      <div className="flex h-16 items-stretch justify-around">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[var(--bg-card)]/95 backdrop-blur-xl border-t border-[var(--border-color)] shadow-lg shadow-black/5 lg:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div className="flex items-center justify-around h-16">
         {tabs.map((tab) => {
           const isActive = tab.path === '/' ? pathname === '/' : pathname.startsWith(tab.path)
-          const count = tab.badge === 'wishlist' ? wishlistCount : tab.badge === 'cart' ? cartCount : 0
 
           return (
             <Link
               key={tab.path}
               to={tab.path}
-              className={`relative flex flex-1 flex-col items-center justify-center gap-1 transition-colors ${
-                isActive ? 'text-gold-600' : 'text-sub'
+              className={`flex flex-col items-center justify-center w-full h-full relative active:scale-90 transition-transform ${
+                isActive ? 'text-[#C6A972]' : 'text-[var(--text-secondary)]'
               }`}
-              aria-current={isActive ? 'page' : undefined}
             >
-              {count > 0 && (
-                <span className="absolute right-[calc(50%-16px)] top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-gold-500 px-1 text-[9px] font-bold leading-none text-white">
-                  {count > 99 ? '99+' : count}
+              {tab.path === '/wishlist' && wishlistCount > 0 && (
+                <span className="absolute top-0 right-1/2 translate-x-4 bg-[#C6A972] text-black text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center z-10">
+                  {wishlistCount > 99 ? '99+' : wishlistCount}
                 </span>
               )}
-              <Icon
-                name={tab.icon}
-                size={20}
-                className={`transition-transform ${isActive ? 'scale-110' : ''}`}
-              />
-              <span className="text-[10px] font-medium tracking-wide">{tab.label}</span>
+              {tab.icon(isActive)}
+              <span className="text-[11px] mt-1 font-medium">{tab.label}</span>
             </Link>
           )
         })}

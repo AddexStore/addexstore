@@ -1,134 +1,69 @@
-/* ============================================================
-   ADDEXSTORES — LUXURY DESIGN SYSTEM
-   Single source of truth for colors, surfaces, text, borders,
-   shadows and semantic states. Every component consumes these
-   CSS variables — no hardcoded values in components.
-   ============================================================ */
-
 :root {
-  /* ---- Brand: Champagne Gold (theme-invariant) ---- */
-  --gold-50: #FBF8F1;
-  --gold-100: #F6EFDF;
-  --gold-200: #EDDFBB;
-  --gold-300: #E0C78D;
-  --gold-400: #D3B274;
-  --gold-500: #C6A972;
-  --gold-600: #B3925C;
-  --gold-700: #92754A;
-  --gold-800: #6F5838;
-  --gold-900: #4F3F27;
+  /* Luxury Brand Colors (theme-invariant) */
+  --color-primary: #C6A972;
+  --color-primary-hover: #B8965F;
+  --color-primary-dark: #8A6A3D;
+  --color-secondary: #2E2E2E;
 
-  /* ---- Neutrals: Warm Charcoal / Ivory Sand ---- */
-  --ivory-50: #FCFBF9;
-  --ivory-100: #F7F4EF;
-  --ivory-200: #EFEAE2;
-  --ivory-300: #E4DDD2;
-  --ivory-400: #D2C9BB;
-  --ivory-500: #B4AA99;
-
-  --charcoal-50: #F5F4F2;
-  --charcoal-100: #E9E7E3;
-  --charcoal-200: #CECBC5;
-  --charcoal-300: #ABA69E;
-  --charcoal-400: #807B72;
-  --charcoal-500: #5C574E;
-  --charcoal-600: #454038;
-  --charcoal-700: #2E2B25;
-  --charcoal-800: #1D1B17;
-  --charcoal-900: #12110E;
-
-  /* ---- Semantic (theme-invariant base) ---- */
-  --success: #2F7D5A;
-  --error: #B3403A;
-  --warning: #B9872E;
-  --info: #4F6272;
-
-  /* ---- Chart / data-viz (theme-invariant series) ---- */
-  --chart-gold: #C6A972;
-  --chart-blue: #4F6272;
-  --chart-green: #2F7D5A;
-  --chart-purple: #8B5CF6;
-  --chart-rose: #D99BA8;
-  --chart-teal: #3E9C88;
-  --chart-orange: #D09A3E;
-
-  /* ---- Surfaces — Light ---- */
-  --bg-page: #F7F4EF;
+  /* Background Colors — Light Theme */
+  --bg-page: #FAF9F7;
   --bg-card: #FFFFFF;
   --bg-elevated: #FFFFFF;
-  --bg-hover: #EFEAE2;
-  --bg-input: #F6F3ED;
-  --bg-secondary: #F2EEE6;
-  --bg-overlay: rgba(29, 27, 23, 0.42);
+  --bg-hover: #EDE8E1;
+  --bg-input: #FFFFFF;
+  --bg-secondary: #F5F2ED;
 
-  /* ---- Text — Light ---- */
-  --text-primary: #1D1B17;
-  --text-secondary: #5C574E;
-  --text-muted: #8A8478;
+  /* Text Colors — Light Theme */
+  --text-primary: #1A1A1A;
+  --text-secondary: #666666;
+  --text-muted: #999999;
 
-  /* ---- Borders — Light ---- */
-  --border-color: #E5DED1;
-  --divider-color: #EDE7DB;
-  --border-subtle: #F0EBE1;
+  /* Border & Divider — Light Theme */
+  --border-color: #E7E2DA;
+  --divider-color: #EFEAE4;
+  --border-subtle: #EFEAE4;
 
-  /* ---- Focus / Accent glows ---- */
-  --ring-gold: rgba(198, 169, 114, 0.35);
+  /* Semantic Colors (theme-invariant) */
+  --success: #2F855A;
+  --error: #C53030;
+  --warning: #D69E2E;
+  --info: #4A5568;
 
-  /* ---- Shadows — Light ---- */
-  --shadow-sm: 0 1px 2px rgba(29, 27, 23, 0.04);
-  --shadow-card: 0 1px 2px rgba(29, 27, 23, 0.04), 0 10px 28px -14px rgba(29, 27, 23, 0.16);
-  --shadow-card-hover: 0 2px 4px rgba(29, 27, 23, 0.05), 0 22px 44px -18px rgba(29, 27, 23, 0.24);
-  --shadow-gold: 0 10px 28px -10px rgba(198, 169, 114, 0.5);
-  --shadow-gold-soft: 0 6px 18px -8px rgba(198, 169, 114, 0.35);
-  --shadow-overlay: 0 24px 60px -20px rgba(29, 27, 23, 0.35);
-
-  /* ---- Legacy aliases (kept for backward compatibility) ---- */
-  --color-primary: var(--gold-500);
-  --color-primary-hover: var(--gold-600);
-  --color-primary-dark: var(--gold-700);
-  --color-secondary: var(--charcoal-700);
-  --overlay-dark: var(--bg-overlay);
-  --overlay-light: rgba(29, 27, 23, 0.04);
+  /* Overlay Colors — Light Theme */
+  --overlay-dark: rgba(0, 0, 0, 0.35);
+  --overlay-light: rgba(0, 0, 0, 0.04);
   --overlay-gold: rgba(198, 169, 114, 0.15);
+
+  /* Shadows — Light Theme */
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 8px 30px rgba(0, 0, 0, 0.1);
+  --shadow-gold: 0 4px 20px rgba(198, 169, 114, 0.2);
 }
 
 [data-theme="dark"] {
-  /* ---- Surfaces — Dark ---- */
-  --bg-page: #12110E;
-  --bg-card: #1D1B17;
-  --bg-elevated: #252219;
-  --bg-hover: #2A271E;
-  --bg-input: #171510;
-  --bg-secondary: #1A1814;
-  --bg-overlay: rgba(0, 0, 0, 0.6);
+  /* Background Colors — Dark Theme */
+  --bg-page: #111111;
+  --bg-card: #1F1F1F;
+  --bg-elevated: #1F1F1F;
+  --bg-hover: #2A2A2A;
+  --bg-input: #171717;
+  --bg-secondary: #171717;
 
-  /* ---- Text — Dark ---- */
-  --text-primary: #F5F2EC;
-  --text-secondary: #B5AE9F;
-  --text-muted: #79735F;
+  /* Text Colors — Dark Theme */
+  --text-primary: #FFFFFF;
+  --text-secondary: #B5B5B5;
+  --text-muted: #6B6B6B;
 
-  /* ---- Borders — Dark ---- */
-  --border-color: #2E2A20;
-  --divider-color: #282419;
-  --border-subtle: #242118;
+  /* Border & Divider — Dark Theme */
+  --border-color: #2A2A2A;
+  --divider-color: #2A2A2A;
+  --border-subtle: #2A2A2A;
 
-  /* ---- Focus / Accent glows ---- */
-  --ring-gold: rgba(211, 178, 116, 0.4);
-
-  /* ---- Shadows — Dark ---- */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 30px -14px rgba(0, 0, 0, 0.55);
-  --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.35), 0 24px 48px -18px rgba(0, 0, 0, 0.65);
-  --shadow-gold: 0 10px 28px -10px rgba(198, 169, 114, 0.28);
-  --shadow-gold-soft: 0 6px 18px -8px rgba(198, 169, 114, 0.18);
-  --shadow-overlay: 0 24px 60px -20px rgba(0, 0, 0, 0.7);
-
-  /* ---- Legacy aliases ---- */
-  --color-primary: var(--gold-500);
-  --color-primary-hover: var(--gold-600);
-  --color-primary-dark: var(--gold-700);
-  --color-secondary: var(--charcoal-100);
-  --overlay-dark: var(--bg-overlay);
+  /* Overlay Colors — Dark Theme */
+  --overlay-dark: rgba(0, 0, 0, 0.5);
   --overlay-light: rgba(255, 255, 255, 0.05);
-  --overlay-gold: rgba(198, 169, 114, 0.18);
+
+  /* Shadows — Dark Theme */
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 8px 30px rgba(0, 0, 0, 0.4);
 }

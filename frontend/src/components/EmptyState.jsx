@@ -1,36 +1,41 @@
-import Button from './ui/Button'
-import Icon from './ui/Icon'
+import { Link } from 'react-router-dom'
 
-export default function EmptyState({
-  icon = 'PackageOpen',
-  title = 'Nothing here yet',
-  message = 'Your section is currently empty.',
-  actionLabel,
-  actionLink,
-  onAction,
-  size = 'lg',
-  compact = false,
-}) {
+export default function EmptyState({ icon, title, message, actionLabel, actionLink }) {
   return (
-    <div className={`flex flex-col items-center justify-center px-4 text-center ${compact ? 'py-8' : 'py-16'}`}>
-      <div
-        className={`mb-6 flex items-center justify-center rounded-full bg-gold-100 text-gold-600 ${
-          size === 'lg' ? 'h-20 w-20' : 'h-16 w-16'
-        } ${compact ? 'mb-4 h-14 w-14' : ''}`}
-      >
-        <Icon name={icon} size={size === 'lg' ? 32 : 26} strokeWidth={1.5} />
-      </div>
-      <h3 className="heading-display text-xl text-ink">{title}</h3>
-      <p className="mt-2 max-w-xs text-sm text-sub">{message}</p>
-      {actionLabel && actionLink && (
-        <Button variant="secondary" className="mt-6" to={actionLink} icon="ArrowRight">
-          {actionLabel}
-        </Button>
+    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+      {icon ? (
+        <div className="w-20 h-20 rounded-full bg-[#f5e6c8] flex items-center justify-center text-[#C6A972] mb-6">
+          {icon}
+        </div>
+      ) : (
+        <div className="w-20 h-20 rounded-full bg-[var(--bg-card)] flex items-center justify-center mb-6">
+          <svg className="w-10 h-10 text-[var(--text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+          </svg>
+        </div>
       )}
-      {actionLabel && onAction && (
-        <Button variant="secondary" className="mt-6" onClick={onAction}>
+
+      <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-1">
+        {title || 'Nothing here yet'}
+      </h3>
+
+      <p className="text-sm text-[var(--text-secondary)] max-w-xs mb-6">
+        {message || 'Your section is currently empty.'}
+      </p>
+
+      {actionLabel && actionLink && (
+        <Link
+          to={actionLink}
+          className="px-6 py-2.5 bg-[var(--bg-secondary)] text-[var(--text-primary)] text-sm font-medium rounded-full hover:bg-[var(--bg-hover)] transition active:scale-[0.98]"
+        >
           {actionLabel}
-        </Button>
+        </Link>
+      )}
+
+      {actionLabel && !actionLink && (
+        <span className="px-6 py-2.5 bg-[var(--bg-secondary)] text-[var(--text-primary)] text-sm font-medium rounded-full">
+          {actionLabel}
+        </span>
       )}
     </div>
   )

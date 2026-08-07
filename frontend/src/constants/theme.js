@@ -1,106 +1,93 @@
-/* JS mirror of the design-system tokens defined in src/styles/theme.css.
-   Prefer CSS variables in components; use this only where JS values are
-   required (charts, inline SVG fills). */
-
 export const theme = {
   colors: {
-    gold: {
-      50: '#FBF8F1', 100: '#F6EFDF', 200: '#EDDFBB', 300: '#E0C78D',
-      400: '#D3B274', 500: '#C6A972', 600: '#B3925C', 700: '#92754A',
-      800: '#6F5838', 900: '#4F3F27',
-    },
-    ivory: { 50: '#FCFBF9', 100: '#F7F4EF', 200: '#EFEAE2', 300: '#E4DDD2', 400: '#D2C9BB', 500: '#B4AA99' },
-    charcoal: {
-      50: '#F5F4F2', 100: '#E9E7E3', 200: '#CECBC5', 300: '#ABA69E',
-      400: '#807B72', 500: '#5C574E', 600: '#454038', 700: '#2E2B25',
-      800: '#1D1B17', 900: '#12110E',
-    },
     bg: {
-      primary: '#F7F4EF',
-      secondary: '#F2EEE6',
+      primary: '#FAF9F7',
+      secondary: '#F5F2ED',
       card: '#FFFFFF',
-      hover: '#EFEAE2',
-      input: '#F6F3ED',
+      hover: '#EDE8E1',
     },
     text: {
-      primary: '#1D1B17',
-      secondary: '#5C574E',
-      muted: '#8A8478',
+      primary: '#1A1A1A',
+      secondary: '#666666',
+      muted: '#999999',
     },
     accent: {
       gold: '#C6A972',
-      goldHover: '#B3925C',
-      goldDark: '#92754A',
-      secondary: '#2E2B25',
+      goldHover: '#B8965F',
+      goldDark: '#8A6A3D',
+      secondary: '#2E2E2E',
     },
     border: {
-      DEFAULT: '#E5DED1',
-      divider: '#EDE7DB',
+      DEFAULT: '#E7E2DA',
+      divider: '#EFEAE4',
     },
     semantic: {
-      success: '#2F7D5A',
-      error: '#B3403A',
-      warning: '#B9872E',
-      info: '#4F6272',
+      success: '#2F855A',
+      error: '#C53030',
+      warning: '#D69E2E',
+      info: '#4A5568',
     },
     chart: {
       gold: '#C6A972',
-      blue: '#4F6272',
-      green: '#2F7D5A',
+      blue: '#4A5568',
+      green: '#2F855A',
       purple: '#8B5CF6',
-      rose: '#D99BA8',
-      teal: '#3E9C88',
-      orange: '#D09A3E',
+      rose: '#E8A0B4',
+      teal: '#14B8A6',
+      orange: '#D69E2E',
     },
     overlay: {
-      dark: 'rgba(29, 27, 23, 0.42)',
-      light: 'rgba(29, 27, 23, 0.04)',
+      dark: 'rgba(0, 0, 0, 0.35)',
+      light: 'rgba(0, 0, 0, 0.04)',
       gold: 'rgba(198, 169, 114, 0.15)',
     },
   },
   spacing: {
-    section: 'section-lux',
-    container: 'container-lux',
+    section: 'py-16 sm:py-20 lg:py-24',
+    container: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8',
+    sectionMobile: 'py-12 sm:py-16',
   },
   typography: {
-    heading: 'heading-display',
-    body: 'font-sans',
-    eyebrow: 'eyebrow',
+    heading: 'font-playfair-display',
+    body: 'font-inter',
+    headingClass: 'font-playfair-display font-bold text-[#1A1A1A]',
+    bodyClass: 'font-inter text-[#666666]',
   },
   borderRadius: {
-    card: 'rounded-card',
-    button: 'rounded-full',
-    field: 'rounded-field',
+    card: 'rounded-xl',
+    button: 'rounded-xl',
+    full: 'rounded-full',
   },
   shadow: {
-    card: 'shadow-card',
-    cardHover: 'shadow-card-hover',
-    button: 'shadow-gold-soft',
-    glow: 'shadow-gold',
+    card: 'shadow-lg shadow-black/5',
+    cardHover: 'shadow-xl shadow-black/10',
+    button: 'shadow-md shadow-black/5',
+    glow: 'shadow-lg shadow-[#C6A972]/20',
   },
   animation: {
     transition: 'transition-all duration-300',
-    hoverLift: 'hover:-translate-y-0.5',
+    hover: 'hover:scale-[1.02]',
+    hoverLift: 'hover:-translate-y-1',
   },
 }
 
 export const colors = theme.colors
 
 export const buttonStyles = {
-  primary: 'btn btn-primary',
-  gold: 'btn btn-primary',
-  secondary: 'btn btn-secondary',
-  outline: 'btn btn-outline',
-  danger: 'btn btn-danger',
-  ghost: 'btn btn-ghost',
+  primary: `bg-[#C6A972] text-white ${theme.borderRadius.button} px-6 py-2.5 text-sm font-medium ${theme.animation.transition} hover:bg-[#B8965F] active:scale-[0.98] shadow-lg shadow-[#C6A972]/20`,
+  gold: `bg-[#C6A972] text-white ${theme.borderRadius.button} px-6 py-2.5 text-sm font-semibold ${theme.animation.transition} hover:bg-[#B8965F] active:scale-[0.98] shadow-lg shadow-[#C6A972]/20`,
+  secondary: `bg-white border border-[#E7E2DA] text-[#1A1A1A] ${theme.borderRadius.button} px-6 py-2.5 text-sm font-medium ${theme.animation.transition} hover:bg-[#FAF9F7] active:scale-[0.98]`,
+  outline: `bg-transparent border border-[#C6A972] text-[#C6A972] ${theme.borderRadius.button} px-6 py-2.5 text-sm font-medium ${theme.animation.transition} hover:bg-[#C6A972] hover:text-white active:scale-[0.98]`,
+  danger: `bg-transparent border border-[#C53030]/40 text-[#C53030] ${theme.borderRadius.button} px-6 py-2.5 text-sm font-medium ${theme.animation.transition} hover:bg-[#C53030]/5 active:scale-[0.98]`,
+  ghost: `text-[#666666] ${theme.borderRadius.button} px-4 py-2 text-sm font-medium ${theme.animation.transition} hover:bg-[#EDE8E1] hover:text-[#1A1A1A]`,
 }
 
 export const cardStyles = {
-  card: 'card',
-  interactive: 'card card-interactive',
-  glass: 'card card-glass',
+  card: `bg-white ${theme.borderRadius.card} ${theme.shadow.card} border border-[#E7E2DA] ${theme.animation.transition} ${theme.animation.hoverLift} hover:${theme.shadow.cardHover}`,
+  interactive: `bg-white ${theme.borderRadius.card} border border-[#E7E2DA] ${theme.animation.transition} hover:border-[#C6A972]/30 hover:bg-[#EDE8E1]`,
+  glass: `bg-white/80 backdrop-blur-md border border-[#E7E2DA] ${theme.borderRadius.card}`,
 }
 
 export const inputStyles = {
-  base: 'input',
+  base: `w-full bg-white border border-[#E7E2DA] ${theme.borderRadius.button} px-4 py-2.5 text-sm text-[#1A1A1A] placeholder-[#999999] focus:outline-none focus:border-[#C6A972] focus:ring-1 focus:ring-[#C6A972]/30 ${theme.animation.transition}`,
 }

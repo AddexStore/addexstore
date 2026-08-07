@@ -1,11 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
-import { Field, Input, Toggle } from '../components/ui/Input'
-import Button from '../components/ui/Button'
-import Icon from '../components/ui/Icon'
-import EmptyState from '../components/EmptyState'
-import { ConfirmDialog } from '../components/ui/Modal'
+import BackButton from '../components/BackButton'
 
 export default function Settings() {
   const { user, updateProfile } = useAuth()
@@ -99,154 +95,249 @@ export default function Settings() {
 
   if (!user) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center px-4">
-        <EmptyState
-          icon="User"
-          title="Sign In Required"
-          message="Please sign in to manage your settings."
-          actionLabel="Sign In"
-          actionLink="/login"
-        />
+      <div className="min-h-[60vh] flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="w-20 h-20 rounded-full bg-[var(--bg-card)] flex items-center justify-center mx-auto mb-6">
+            <svg className="w-10 h-10 text-[var(--text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Sign In Required</h2>
+          <p className="text-sm text-[var(--text-secondary)] mb-6">Please sign in to manage your settings.</p>
+          <a href="/login" className="inline-block min-h-[48px] px-8 py-3 bg-[#C6A972] text-white text-sm font-medium rounded-full hover:bg-[#B8965F] transition active:scale-[0.98]">
+            Sign In
+          </a>
+        </div>
       </div>
     )
   }
 
-  const sectionClass = 'rounded-card border border-line bg-surface p-6 shadow-card sm:p-8'
-  const sectionTitle = 'mb-6 text-lg font-semibold text-ink'
-
   return (
-    <div className="min-h-screen bg-page pb-16">
-      <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+    <div className="min-h-screen bg-[var(--bg-page)] pb-16">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="mb-6 sm:mb-8">
-          <p className="eyebrow mb-2 text-gold-600">Account</p>
-          <h1 className="heading-display text-2xl sm:text-3xl">Settings</h1>
-          <p className="mt-1 text-sm text-sub">Manage your account preferences and information.</p>
+          <div className="flex items-center gap-3">
+            <BackButton />
+            <h1 className="text-2xl sm:text-3xl font-playfair-display font-bold text-[var(--text-primary)]">Settings</h1>
+          </div>
+          <p className="text-sm text-[var(--text-secondary)] mt-1">Manage your account preferences and information.</p>
         </div>
 
         <div className="space-y-6 sm:space-y-8">
-          <section className={sectionClass}>
-            <h2 className={sectionTitle}>Profile Settings</h2>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <Field label="Full Name">
-                <Input type="text" name="name" value={profile.name} onChange={handleProfileChange} />
-              </Field>
-              <Field label="Email Address">
-                <Input type="email" name="email" value={profile.email} onChange={handleProfileChange} />
-              </Field>
-              <Field label="Phone Number">
-                <Input type="tel" name="phone" value={profile.phone} onChange={handleProfileChange} />
-              </Field>
-              <Field label="Street Address">
-                <Input type="text" name="street" value={profile.street} onChange={handleProfileChange} />
-              </Field>
-              <Field label="City">
-                <Input type="text" name="city" value={profile.city} onChange={handleProfileChange} />
-              </Field>
-              <Field label="State">
-                <Input type="text" name="state" value={profile.state} onChange={handleProfileChange} />
-              </Field>
-              <Field label="ZIP / Postal Code">
-                <Input type="text" name="zip" value={profile.zip} onChange={handleProfileChange} />
-              </Field>
-              <Field label="Country">
-                <Input type="text" name="country" value={profile.country} onChange={handleProfileChange} />
-              </Field>
+          <section className="bg-[var(--bg-card)] rounded-2xl shadow-lg shadow-black/5 border border-[var(--border-color)] p-6 sm:p-8">
+            <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-6">Profile Settings</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Full Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={profile.name}
+                  onChange={handleProfileChange}
+                  className="w-full min-h-[48px] px-4 py-3 text-sm border border-[var(--border-color)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Email Address</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={profile.email}
+                  onChange={handleProfileChange}
+                  className="w-full min-h-[48px] px-4 py-3 text-sm border border-[var(--border-color)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Phone Number</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={profile.phone}
+                  onChange={handleProfileChange}
+                  className="w-full min-h-[48px] px-4 py-3 text-sm border border-[var(--border-color)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Street Address</label>
+                <input
+                  type="text"
+                  name="street"
+                  value={profile.street}
+                  onChange={handleProfileChange}
+                  className="w-full min-h-[48px] px-4 py-3 text-sm border border-[var(--border-color)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">City</label>
+                <input
+                  type="text"
+                  name="city"
+                  value={profile.city}
+                  onChange={handleProfileChange}
+                  className="w-full min-h-[48px] px-4 py-3 text-sm border border-[var(--border-color)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">State</label>
+                <input
+                  type="text"
+                  name="state"
+                  value={profile.state}
+                  onChange={handleProfileChange}
+                  className="w-full min-h-[48px] px-4 py-3 text-sm border border-[var(--border-color)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">ZIP / Postal Code</label>
+                <input
+                  type="text"
+                  name="zip"
+                  value={profile.zip}
+                  onChange={handleProfileChange}
+                  className="w-full min-h-[48px] px-4 py-3 text-sm border border-[var(--border-color)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Country</label>
+                <input
+                  type="text"
+                  name="country"
+                  value={profile.country}
+                  onChange={handleProfileChange}
+                  className="w-full min-h-[48px] px-4 py-3 text-sm border border-[var(--border-color)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
+                />
+              </div>
             </div>
-            <div className="mt-6 border-t border-line pt-6">
-              <Button variant="primary" onClick={handleSaveProfile} loading={isSaving}>
+            <div className="mt-6 pt-6 border-t border-[var(--border-color)]">
+              <button
+                onClick={handleSaveProfile}
+                disabled={isSaving}
+                className="w-full sm:w-auto min-h-[48px] px-8 py-3 bg-[#C6A972] text-white text-sm font-semibold rounded-full hover:bg-[#B8965F] transition disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+              >
                 {isSaving ? 'Saving...' : 'Save Changes'}
-              </Button>
+              </button>
             </div>
           </section>
 
-          <section className={sectionClass}>
-            <h2 className={sectionTitle}>Notification Preferences</h2>
-            <div className="divide-y divide-line">
+          <section className="bg-[var(--bg-card)] rounded-2xl shadow-lg shadow-black/5 border border-[var(--border-color)] p-6 sm:p-8">
+            <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-6">Notification Preferences</h2>
+            <div className="space-y-5">
               {[
                 { key: 'email', label: 'Email Notifications', description: 'Receive order updates and promotions via email' },
                 { key: 'sms', label: 'SMS Alerts', description: 'Get text message alerts for order status changes' },
                 { key: 'push', label: 'Push Notifications', description: 'Enable browser push notifications for real-time updates' },
               ].map((item) => (
-                <div key={item.key} className="flex items-center justify-between gap-4 py-4">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-ink">{item.label}</p>
-                    <p className="mt-0.5 text-xs text-sub">{item.description}</p>
+                <div key={item.key} className="flex items-center justify-between py-3 gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[var(--text-primary)]">{item.label}</p>
+                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">{item.description}</p>
                   </div>
-                  <Toggle
-                    checked={notifications[item.key]}
-                    onChange={() => handleToggle(item.key)}
-                    aria-label={`Toggle ${item.label}`}
-                  />
+                  <button
+                    onClick={() => handleToggle(item.key)}
+                    className={`relative w-12 h-7 rounded-full transition-colors flex-shrink-0 ${
+                      notifications[item.key] ? 'bg-[#C6A972]' : 'bg-[#E7E2DA]'
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 w-6 h-6 bg-[var(--bg-card)] rounded-full shadow-lg shadow-black/5 transition-transform ${
+                        notifications[item.key] ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
                 </div>
               ))}
             </div>
           </section>
 
-          <section className={sectionClass}>
-            <h2 className={sectionTitle}>Change Password</h2>
+          <section className="bg-[var(--bg-card)] rounded-2xl shadow-lg shadow-black/5 border border-[var(--border-color)] p-6 sm:p-8">
+            <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-6">Change Password</h2>
             <form onSubmit={handleChangePassword} className="space-y-5">
-              <Field label="Current Password">
-                <Input
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Current Password</label>
+                <input
                   type="password"
                   name="current"
                   value={passwordForm.current}
                   onChange={handlePasswordChange}
+                  className="w-full min-h-[48px] px-4 py-3 text-sm border border-[var(--border-color)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
                   placeholder="Enter current password"
-                  autoComplete="current-password"
                 />
-              </Field>
-              <Field label="New Password">
-                <Input
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">New Password</label>
+                <input
                   type="password"
                   name="new"
                   value={passwordForm.new}
                   onChange={handlePasswordChange}
+                  className="w-full min-h-[48px] px-4 py-3 text-sm border border-[var(--border-color)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
                   placeholder="At least 8 characters"
-                  autoComplete="new-password"
                 />
-              </Field>
-              <Field label="Confirm New Password">
-                <Input
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Confirm New Password</label>
+                <input
                   type="password"
                   name="confirm"
                   value={passwordForm.confirm}
                   onChange={handlePasswordChange}
+                  className="w-full min-h-[48px] px-4 py-3 text-sm border border-[var(--border-color)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
                   placeholder="Re-enter new password"
-                  autoComplete="new-password"
                 />
-              </Field>
+              </div>
               <div className="pt-2">
-                <Button type="submit" variant="secondary">
+                <button
+                  type="submit"
+                  className="w-full sm:w-auto min-h-[48px] px-8 py-3 bg-[#C6A972] text-white text-sm font-semibold rounded-full hover:bg-[#B8965F] transition active:scale-[0.98]"
+                >
                   Update Password
-                </Button>
+                </button>
               </div>
             </form>
           </section>
 
-          <section className={sectionClass}>
-            <h2 className={sectionTitle}>Account</h2>
-            <p className="mb-6 text-sm text-sub">
-              Permanently delete your account and all associated data.
-            </p>
-            <Button
-              variant="danger"
-              icon="Trash2"
+          <section className="bg-[var(--bg-card)] rounded-2xl shadow-lg shadow-black/5 border border-[var(--border-color)] p-6 sm:p-8">
+            <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-2">Account</h2>
+            <p className="text-sm text-[var(--text-secondary)] mb-6">Permanently delete your account and all associated data.</p>
+            <button
               onClick={() => setShowDeleteDialog(true)}
+              className="w-full sm:w-auto min-h-[48px] px-8 py-3 border border-[#C53030]/30 text-[#C53030] text-sm font-medium rounded-full hover:bg-[#C53030]/10 transition active:scale-[0.98]"
             >
               Delete Account
-            </Button>
+            </button>
           </section>
         </div>
 
-        <ConfirmDialog
-          open={showDeleteDialog}
-          onClose={() => setShowDeleteDialog(false)}
-          onConfirm={handleDeleteAccount}
-          title="Delete Account"
-          message="Are you sure you want to delete your account? This action cannot be undone. All your data, orders, and preferences will be permanently removed."
-          confirmLabel="Delete My Account"
-          danger
-        />
+        {showDeleteDialog && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowDeleteDialog(false)} />
+            <div className="relative bg-[var(--bg-card)] rounded-2xl shadow-xl max-w-md w-full p-6 sm:p-8 border border-[var(--border-color)] mx-4">
+              <div className="w-14 h-14 rounded-full bg-[#C53030]/10 flex items-center justify-center mx-auto mb-4">
+                <svg className="w-7 h-7 text-[#C53030]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-[var(--text-primary)] text-center mb-2">Delete Account</h3>
+              <p className="text-sm text-[var(--text-secondary)] text-center mb-6 leading-relaxed">
+                Are you sure you want to delete your account? This action cannot be undone. All your data, orders, and preferences will be permanently removed.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => setShowDeleteDialog(false)}
+                  className="flex-1 min-h-[48px] px-4 py-3 border border-[var(--border-color)] text-[var(--text-secondary)] text-sm font-medium rounded-full hover:bg-[var(--bg-hover)] transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  className="flex-1 min-h-[48px] px-4 py-3 bg-[#C53030] text-[var(--text-primary)] text-sm font-medium rounded-full hover:bg-[#DC2626] transition"
+                >
+                  Delete My Account
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

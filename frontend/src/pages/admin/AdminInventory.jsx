@@ -1,19 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { productService } from '../../services/productService'
-import { getAssetUrl } from '../../services/api'
 import { useToast } from '../../context/ToastContext'
-import StatusBadge from '../../components/ui/StatusBadge'
-import Badge from '../../components/ui/Badge'
-import { Table, THead, TBody, TR, TH, TD } from '../../components/ui/Table'
-import Pagination from '../../components/ui/Pagination'
-import PageHeader from '../../components/ui/PageHeader'
-import EmptyState from '../../components/EmptyState'
-import Modal from '../../components/ui/Modal'
-import { Checkbox, Input } from '../../components/ui/Input'
-import Button from '../../components/ui/Button'
-import Icon from '../../components/ui/Icon'
-
-const PAGE_SIZE = 10
+import BackButton from '../../components/BackButton'
 
 export default function AdminInventory() {
   const { showToast } = useToast()
@@ -26,7 +14,6 @@ export default function AdminInventory() {
   const [bulkStock, setBulkStock] = useState('')
   const [showBulkModal, setShowBulkModal] = useState(false)
   const [savingId, setSavingId] = useState(null)
-  const [page, setPage] = useState(1)
 
   useEffect(() => {
     let cancelled = false
@@ -53,16 +40,6 @@ export default function AdminInventory() {
 
   const lowStockCount = products.filter((p) => (p.stock ?? 0) >= 1 && (p.stock ?? 0) <= 10).length
   const outOfStockCount = products.filter((p) => (p.stock ?? 0) === 0).length
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const pagedProducts = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE
-    return filtered.slice(start, start + PAGE_SIZE)
-  }, [filtered, page])
-
-  useEffect(() => {
-    setPage(1)
-  }, [filter])
 
   const handleStockUpdate = async (id) => {
     const val = parseInt(stockValue)
@@ -111,171 +88,108 @@ export default function AdminInventory() {
 
   if (loading) {
     return (
-      <div className="flex h-full flex-col gap-4 py-4">
-        <PageHeader title="Inventory" />
-        <div className="flex-1 animate-pulse rounded-card border border-line bg-surface" />
+      <div className="h-full flex flex-col gap-2 py-3">
+        <div className="flex items-center gap-3">
+          <BackButton />
+          <h1 className="text-lg font-bold text-[var(--text-primary)] font-['Playfair_Display']">Inventory</h1>
+        </div>
+        <div className="flex-1 bg-[var(--bg-card)] rounded-lg border border-[var(--border-color)]/50 animate-pulse" />
       </div>
     )
   }
 
   return (
-    <div className="flex h-full flex-col gap-4 py-4">
-      <PageHeader
-        title="Inventory"
-        description="Monitor stock levels and update quantities across your catalog."
-        actions={
-          <>
-            {selectedIds.size > 0 && (
-              <Button variant="goldOutline" size="sm" icon="SlidersHorizontal" onClick={() => setShowBulkModal(true)}>
-                Bulk ({selectedIds.size})
-              </Button>
-            )}
-            <div className="flex gap-1 rounded-full border border-line bg-surface p-1">
-              {['all', 'low', 'out'].map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filter === f ? 'bg-gold-500 text-white shadow-gold-soft' : 'text-sub hover:text-ink'}`}
-                >
-                  {f === 'all' ? `All (${products.length})` : f === 'low' ? `Low (${lowStockCount})` : `OOS (${outOfStockCount})`}
-                </button>
-              ))}
-            </div>
-          </>
-        }
-      />
-
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-line bg-surface shadow-card">
-        {filtered.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center">
-            <EmptyState
-              compact
-              icon="Package"
-              title="No products found"
-              message="No products match the current stock filter."
-            />
+    <div className="h-full flex flex-col gap-2 py-3">
+      <div className="flex items-center justify-between flex-shrink-0 flex-wrap gap-2">
+        <div className="flex items-center gap-3">
+          <BackButton />
+          <h1 className="text-lg font-bold text-[var(--text-primary)] font-['Playfair_Display']">Inventory</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          {selectedIds.size > 0 && (
+            <button onClick={() => setShowBulkModal(true)} className="px-3 py-1.5 bg-[#C6A972]/20 text-[#C6A972] rounded-lg text-xs font-medium hover:bg-[#C6A972]/30 transition-colors">
+              Bulk ({selectedIds.size})
+            </button>
+          )}
+          <div className="flex gap-1">
+            {['all', 'low', 'out'].map((f) => (
+              <button key={f} onClick={() => setFilter(f)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${filter === f ? 'bg-[#C6A972] text-white' : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
+                {f === 'all' ? `All (${products.length})` : f === 'low' ? `Low (${lowStockCount})` : `OOS (${outOfStockCount})`}
+              </button>
+            ))}
           </div>
-        ) : (
-          <>
-            <div className="min-h-0 flex-1 overflow-auto">
-              <Table>
-                <THead>
-                  <TR className="border-0">
-                    <TH className="w-8">
-                      <Checkbox
-                        checked={filtered.length > 0 && selectedIds.size === filtered.length}
-                        onChange={toggleAll}
-                        aria-label="Select all products"
-                      />
-                    </TH>
-                    <TH className="w-10">Image</TH>
-                    <TH>Name</TH>
-                    <TH className="hidden sm:table-cell">SKU</TH>
-                    <TH className="hidden sm:table-cell">Category</TH>
-                    <TH className="text-right">Stock</TH>
-                    <TH>Status</TH>
-                  </TR>
-                </THead>
-                <TBody>
-                  {pagedProducts.map((product) => {
-                    const stock = product.stock ?? 0
-                    const isEditing = editingStock === product.id
-                    return (
-                      <TR key={product.id} className="hover:bg-subtle">
-                        <TD>
-                          <Checkbox
-                            checked={selectedIds.has(product.id)}
-                            onChange={() => toggleSelect(product.id)}
-                            aria-label={`Select ${product.name}`}
-                          />
-                        </TD>
-                        <TD>
-                          <img
-                            src={getAssetUrl(product.image) || '/assets/placeholders/product.svg'}
-                            alt={product.name}
-                            onError={(e) => { e.currentTarget.src = '/assets/placeholders/product.svg' }}
-                            className="h-10 w-10 rounded-soft bg-surface object-cover"
-                          />
-                        </TD>
-                        <TD className="max-w-[160px] truncate font-medium text-ink">{product.name}</TD>
-                        <TD className="hidden font-mono text-[10px] text-sub sm:table-cell">SKU-{String(product.id).padStart(4, '0')}</TD>
-                        <TD className="hidden text-sub sm:table-cell">{product.category?.name || product.category || ''}</TD>
-                        <TD className="text-right">
-                          {isEditing ? (
-                            <div className="flex items-center justify-end gap-1">
-                              <input
-                                type="number"
-                                value={stockValue}
-                                onChange={(e) => setStockValue(e.target.value)}
-                                autoFocus
-                                className="w-16 rounded-field border border-gold-500 bg-inset px-2 py-1 text-xs text-ink focus:outline-none focus:ring-2 focus:ring-gold-500/25"
-                              />
-                              <button
-                                onClick={() => handleStockUpdate(product.id)}
-                                disabled={savingId === product.id}
-                                className="p-1.5 text-success transition-colors hover:opacity-80"
-                                aria-label="Save stock"
-                              >
-                                {savingId === product.id ? <Icon name="Loader2" size="sm" className="animate-spin" /> : <Icon name="Check" size="sm" />}
-                              </button>
-                              <button
-                                onClick={() => setEditingStock(null)}
-                                className="p-1.5 text-danger transition-colors hover:opacity-80"
-                                aria-label="Cancel edit"
-                              >
-                                <Icon name="X" size="sm" />
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => { setEditingStock(product.id); setStockValue(String(stock)) }}
-                              className="inline-flex items-center gap-1.5 rounded-soft text-ink transition-colors hover:text-gold-600"
-                            >
-                              <span className="font-medium">{stock}</span>
-                              <Icon name="Pencil" size="sm" className="text-sub" />
-                            </button>
-                          )}
-                        </TD>
-                        <TD>
-                          {stock === 0 ? (
-                            <StatusBadge status="OUT_OF_STOCK" />
-                          ) : stock <= 10 ? (
-                            <StatusBadge status="LOW_STOCK" />
-                          ) : (
-                            <Badge tone="success" size="sm">In Stock</Badge>
-                          )}
-                        </TD>
-                      </TR>
-                    )
-                  })}
-                </TBody>
-              </Table>
-            </div>
-            <div className="flex flex-shrink-0 flex-col items-center justify-between gap-3 border-t border-line px-4 py-3 sm:flex-row">
-              <span className="text-[11px] text-sub">
-                {filtered.length} product{filtered.length === 1 ? '' : 's'} · Page {page} of {totalPages}
-              </span>
-              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-            </div>
-          </>
-        )}
+        </div>
       </div>
 
-      <Modal
-        open={showBulkModal}
-        onClose={() => setShowBulkModal(false)}
-        title="Bulk Stock Update"
-        description={`Update stock for ${selectedIds.size} product(s)`}
-        size="sm"
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setShowBulkModal(false)}>Cancel</Button>
-            <Button variant="primary" onClick={applyBulkStock}>Apply</Button>
-          </>
-        }
-      >
-        <Input type="number" value={bulkStock} onChange={(e) => setBulkStock(e.target.value)} placeholder="Enter stock value" />
-      </Modal>
+      <div className="flex-1 min-h-0 bg-[var(--bg-card)] rounded-lg border border-[var(--border-color)]/50 overflow-hidden">
+        <div className="overflow-auto h-full">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-[var(--border-color)] sticky top-0 bg-[var(--bg-card)]">
+                <th className="py-2 px-2 w-8"><input type="checkbox" checked={filtered.length > 0 && selectedIds.size === filtered.length} onChange={toggleAll} className="accent-[#C6A972]" /></th>
+                <th className="text-left py-2 px-2 text-[var(--text-secondary)] font-medium">Name</th>
+                <th className="text-left py-2 px-2 text-[var(--text-secondary)] font-medium hidden sm:table-cell">SKU</th>
+                <th className="text-left py-2 px-2 text-[var(--text-secondary)] font-medium hidden sm:table-cell">Category</th>
+                <th className="text-right py-2 px-2 text-[var(--text-secondary)] font-medium">Stock</th>
+                <th className="text-left py-2 px-2 text-[var(--text-secondary)] font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((product) => {
+                const stock = product.stock ?? 0
+                const isEditing = editingStock === product.id
+                const status = stock === 0 ? { label: 'OOS', color: 'text-red-600 bg-red-500/10' } : stock <= 10 ? { label: 'Low', color: 'text-yellow-600 bg-yellow-500/10' } : { label: 'In Stock', color: 'text-green-600 bg-green-500/10' }
+                return (
+                  <tr key={product.id} className="border-b border-[var(--border-color)]/30 hover:bg-[var(--bg-hover)] transition-colors">
+                    <td className="py-1.5 px-2"><input type="checkbox" checked={selectedIds.has(product.id)} onChange={() => toggleSelect(product.id)} className="accent-[#C6A972]" /></td>
+                    <td className="py-1.5 px-2 text-[var(--text-primary)] truncate max-w-[160px]">{product.name}</td>
+                    <td className="py-1.5 px-2 text-[var(--text-secondary)] font-mono text-[10px] hidden sm:table-cell">SKU-{String(product.id).padStart(4, '0')}</td>
+                    <td className="py-1.5 px-2 text-[var(--text-secondary)] hidden sm:table-cell">{product.category?.name || product.category || ''}</td>
+                    <td className="py-1.5 px-2 text-right">
+                      {isEditing ? (
+                        <div className="flex items-center justify-end gap-1">
+                          <input type="number" value={stockValue} onChange={(e) => setStockValue(e.target.value)} autoFocus className="w-16 bg-[var(--bg-input)] border border-[#C6A972] rounded px-1.5 py-0.5 text-xs text-[var(--text-primary)] focus:outline-none" />
+                          <button onClick={() => handleStockUpdate(product.id)} disabled={savingId === product.id} className="text-green-600 hover:text-green-300">
+                            {savingId === product.id ? (
+                              <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="8"/></svg>
+                            ) : (
+                              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            )}
+                          </button>
+                          <button onClick={() => setEditingStock(null)} className="text-red-600 hover:text-red-300"><svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                        </div>
+                      ) : (
+                        <button onClick={() => { setEditingStock(product.id); setStockValue(String(stock)) }} className="inline-flex items-center gap-1 text-[var(--text-primary)] hover:text-[#C6A972] transition-colors">
+                          <span className="font-medium">{stock}</span>
+                          <svg className="w-3 h-3 text-[var(--text-secondary)] group-hover:text-[#C6A972]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                      )}
+                    </td>
+                    <td className="py-1.5 px-2"><span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${status.color}`}>{status.label}</span></td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+        {filtered.length === 0 && !loading && <div className="text-center py-6 text-[var(--text-secondary)] text-xs">No products found</div>}
+      </div>
+
+      {showBulkModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setShowBulkModal(false)}>
+          <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] p-5 w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-semibold text-[var(--text-primary)] mb-1">Bulk Stock Update</h3>
+            <p className="text-xs text-[var(--text-secondary)] mb-3">Update stock for <span className="text-[var(--text-primary)] font-medium">{selectedIds.size}</span> product(s)</p>
+            <input type="number" value={bulkStock} onChange={(e) => setBulkStock(e.target.value)} placeholder="Enter stock value"
+              className="w-full bg-[var(--bg-input)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#C6A972] mb-3" />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowBulkModal(false)} className="px-4 py-1.5 rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-input)] hover:bg-[var(--bg-hover)] transition-colors">Cancel</button>
+              <button onClick={applyBulkStock} className="px-4 py-1.5 rounded-lg text-xs font-semibold text-white bg-[#C6A972] hover:bg-[#B8965F] transition-colors">Apply</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -1,28 +1,32 @@
-import Button from '../components/ui/Button'
-import Icon from '../components/ui/Icon'
+import { Link } from 'react-router-dom'
 
 export default function NotFound() {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-page px-4 py-16">
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold-500/8 blur-3xl" />
-      <div className="relative mx-auto w-full max-w-md text-center">
-        <p className="eyebrow mb-4 text-gold-600">Error 404</p>
-        <h1 className="heading-display text-[7rem] leading-none text-ink sm:text-[9rem]">
+    <div className="min-h-screen bg-[var(--bg-page)] flex items-center justify-center py-12 px-4">
+      <div className="text-center max-w-md">
+        <h1 className="font-playfair-display text-8xl sm:text-9xl font-bold text-[var(--text-primary)] leading-none">
           404
         </h1>
-        <div className="mx-auto mb-6 h-px w-16 bg-gold-500" />
-        <h2 className="heading-display text-2xl text-ink">Page Not Found</h2>
-        <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-sub">
+
+        <div className="w-16 h-0.5 bg-[#C6A972] mx-auto my-6" />
+
+        <h2 className="font-playfair-display text-2xl sm:text-3xl font-bold text-[var(--text-primary)] mb-3">
+          Page Not Found
+        </h2>
+
+        <p className="text-sm text-[var(--text-secondary)] mb-8">
           The page you&apos;re looking for doesn&apos;t exist or has been moved.
         </p>
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button to="/" icon="Home">
-            Back to Home
-          </Button>
-          <Button to="/products" variant="outline" icon="ShoppingBag">
-            Explore Collection
-          </Button>
-        </div>
+
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 px-8 py-3 bg-[#C6A972] text-white text-sm font-medium rounded-full hover:bg-[#B8965F] transition active:scale-[0.98]"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          Back to Home
+        </Link>
       </div>
     </div>
   )

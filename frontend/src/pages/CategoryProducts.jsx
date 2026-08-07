@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { SORT_OPTIONS, COLORS, SIZES } from '../constants'
+import { formatPrice, getDiscountPrice } from '../utils/helpers'
 import { productService } from '../services/productService'
 import { categoryService } from '../services/categoryService'
 import { mapProduct, mapCategory } from '../services/mappers'
@@ -8,20 +9,11 @@ import { getAssetUrl } from '../services/api'
 import ProductCard from '../components/ProductCard'
 import SkeletonLoader from '../components/SkeletonLoader'
 import EmptyState from '../components/EmptyState'
-import Button from '../components/ui/Button'
-import Icon from '../components/ui/Icon'
-import { Select, Input, Checkbox } from '../components/ui/Input'
-import Pagination from '../components/ui/Pagination'
+import BackButton from '../components/BackButton'
 import SafeIcon from '../components/SafeIcon'
 import { isSvgMarkup } from '../utils/sanitizeSvg'
 
 const ITEMS_PER_PAGE = 12
-
-const COLOR_MAP = {
-  Black: '#000', White: '#fff', Navy: '#1e3a5f', Red: '#dc2626',
-  Gold: '#C6A972', Beige: '#f5f5dc', Brown: '#8b4513', Gray: '#6b7280',
-  Pink: '#e8a0b4', Blue: '#3b82f6', Green: '#22c55e', Purple: '#7c3aed',
-}
 
 export default function CategoryProducts() {
   const { categoryName } = useParams()
@@ -185,15 +177,15 @@ export default function CategoryProducts() {
 
   if (categoryLoading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Icon name="Loader2" size="lg" className="animate-spin text-gold-600" />
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#C6A972] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
 
   if (!category) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="min-h-[60vh] flex items-center justify-center">
         <EmptyState
           title="Category Not Found"
           message="The category you're looking for doesn't exist or has been removed."
@@ -204,195 +196,188 @@ export default function CategoryProducts() {
     )
   }
 
-  const filterSectionClass = 'border-t border-line pt-6'
-
   const FilterContent = () => (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-ink">
-          Filters
-        </h3>
+    <div className="bg-[var(--bg-card)] rounded-2xl shadow-lg shadow-black/5 border border-[var(--border-color)] p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider">Filters</h3>
         {hasActiveFilters && (
           <button
             onClick={clearAllFilters}
-            className="text-xs font-medium text-gold-600 transition-colors hover:text-gold-700"
+            className="text-xs text-[#C6A972] hover:text-[#B8965F] font-medium transition"
           >
             Clear All
           </button>
         )}
       </div>
 
-      <div>
-        <h4 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-faint">
-          Subcategory
-        </h4>
-        <div className="space-y-2.5">
-          {sidebarSubcategories.map((sub) => (
-            <Checkbox
-              key={sub}
-              label={sub}
-              checked={selectedSubcategories.includes(sub) || selectedSub === sub}
-              onChange={() => {
-                if (selectedSub) {
-                  setSearchParams({})
-                } else {
-                  toggleSubcategory(sub)
-                }
-              }}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div className={filterSectionClass}>
-        <h4 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-faint">
-          Price Range
-        </h4>
-        <div className="flex items-center gap-2">
-          <Input
-            type="number"
-            value={priceRange[0]}
-            onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
-            placeholder="Min"
-            aria-label="Minimum price"
-          />
-          <span className="text-faint">—</span>
-          <Input
-            type="number"
-            value={priceRange[1]}
-            onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
-            placeholder="Max"
-            aria-label="Maximum price"
-          />
-        </div>
-      </div>
-
-      {brands.length > 0 && (
-        <div className={filterSectionClass}>
-          <h4 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-faint">
-            Brand
-          </h4>
-          <div className="max-h-48 space-y-2.5 overflow-y-auto pr-1">
-            {brands.map((brand) => (
-              <Checkbox
-                key={brand}
-                label={brand}
-                checked={selectedBrands.includes(brand)}
-                onChange={() => toggleBrand(brand)}
-              />
+      <div className="space-y-6">
+        <div>
+          <h4 className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-3">Subcategory</h4>
+          <div className="space-y-2">
+            {sidebarSubcategories.map((sub) => (
+              <label key={sub} className="flex items-center gap-2.5 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={selectedSubcategories.includes(sub) || selectedSub === sub}
+                  onChange={() => {
+                    if (selectedSub) {
+                      setSearchParams({})
+                    } else {
+                      toggleSubcategory(sub)
+                    }
+                  }}
+                  className="w-4 h-4 rounded border-[var(--border-color)] text-[#C6A972] focus:ring-[#C6A972] bg-[var(--bg-secondary)]"
+                />
+                <span className="text-sm text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition">{sub}</span>
+              </label>
             ))}
           </div>
         </div>
-      )}
 
-      <div className={filterSectionClass}>
-        <h4 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-faint">
-          Color
-        </h4>
-        <div className="flex flex-wrap gap-2">
-          {COLORS.map((color) => {
-            const isSelected = selectedColors.includes(color)
-            const light = color === 'White' || color === 'Beige'
-            return (
+        <div className="border-t border-[var(--border-color)] pt-6">
+          <h4 className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-3">Price Range</h4>
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              value={priceRange[0]}
+              onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
+              className="w-full px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#C6A972] bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
+              placeholder="Min"
+            />
+            <span className="text-[var(--text-secondary)]">—</span>
+            <input
+              type="number"
+              value={priceRange[1]}
+              onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
+              className="w-full px-3 py-2 text-sm border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#C6A972] bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
+              placeholder="Max"
+            />
+          </div>
+        </div>
+
+        <div className="border-t border-[var(--border-color)] pt-6">
+          <h4 className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-3">Brand</h4>
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {brands.map((brand) => (
+              <label key={brand} className="flex items-center gap-2.5 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={selectedBrands.includes(brand)}
+                  onChange={() => toggleBrand(brand)}
+                  className="w-4 h-4 rounded border-[var(--border-color)] text-[#C6A972] focus:ring-[#C6A972] bg-[var(--bg-secondary)]"
+                />
+                <span className="text-sm text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition">{brand}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="border-t border-[var(--border-color)] pt-6">
+          <h4 className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-3">Color</h4>
+          <div className="flex flex-wrap gap-2">
+            {COLORS.map((color) => {
+              const isSelected = selectedColors.includes(color)
+              const colorMap = {
+                Black: '#000', White: '#fff', Navy: '#1e3a5f', Red: '#dc2626',
+                Gold: '#C6A972', Beige: '#f5f5dc', Brown: '#8b4513', Gray: '#6b7280',
+                Pink: '#e8a0b4', Blue: '#3b82f6', Green: '#22c55e', Purple: '#7c3aed',
+              }
+              return (
+                <button
+                  key={color}
+                  onClick={() => toggleColor(color)}
+                  className={`w-7 h-7 rounded-full border-2 transition-all ${
+                    isSelected ? 'border-[#C6A972] scale-110' : 'border-[var(--border-color)] hover:border-[#C6A972]'
+                  }`}
+                  style={{ backgroundColor: colorMap[color] || '#e5e7eb' }}
+                  title={color}
+                >
+                  {isSelected && (
+                    <svg className="w-full h-full p-1.5" viewBox="0 0 24 24" fill={color === 'White' || color === 'Beige' ? '#000' : '#fff'}>
+                      <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="border-t border-[var(--border-color)] pt-6">
+          <h4 className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-3">Size</h4>
+          <div className="flex flex-wrap gap-2">
+            {SIZES.map((size) => (
               <button
-                key={color}
-                onClick={() => toggleColor(color)}
-                className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all ${
-                  isSelected
-                    ? 'scale-110 border-gold-500 ring-2 ring-gold-500/30'
-                    : 'border-line hover:border-gold-500'
+                key={size}
+                onClick={() => toggleSize(size)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-all ${
+                  selectedSizes.includes(size)
+                    ? 'border-[#C6A972] bg-[#C6A972]/10 text-[#C6A972]'
+                    : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:border-[#C6A972]'
                 }`}
-                style={{ backgroundColor: COLOR_MAP[color] || '#e5e7eb' }}
-                title={color}
-                aria-label={`Color ${color}`}
-                aria-pressed={isSelected}
               >
-                {isSelected && (
-                  <Icon name="Check" size="xs" className={light ? 'text-charcoal-700' : 'text-white'} />
-                )}
+                {size}
               </button>
-            )
-          })}
+            ))}
+          </div>
         </div>
-      </div>
-
-      <div className={filterSectionClass}>
-        <h4 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-faint">
-          Size
-        </h4>
-        <div className="flex flex-wrap gap-2">
-          {SIZES.map((size) => (
-            <button
-              key={size}
-              onClick={() => toggleSize(size)}
-              className={`min-w-[44px] rounded-field border px-3 py-1.5 text-xs font-medium transition-all ${
-                selectedSizes.includes(size)
-                  ? 'border-gold-500 bg-gold-50 text-gold-800 ring-1 ring-gold-500/30'
-                  : 'border-line text-sub hover:border-gold-500'
-              }`}
-              aria-pressed={selectedSizes.includes(size)}
-            >
-              {size}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-
-  const CategoryHero = () => (
-    <div className="relative mb-10 overflow-hidden rounded-card">
-      <div className="absolute inset-0 z-10 bg-gradient-to-r from-charcoal-900/80 via-charcoal-900/50 to-transparent" />
-      <img
-        src={getAssetUrl(category.image)}
-        alt={category.name}
-        className="h-48 w-full object-cover sm:h-64"
-      />
-      <div className="absolute inset-0 z-20 flex flex-col justify-center px-8 sm:px-12">
-        <h1 className="heading-display mb-2 text-3xl text-white sm:text-4xl lg:text-5xl">
-          {selectedSub || category.name}
-        </h1>
-        <p className="mb-3 max-w-xl text-sm text-white/80 sm:text-base">
-          {category.description}
-        </p>
-        <span className="text-sm font-medium text-gold-300">
-          {selectedSub ? filteredProducts.length : category.productCount} Products
-        </span>
       </div>
     </div>
   )
 
   if (!selectedSub && normalizedSubcategories.length > 0) {
     return (
-      <div className="container-lux py-8">
-        <nav className="mb-6 flex items-center gap-2 text-sm text-sub" aria-label="Breadcrumb">
-          <Link to="/" className="transition-colors hover:text-ink">Home</Link>
-          <Icon name="ChevronRight" size="xs" />
-          <span className="font-medium text-ink">{category.name}</span>
-        </nav>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6">
+          <nav className="flex items-center gap-2 text-sm text-[var(--text-secondary)] mb-4">
+            <Link to="/" className="hover:text-[var(--text-primary)] transition">Home</Link>
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+            <span className="text-[var(--text-primary)] font-medium">{category.name}</span>
+          </nav>
+        </div>
 
-        <CategoryHero />
+        <div className="relative rounded-2xl overflow-hidden mb-10">
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent z-10" />
+          <img
+            src={getAssetUrl(category.image)}
+            alt={category.name}
+            className="w-full h-48 sm:h-64 object-cover"
+          />
+          <div className="absolute inset-0 z-20 flex flex-col justify-center px-8 sm:px-12">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-playfair-display text-[var(--text-primary)] font-bold mb-2">
+              {category.name}
+            </h1>
+            <p className="text-[var(--text-primary)]/80 text-sm sm:text-base max-w-xl mb-3">
+              {category.description}
+            </p>
+            <span className="text-[#C6A972] text-sm font-medium">
+              {category.productCount} Products
+            </span>
+          </div>
+        </div>
 
-        <h2 className="mb-6 text-xl font-semibold text-ink">Shop by Category</h2>
+        <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-6">Shop by Category</h2>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 lg:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {normalizedSubcategories.map((sub) => {
             const count = categoryProducts.filter((p) => p.subCategory === sub.name).length
             return (
               <button
                 key={sub.name}
                 onClick={() => setSearchParams({ sub: sub.name })}
-                className="group rounded-card border border-line bg-surface p-6 text-left shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-gold-500/50 hover:shadow-card-hover active:scale-[0.98]"
+                className="bg-[var(--bg-card)] rounded-2xl p-6 border border-[var(--border-color)] hover:border-[#C6A972]/50 hover:-translate-y-1 transition-all duration-300 text-left group"
               >
-                <div className="mb-4 flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-gold-100 text-gold-600 transition-colors group-hover:bg-gold-500 group-hover:text-white">
+                <div className="w-12 h-12 rounded-full bg-[#C6A972]/10 flex items-center justify-center mb-4 group-hover:bg-[#C6A972]/20 transition-colors overflow-hidden">
                   {isSvgMarkup(sub.icon) ? (
-                    <SafeIcon icon={sub.icon} className="h-6 w-6" />
+                    <SafeIcon icon={sub.icon} className="w-6 h-6 text-[#C6A972]" />
                   ) : sub.icon ? (
-                    <img src={getAssetUrl(sub.icon)} alt={sub.name} className="h-full w-full object-cover" />
+                    <img src={getAssetUrl(sub.icon)} alt={sub.name} className="w-full h-full object-cover" />
                   ) : null}
                 </div>
-                <h3 className="mb-1 text-base font-medium text-ink">{sub.name}</h3>
-                <p className="text-sm text-sub">{count} {count === 1 ? 'Product' : 'Products'}</p>
+                <h3 className="text-[var(--text-primary)] font-medium text-base mb-1">{sub.name}</h3>
+                <p className="text-[var(--text-secondary)] text-sm">{count} {count === 1 ? 'Product' : 'Products'}</p>
               </button>
             )
           })}
@@ -402,56 +387,94 @@ export default function CategoryProducts() {
   }
 
   return (
-    <div className="container-lux py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-6">
-        <nav className="mb-4 flex items-center gap-2 text-sm text-sub" aria-label="Breadcrumb">
-          <Link to="/" className="transition-colors hover:text-ink">Home</Link>
-          <Icon name="ChevronRight" size="xs" />
+        <BackButton />
+        <nav className="flex items-center gap-2 text-sm text-[var(--text-secondary)] mb-4">
+          <Link to="/" className="hover:text-[var(--text-primary)] transition">Home</Link>
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
           {selectedSub ? (
             <>
-              <button onClick={() => setSearchParams({})} className="transition-colors hover:text-ink">
+              <button
+                onClick={() => setSearchParams({})}
+                className="hover:text-[var(--text-primary)] transition"
+              >
                 {category.name}
               </button>
-              <Icon name="ChevronRight" size="xs" />
-              <span className="font-medium text-ink">{selectedSub}</span>
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              <span className="text-[var(--text-primary)] font-medium">{selectedSub}</span>
             </>
           ) : (
-            <span className="font-medium text-ink">{category.name}</span>
+            <span className="text-[var(--text-primary)] font-medium">{category.name}</span>
           )}
         </nav>
+        {selectedSub && normalizedSubcategories.length > 0 && (
+          <button
+            onClick={() => setSearchParams({})}
+            className="inline-flex items-center gap-2 text-sm text-[#C6A972] hover:text-[#B8965F] transition font-medium mb-4"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            {category.name}
+          </button>
+        )}
       </div>
 
-      <CategoryHero />
+      <div className="relative rounded-2xl overflow-hidden mb-10">
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent z-10" />
+        <img
+          src={getAssetUrl(category.image)}
+          alt={category.name}
+          className="w-full h-48 sm:h-64 object-cover"
+        />
+        <div className="absolute inset-0 z-20 flex flex-col justify-center px-8 sm:px-12">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-playfair-display text-[var(--text-primary)] font-bold mb-2">
+            {selectedSub || category.name}
+          </h1>
+          <p className="text-[var(--text-primary)]/80 text-sm sm:text-base max-w-xl mb-3">
+            {category.description}
+          </p>
+          <span className="text-[#C6A972] text-sm font-medium">
+            {filteredProducts.length} Products
+          </span>
+        </div>
+      </div>
 
       <div className="flex gap-8">
-        <aside className="hidden w-64 shrink-0 lg:block">
-          <div className="sticky top-28 rounded-card border border-line bg-surface p-6 shadow-card">
+        <aside className="hidden lg:block w-64 flex-shrink-0">
+          <div className="sticky top-24">
             <FilterContent />
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1">
-          <div className="mb-6 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
-            <div className="flex w-full items-center gap-3 sm:w-auto">
-              <Button
-                variant="outline"
-                size="md"
-                icon="SlidersHorizontal"
-                className="lg:hidden"
+        <main className="flex-1 min-w-0">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <button
                 onClick={() => setFilterDrawerOpen(true)}
+                className="lg:hidden inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-[var(--border-color)] rounded-full text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition active:scale-[0.98] min-h-[44px]"
               >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
                 Filters
-                {hasActiveFilters && <span className="h-2 w-2 rounded-full bg-gold-500" />}
-              </Button>
-              <p className="whitespace-nowrap text-sm text-sub">
-                <span className="font-medium text-ink">{filteredProducts.length}</span> products
+                {hasActiveFilters && (
+                  <span className="w-2 h-2 rounded-full bg-[#C6A972]" />
+                )}
+              </button>
+              <p className="text-sm text-[var(--text-secondary)] whitespace-nowrap">
+                <span className="font-medium text-[var(--text-primary)]">{filteredProducts.length}</span> products
               </p>
             </div>
-            <Select
+            <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              aria-label="Sort products"
-              className="w-full sm:w-56"
+              className="w-full sm:w-auto px-4 py-2.5 border border-[var(--border-color)] rounded-full text-sm text-[var(--text-secondary)] bg-[var(--bg-card)] focus:outline-none focus:ring-1 focus:ring-[#C6A972] cursor-pointer min-h-[44px]"
             >
               <option value="">Sort by</option>
               {SORT_OPTIONS.map((opt) => (
@@ -459,74 +482,118 @@ export default function CategoryProducts() {
                   {opt.label}
                 </option>
               ))}
-            </Select>
+            </select>
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4 lg:gap-6">
-              {Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
-                <SkeletonLoader key={i} type="product" />
-              ))}
-            </div>
+            <SkeletonLoader type="product" count={ITEMS_PER_PAGE} />
           ) : paginatedProducts.length === 0 ? (
-            <div className="flex min-h-[40vh] flex-col items-center justify-center">
+            <div className="min-h-[40vh] flex flex-col items-center justify-center">
               <EmptyState
-                icon="PackageOpen"
+                icon={
+                  <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
+                }
                 title="No Products Found"
                 message="Try adjusting your filters or search criteria to find what you're looking for."
                 actionLabel="Clear Filters"
-                onAction={clearAllFilters}
+                actionLink={undefined}
               />
+              {hasActiveFilters && (
+                <button
+                  onClick={clearAllFilters}
+                  className="px-6 py-2.5 bg-[#C6A972] text-white text-sm font-medium rounded-full hover:bg-[#B8965F] transition active:scale-[0.98]"
+                >
+                  Clear All Filters
+                </button>
+              )}
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4 lg:gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                 {paginatedProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
 
-              <div className="mt-12">
-                <Pagination
-                  page={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={(p) => {
-                    setCurrentPage(p)
-                    window.scrollTo({ top: 0, behavior: 'smooth' })
-                  }}
-                />
-              </div>
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-12">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="min-w-[44px] h-11 flex items-center justify-center rounded-full border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-[0.98] px-3"
+                  >
+                    <svg className="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    <span className="hidden sm:inline text-sm">Previous</span>
+                  </button>
+
+                  <div className="hidden sm:flex items-center gap-2">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-11 h-11 rounded-full text-sm font-medium transition active:scale-[0.98] ${
+                          currentPage === page
+                            ? 'bg-[#C6A972] text-white'
+                            : 'border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+
+                  <span className="sm:hidden text-sm text-[var(--text-secondary)]">
+                    Page {currentPage} of {totalPages}
+                  </span>
+
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="min-w-[44px] h-11 flex items-center justify-center rounded-full border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-[0.98] px-3"
+                  >
+                    <span className="hidden sm:inline text-sm">Next</span>
+                    <svg className="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              )}
             </>
           )}
         </main>
       </div>
 
       <div
-        className={`fixed inset-0 z-50 transition-opacity duration-300 lg:hidden ${
-          filterDrawerOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+        className={`fixed inset-0 z-50 lg:hidden transition-opacity duration-300 ${
+          filterDrawerOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
       >
-        <div className="absolute inset-0 bg-black/60" onClick={() => setFilterDrawerOpen(false)} />
         <div
-          className={`absolute left-0 top-0 h-full w-80 max-w-[85vw] overflow-y-auto border-r border-line bg-surface transition-transform duration-300 ${
+          className="absolute inset-0 bg-black/60"
+          onClick={() => setFilterDrawerOpen(false)}
+        />
+        <div
+          className={`absolute top-0 left-0 h-full w-80 max-w-[85vw] bg-[var(--bg-card)] border-r border-[var(--border-color)] overflow-y-auto transform transition-transform duration-300 ${
             filterDrawerOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
-          role="dialog"
-          aria-label="Filters"
         >
-          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-surface p-4">
-            <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-ink">
-              Filters
-            </h3>
+          <div className="sticky top-0 bg-[var(--bg-card)] z-10 flex items-center justify-between p-4 border-b border-[var(--border-color)]">
+            <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider">Filters</h3>
             <button
               onClick={() => setFilterDrawerOpen(false)}
-              className="flex h-11 w-11 items-center justify-center rounded-full text-sub transition-colors hover:bg-subtle hover:text-ink"
+              className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-[var(--bg-hover)] transition active:scale-[0.98]"
               aria-label="Close filters"
             >
-              <Icon name="X" />
+              <svg className="w-5 h-5 text-[var(--text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
-          <div className="p-5">
+          <div className="p-4">
             <FilterContent />
           </div>
         </div>

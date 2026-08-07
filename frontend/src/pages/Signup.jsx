@@ -2,17 +2,6 @@ import { useState } from 'react'
 import { Link, useNavigate, Navigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
-import { Field, Input } from '../components/ui/Input'
-import Button from '../components/ui/Button'
-import Icon from '../components/ui/Icon'
-import Badge from '../components/ui/Badge'
-import { SITE_NAME } from '../constants'
-
-const PERKS = [
-  { icon: 'Truck', text: 'Complimentary express shipping' },
-  { icon: 'RefreshCw', text: 'Free 30-day returns' },
-  { icon: 'Gem', text: 'Access to private collections' },
-]
 
 export default function Signup() {
   const { signup, isAuthenticated } = useAuth()
@@ -29,8 +18,6 @@ export default function Signup() {
   })
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirm, setShowConfirm] = useState(false)
 
   if (isAuthenticated) {
     return <Navigate to={redirect} replace />
@@ -91,131 +78,120 @@ export default function Signup() {
     }
   }
 
-  const passwordField = (name, value, placeholder, autoComplete) => (
-    <div className="relative">
-      <Input
-        type={name === 'password' ? (showPassword ? 'text' : 'password') : (showConfirm ? 'text' : 'password')}
-        name={name}
-        value={value}
-        onChange={handleChange}
-        placeholder={placeholder}
-        error={errors[name]}
-        autoComplete={autoComplete}
-        className="pr-12"
-      />
-      <button
-        type="button"
-        onClick={() => (name === 'password' ? setShowPassword((v) => !v) : setShowConfirm((v) => !v))}
-        className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-sub transition-colors hover:text-ink"
-        aria-label={name === 'password' ? 'Toggle password visibility' : 'Toggle confirm password visibility'}
-      >
-        <Icon
-          name={name === 'password' ? (showPassword ? 'EyeOff' : 'Eye') : (showConfirm ? 'EyeOff' : 'Eye')}
-          size="sm"
-        />
-      </button>
-    </div>
-  )
-
   return (
-    <div className="flex min-h-screen bg-page">
-      <aside className="relative hidden w-1/2 overflow-hidden bg-charcoal-900 lg:block">
-        <div className="absolute inset-0 opacity-[0.06] [background-image:radial-gradient(circle_at_center,#fff_1px,transparent_1px)] [background-size:28px_28px]" />
-        <div className="absolute -right-32 top-1/4 h-96 w-96 rounded-full bg-gold-500/15 blur-3xl" />
-        <div className="absolute -left-20 bottom-1/4 h-72 w-72 rounded-full bg-gold-500/10 blur-3xl" />
-        <div className="relative flex h-full flex-col justify-between p-12">
-          <Link to="/" className="flex items-center gap-3 text-white">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full border border-gold-500/40 bg-gold-500/10">
-              <Icon name="Gem" size="md" className="text-gold-300" />
-            </span>
-            <span className="heading-display text-xl">{SITE_NAME}</span>
+    <div className="min-h-screen bg-[var(--bg-page)] flex items-center justify-center py-12 px-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <Link to="/" className="font-playfair-display text-3xl font-bold text-[var(--text-primary)]">
+            AddexStores
           </Link>
-
-          <div>
-            <p className="eyebrow mb-4 text-gold-300">Become a Member</p>
-            <h2 className="heading-display text-3xl leading-tight text-white xl:text-4xl">
-              Join the inner circle
-              <br />
-              of discerning shoppers.
-            </h2>
-            <div className="mt-8 space-y-3">
-              {PERKS.map((perk) => (
-                <div key={perk.text} className="flex items-center gap-3 text-sm text-white/70">
-                  <Icon name={perk.icon} size="sm" className="text-gold-300" />
-                  {perk.text}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <p className="text-xs text-white/40">© {new Date().getFullYear()} {SITE_NAME}. All rights reserved.</p>
+          <p className="text-sm text-[var(--text-secondary)] mt-2">Create your account</p>
         </div>
-      </aside>
 
-      <main className="flex w-full items-center justify-center px-4 py-12 sm:px-8 lg:w-1/2">
-        <div className="w-full max-w-sm">
-          <Link to="/" className="mb-10 flex items-center justify-center gap-2.5 lg:hidden">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full border border-gold-500/40 bg-gold-100 text-gold-600">
-              <Icon name="Gem" size="sm" />
-            </span>
-            <span className="heading-display text-lg text-ink">{SITE_NAME}</span>
-          </Link>
-
-          <Badge tone="gold" size="md" className="mb-3">
-            New Member
-          </Badge>
-          <h1 className="heading-display text-2xl text-ink sm:text-3xl">Create your account</h1>
-          <p className="mt-2 text-sm text-sub">Join us for a more considered shopping experience.</p>
-
-          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-            <Field label="Full Name" required error={errors.name}>
-              <Input
+        <div className="bg-[var(--bg-card)] rounded-2xl shadow-lg shadow-black/5 p-6 sm:p-8">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">
+                Full Name
+              </label>
+              <input
                 type="text"
                 name="name"
                 value={form.name}
                 onChange={handleChange}
                 placeholder="John Doe"
-                error={errors.name}
-                autoComplete="name"
+                className={`w-full min-h-[48px] px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] ${
+                  errors.name ? 'border-[#C53030] bg-[#C53030]/10' : 'border-[var(--border-color)]'
+                }`}
               />
-            </Field>
+              {errors.name && (
+                <p className="text-xs text-[#C53030] mt-1.5">{errors.name}</p>
+              )}
+            </div>
 
-            <Field label="Email" required error={errors.email}>
-              <Input
+            <div>
+              <label className="block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">
+                Email
+              </label>
+              <input
                 type="email"
                 name="email"
                 value={form.email}
                 onChange={handleChange}
                 placeholder="you@example.com"
-                error={errors.email}
-                autoComplete="email"
+                className={`w-full min-h-[48px] px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] ${
+                  errors.email ? 'border-[#C53030] bg-[#C53030]/10' : 'border-[var(--border-color)]'
+                }`}
               />
-            </Field>
+              {errors.email && (
+                <p className="text-xs text-[#C53030] mt-1.5">{errors.email}</p>
+              )}
+            </div>
 
-            <Field label="Password" required error={errors.password}>
-              {passwordField('password', form.password, 'Create a password', 'new-password')}
-            </Field>
+            <div>
+              <label className="block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">
+                Password
+              </label>
+              <input
+                type="password"
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                placeholder="Create a password"
+                className={`w-full min-h-[48px] px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] ${
+                  errors.password ? 'border-[#C53030] bg-[#C53030]/10' : 'border-[var(--border-color)]'
+                }`}
+              />
+              {errors.password && (
+                <p className="text-xs text-[#C53030] mt-1.5">{errors.password}</p>
+              )}
+            </div>
 
-            <Field label="Confirm Password" required error={errors.confirmPassword}>
-              {passwordField('confirmPassword', form.confirmPassword, 'Confirm your password', 'new-password')}
-            </Field>
+            <div>
+              <label className="block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={form.confirmPassword}
+                onChange={handleChange}
+                placeholder="Confirm your password"
+                className={`w-full min-h-[48px] px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] ${
+                  errors.confirmPassword
+                    ? 'border-[#C53030] bg-[#C53030]/10'
+                    : 'border-[var(--border-color)]'
+                }`}
+              />
+              {errors.confirmPassword && (
+                <p className="text-xs text-[#C53030] mt-1.5">
+                  {errors.confirmPassword}
+                </p>
+              )}
+            </div>
 
-            <Button type="submit" variant="primary" size="lg" fullWidth loading={loading}>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full min-h-[48px] py-3 bg-[#C6A972] text-white text-sm font-medium rounded-xl hover:bg-[#B8965F] transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               {loading ? 'Creating Account...' : 'Create Account'}
-            </Button>
+            </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-sub">
-            Already have an account?{' '}
-            <Link
-              to={redirect !== '/' ? `/login?redirect=${redirect}` : '/login'}
-              className="font-medium text-gold-600 transition-colors hover:text-gold-700"
-            >
-              Sign In
-            </Link>
-          </p>
+          <div className="mt-6 text-center">
+            <p className="text-sm text-[var(--text-secondary)]">
+              Already have an account?{' '}
+              <Link
+                to={redirect !== '/' ? `/login?redirect=${redirect}` : '/login'}
+                className="text-[#C6A972] hover:text-[#B8965F] font-medium transition"
+              >
+                Sign In
+              </Link>
+            </p>
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   )
 }
