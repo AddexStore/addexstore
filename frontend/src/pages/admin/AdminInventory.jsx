@@ -19,9 +19,17 @@ export default function AdminInventory() {
     let cancelled = false
     async function load() {
       try {
-        const res = await productService.getProducts({ page: 0, size: 1000 })
-        const list = Array.isArray(res) ? res : res?.content || []
-        if (!cancelled) setProducts(list)
+        let all = []
+        let page = 0
+        let totalPages = 1
+        while (page < totalPages) {
+          const res = await productService.getProducts({ page, size: 100 })
+          const data = res?.data || {}
+          all = all.concat(Array.isArray(data.content) ? data.content : [])
+          totalPages = data.totalPages ?? page + 1
+          page += 1
+        }
+        if (!cancelled) setProducts(all)
       } catch (err) {
         showToast('Failed to load products', 'error')
       } finally {
