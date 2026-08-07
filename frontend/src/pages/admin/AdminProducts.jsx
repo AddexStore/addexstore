@@ -120,12 +120,14 @@ export default function AdminProducts() {
     active: product.active !== false,
     categoryId: lookupCategoryId(product.category),
     subCategoryId: product.subCategory ? lookupSubCategoryId(product.category, product.subCategory) : null,
-    images: product.images || [],
+    images: (product.images || [])
+      .map((img) => (typeof img === 'string' ? img : img?.imageUrl))
+      .filter(Boolean),
     variants: (product.variants || []).map((v) => ({
       size: v.size || '',
       color: v.color || '',
       stock: v.stock || 0,
-      priceOverride: v.priceOverride || null,
+      priceOverride: v.priceOverride != null ? Number(v.priceOverride) : null,
       sku: v.sku || '',
     })),
   })
