@@ -84,12 +84,15 @@ export const api = {
   post: (endpoint, data) => apiClient.post(endpoint, data).then((res) => res.data),
   put: (endpoint, data) => apiClient.put(endpoint, data).then((res) => res.data),
   patch: (endpoint, data) => apiClient.patch(endpoint, data).then((res) => res.data),
-  delete: (endpoint) => apiClient.delete(endpoint).then((res) => res.data),
-  upload: (endpoint, file) => {
+  delete: (endpoint, params) => apiClient.delete(endpoint, { params }).then((res) => res.data),
+  upload: (endpoint, file, onProgress) => {
     const formData = new FormData()
     formData.append('file', file)
     return apiClient
-      .post(endpoint, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+      .post(endpoint, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: onProgress ? (e) => onProgress(e.loaded, e.total) : undefined,
+      })
       .then((res) => res.data)
   },
 }

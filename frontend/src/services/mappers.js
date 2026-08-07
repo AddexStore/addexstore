@@ -35,6 +35,7 @@ export function mapProduct(p) {
     isOnSale: p.isOnSale || p.onSale || false,
     active: p.active !== undefined ? p.active : true,
     createdAt: p.createdAt || new Date().toISOString(),
+    updatedAt: p.updatedAt || p.createdAt || new Date().toISOString(),
     variants: p.variants || [],
   }
 }

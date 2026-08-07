@@ -81,6 +81,7 @@ public class ProductMapper {
                             .collect(Collectors.toList())
                         : Collections.emptyList())
                 .createdAt(product.getCreatedAt())
+                .updatedAt(product.getUpdatedAt())
                 .build();
     }
 

@@ -26,6 +26,9 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version
+    private long version;
+
     @NotBlank
     @Column(nullable = false)
     private String name;

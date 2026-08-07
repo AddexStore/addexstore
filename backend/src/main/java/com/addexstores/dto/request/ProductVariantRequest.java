@@ -10,6 +10,8 @@ import java.math.BigDecimal;
 @Data
 public class ProductVariantRequest {
 
+    private Long id;
+
     @Size(max = 20, message = "Variant size must be at most 20 characters")
     private String size;
 

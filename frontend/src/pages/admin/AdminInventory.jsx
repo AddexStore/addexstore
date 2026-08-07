@@ -23,7 +23,7 @@ export default function AdminInventory() {
         let page = 0
         let totalPages = 1
         while (page < totalPages) {
-          const res = await productService.getProducts({ page, size: 100 })
+          const res = await productService.getAdminProducts({ page, size: 100 })
           const data = res || {}
           all = all.concat(Array.isArray(data.content) ? data.content : [])
           totalPages = data.totalPages ?? page + 1
@@ -54,7 +54,7 @@ export default function AdminInventory() {
     if (isNaN(val) || val < 0) { showToast('Please enter a valid stock number', 'error'); return }
     setSavingId(id)
     try {
-      await productService.updateProduct(id, { stock: val })
+      await productService.patchProduct(id, { stock: val })
       setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, stock: val } : p)))
       showToast('Stock updated successfully', 'success')
       setEditingStock(null)
@@ -82,7 +82,7 @@ export default function AdminInventory() {
     let updated = 0
     for (const id of ids) {
       try {
-        await productService.updateProduct(id, { stock: val })
+        await productService.patchProduct(id, { stock: val })
         updated++
       } catch (err) {
         console.error(`Failed to update product ${id}:`, err)

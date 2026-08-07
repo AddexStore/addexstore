@@ -43,7 +43,7 @@ public class ProductController {
             @RequestParam(required = false) Boolean onSale,
             @RequestParam(required = false) String search) {
         return productService.getAllProducts(page, size, sort, category, subcategory, brand,
-                minPrice, maxPrice, stockStatus, featured, trending, newArrival, onSale, search);
+                minPrice, maxPrice, stockStatus, featured, trending, newArrival, onSale, search, false);
     }
 
     @GetMapping("/{id}")

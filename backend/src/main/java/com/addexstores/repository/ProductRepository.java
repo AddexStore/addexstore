@@ -73,7 +73,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Page<Product> search(@Param("text") String text, Pageable pageable);
 
     @EntityGraph(attributePaths = {"category", "subCategory"})
-    @Query("SELECT p FROM Product p WHERE p.active = true AND " +
+    @Query("SELECT p FROM Product p WHERE (:includeInactive = TRUE OR p.active = TRUE) AND " +
            "(:categoryId IS NULL OR p.category.id = :categoryId) AND " +
            "(:subcategoryId IS NULL OR p.subCategory.id = :subcategoryId) AND " +
            "(:brand IS NULL OR p.brand = :brand) AND " +
@@ -86,7 +86,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
            "(:newArrival IS NULL OR p.isNewArrival = :newArrival) AND " +
            "(:onSale IS NULL OR p.isOnSale = :onSale) AND " +
            "(:search IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) OR LOWER(p.brand) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')))")
-    Page<Product> findAllFiltered(@Param("search") String search,
+    Page<Product> findAllFiltered(@Param("includeInactive") Boolean includeInactive,
+                                  @Param("search") String search,
                                   @Param("categoryId") Long categoryId,
                                   @Param("subcategoryId") Long subcategoryId,
                                   @Param("brand") String brand,

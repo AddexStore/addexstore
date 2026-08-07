@@ -1,5 +1,6 @@
 package com.addexstores.service.impl;
 
+import com.addexstores.dto.request.ProductPatchRequest;
 import com.addexstores.dto.request.ProductRequest;
 import com.addexstores.dto.request.ProductVariantRequest;
 import com.addexstores.dto.response.PagedResponse;
@@ -15,6 +16,7 @@ import com.addexstores.mapper.ProductMapper;
 import com.addexstores.repository.CategoryRepository;
 import com.addexstores.repository.ProductRepository;
 import com.addexstores.repository.SubCategoryRepository;
+import com.addexstores.service.FileUploadService;
 import com.addexstores.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,9 +32,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -53,14 +58,15 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final SubCategoryRepository subCategoryRepository;
     private final ProductMapper productMapper;
+    private final FileUploadService fileUploadService;
 
     @Override
-    @Cacheable(value = "products", key = "'all_' + #page + '_' + #size + '_' + #sort + '_' + #category + '_' + #subcategory + '_' + #brand + '_' + #minPrice + '_' + #maxPrice + '_' + #stockStatus + '_' + #featured + '_' + #trending + '_' + #newArrival + '_' + #onSale + '_' + #search")
+    @Cacheable(value = "products", key = "'all_' + #page + '_' + #size + '_' + #sort + '_' + #category + '_' + #subcategory + '_' + #brand + '_' + #minPrice + '_' + #maxPrice + '_' + #stockStatus + '_' + #featured + '_' + #trending + '_' + #newArrival + '_' + #onSale + '_' + #search + '_' + #includeInactive")
     public PagedResponse<ProductResponse> getAllProducts(int page, int size, String sort, Long category,
                                                            Long subcategory, String brand, Double minPrice,
                                                            Double maxPrice, String stockStatus, Boolean featured,
                                                            Boolean trending, Boolean newArrival, Boolean onSale,
-                                                           String search) {
+                                                           String search, Boolean includeInactive) {
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
         Pageable pageable = createPageable(safePage, safeSize, sort);
@@ -68,9 +74,10 @@ public class ProductServiceImpl implements ProductService {
         BigDecimal min = minPrice != null ? BigDecimal.valueOf(minPrice) : null;
         BigDecimal max = maxPrice != null ? BigDecimal.valueOf(maxPrice) : null;
         Integer[] stockRange = resolveStockRange(stockStatus);
+        boolean showInactive = Boolean.TRUE.equals(includeInactive);
 
         Page<Product> products = productRepository.findAllFiltered(
-                search, category, subcategory, brand, min, max,
+                showInactive, search, category, subcategory, brand, min, max,
                 stockRange[0], stockRange[1],
                 featured, trending, newArrival, onSale, pageable);
 
@@ -82,6 +89,9 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse getProductById(Long id) {
         Product product = productRepository.findByIdWithGraph(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", id));
+        if (!product.isActive()) {
+            throw new ResourceNotFoundException("Product", id);
+        }
         return productMapper.toProductResponse(product);
     }
 
@@ -90,6 +100,9 @@ public class ProductServiceImpl implements ProductService {
     public ProductResponse getProductBySlug(String slug) {
         Product product = productRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "slug", slug));
+        if (!product.isActive()) {
+            throw new ResourceNotFoundException("Product", "slug", slug);
+        }
         return productMapper.toProductResponse(product);
     }
 
@@ -143,6 +156,10 @@ public class ProductServiceImpl implements ProductService {
         if (request.getPrice() == null || request.getPrice().signum() <= 0) {
             throw new BadRequestException("Price must be greater than zero");
         }
+        if (request.getOriginalPrice() != null && request.getOriginalPrice().signum() > 0
+                && request.getPrice().compareTo(request.getOriginalPrice()) > 0) {
+            throw new BadRequestException("Price cannot exceed the original price");
+        }
 
         Category category = null;
         if (request.getCategoryId() != null) {
@@ -181,13 +198,22 @@ public class ProductServiceImpl implements ProductService {
 
         if (request.getImages() != null) {
             List<ProductImage> images = new ArrayList<>();
-            for (int i = 0; i < request.getImages().size(); i++) {
+            int index = 0;
+            for (String rawUrl : request.getImages()) {
+                if (rawUrl == null || rawUrl.isBlank()) {
+                    continue;
+                }
+                String url = rawUrl.trim();
+                if (images.stream().anyMatch(img -> img.getImageUrl().equals(url))) {
+                    continue;
+                }
                 images.add(ProductImage.builder()
                         .product(product)
-                        .imageUrl(request.getImages().get(i).trim())
-                        .isPrimary(i == 0)
-                        .sortOrder(i)
+                        .imageUrl(url)
+                        .isPrimary(index == 0)
+                        .sortOrder(index)
                         .build());
+                index++;
             }
             product.setImages(images);
         }
@@ -239,6 +265,11 @@ public class ProductServiceImpl implements ProductService {
         }
         if (request.getPrice() != null && request.getPrice().signum() <= 0) {
             throw new BadRequestException("Price must be greater than zero");
+        }
+        if (request.getPrice() != null && request.getOriginalPrice() != null
+                && request.getOriginalPrice().signum() > 0
+                && request.getPrice().compareTo(request.getOriginalPrice()) > 0) {
+            throw new BadRequestException("Price cannot exceed the original price");
         }
 
         if (request.getName() != null) {
@@ -307,30 +338,61 @@ public class ProductServiceImpl implements ProductService {
         }
 
         if (request.getImages() != null) {
+            Set<String> urls = new LinkedHashSet<>();
+            for (String rawUrl : request.getImages()) {
+                if (rawUrl != null && !rawUrl.isBlank()) {
+                    urls.add(rawUrl.trim());
+                }
+            }
+
+            List<ProductImage> currentImages = product.getImages() != null
+                    ? new ArrayList<>(product.getImages())
+                    : new ArrayList<>();
+            for (ProductImage existing : currentImages) {
+                if (!urls.contains(existing.getImageUrl())) {
+                    try {
+                        fileUploadService.deleteFile(existing.getImageUrl());
+                    } catch (Exception ex) {
+                        log.warn("Failed to delete removed product image {}: {}", existing.getImageUrl(), ex.getMessage());
+                    }
+                }
+            }
+
             List<ProductImage> images = new ArrayList<>();
-            for (int i = 0; i < request.getImages().size(); i++) {
+            int index = 0;
+            for (String url : urls) {
                 images.add(ProductImage.builder()
                         .product(product)
-                        .imageUrl(request.getImages().get(i).trim())
-                        .isPrimary(i == 0)
-                        .sortOrder(i)
+                        .imageUrl(url)
+                        .isPrimary(index == 0)
+                        .sortOrder(index)
                         .build());
+                index++;
             }
             product.getImages().clear();
             product.getImages().addAll(images);
         }
 
         if (request.getVariants() != null) {
+            Map<Long, ProductVariant> existingById = new HashMap<>();
+            if (product.getVariants() != null) {
+                for (ProductVariant variant : product.getVariants()) {
+                    if (variant.getId() != null) {
+                        existingById.put(variant.getId(), variant);
+                    }
+                }
+            }
             List<ProductVariant> variants = new ArrayList<>();
             for (ProductVariantRequest varReq : request.getVariants()) {
-                variants.add(ProductVariant.builder()
-                        .product(product)
-                        .size(trimToNull(varReq.getSize()))
-                        .color(trimToNull(varReq.getColor()))
-                        .stock(varReq.getStock())
-                        .priceOverride(varReq.getPriceOverride())
-                        .sku(trimToNull(varReq.getSku()))
-                        .build());
+                ProductVariant variant = varReq.getId() != null && existingById.containsKey(varReq.getId())
+                        ? existingById.get(varReq.getId())
+                        : ProductVariant.builder().product(product).build();
+                variant.setSize(trimToNull(varReq.getSize()));
+                variant.setColor(trimToNull(varReq.getColor()));
+                variant.setStock(varReq.getStock());
+                variant.setPriceOverride(varReq.getPriceOverride());
+                variant.setSku(trimToNull(varReq.getSku()));
+                variants.add(variant);
             }
             product.getVariants().clear();
             product.getVariants().addAll(variants);
@@ -356,6 +418,45 @@ public class ProductServiceImpl implements ProductService {
             subCategoryIds.add(product.getSubCategory().getId());
         }
         subCategoryIds.forEach(this::refreshSubCategoryProductCount);
+
+        return productMapper.toProductResponse(product);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = {"products", "categories"}, allEntries = true)
+    public ProductResponse patchProduct(Long id, ProductPatchRequest patch) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", id));
+
+        if (patch.getStock() != null && patch.getStock() < 0) {
+            throw new BadRequestException("Stock cannot be negative");
+        }
+        if (patch.getPrice() != null && patch.getPrice().signum() <= 0) {
+            throw new BadRequestException("Price must be greater than zero");
+        }
+
+        if (patch.getFeatured() != null) product.setFeatured(patch.getFeatured());
+        if (patch.getTrending() != null) product.setTrending(patch.getTrending());
+        if (patch.getNewArrival() != null) product.setNewArrival(patch.getNewArrival());
+        if (patch.getOnSale() != null) product.setOnSale(patch.getOnSale());
+        if (patch.getActive() != null) product.setActive(patch.getActive());
+        if (patch.getStock() != null) product.setStock(patch.getStock());
+        if (patch.getPrice() != null) product.setPrice(patch.getPrice());
+
+        product = productRepository.save(product);
+        log.info("Product patched: {} ({})", product.getName(), id);
+
+        if (patch.getActive() != null) {
+            Long categoryId = product.getCategory() != null ? product.getCategory().getId() : null;
+            Long subCategoryId = product.getSubCategory() != null ? product.getSubCategory().getId() : null;
+            if (categoryId != null) {
+                refreshCategoryProductCount(categoryId);
+            }
+            if (subCategoryId != null) {
+                refreshSubCategoryProductCount(subCategoryId);
+            }
+        }
 
         return productMapper.toProductResponse(product);
     }

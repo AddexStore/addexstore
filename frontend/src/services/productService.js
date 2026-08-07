@@ -6,6 +6,11 @@ export const productService = {
     Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '') query.set(k, v); });
     return api.get(`/products?${query}`);
   },
+  getAdminProducts: (params = {}) => {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null && v !== '') query.set(k, v); });
+    return api.get(`/admin/products?${query}`);
+  },
   getProduct: (id) => api.get(`/products/${id}`),
   getProductBySlug: (slug) => api.get(`/products/slug/${slug}`),
   getFeatured: (page = 0, size = 10) => api.get(`/products/featured?page=${page}&size=${size}`),
@@ -14,6 +19,8 @@ export const productService = {
   getSales: (page = 0, size = 10) => api.get(`/products/sales?page=${page}&size=${size}`),
   createProduct: (data) => api.post('/admin/products', data).then(r => r.data),
   updateProduct: (id, data) => api.put(`/admin/products/${id}`, data).then(r => r.data),
+  patchProduct: (id, patch) => api.patch(`/admin/products/${id}`, patch).then(r => r.data),
   deleteProduct: (id) => api.delete(`/admin/products/${id}`),
-  uploadImage: (file) => api.upload('/admin/products/upload-image', file).then(r => r.data),
+  deleteImage: (imageUrl) => api.delete('/admin/products/image', { imageUrl }).then(r => r.data),
+  uploadImage: (file, onProgress) => api.upload('/admin/products/upload-image', file, onProgress).then(r => r.data),
 };

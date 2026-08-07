@@ -40,6 +40,7 @@ public class ProductResponse {
     private List<ImageResponse> images;
     private List<VariantResponse> variants;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     private boolean active;
 
     @Data

@@ -1,5 +1,6 @@
 package com.addexstores.service;
 
+import com.addexstores.dto.request.ProductPatchRequest;
 import com.addexstores.dto.request.ProductRequest;
 import com.addexstores.dto.response.PagedResponse;
 import com.addexstores.dto.response.ProductResponse;
@@ -10,7 +11,7 @@ public interface ProductService {
                                                   Long subcategory, String brand, Double minPrice,
                                                   Double maxPrice, String stockStatus, Boolean featured,
                                                   Boolean trending, Boolean newArrival, Boolean onSale,
-                                                  String search);
+                                                  String search, Boolean includeInactive);
 
     ProductResponse getProductById(Long id);
 
@@ -27,6 +28,8 @@ public interface ProductService {
     ProductResponse createProduct(ProductRequest request);
 
     ProductResponse updateProduct(Long id, ProductRequest request);
+
+    ProductResponse patchProduct(Long id, ProductPatchRequest patch);
 
     void deleteProduct(Long id);
 }
