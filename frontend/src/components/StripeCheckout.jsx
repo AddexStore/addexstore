@@ -2,9 +2,10 @@ import { useState, useEffect, useRef } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements } from '@stripe/react-stripe-js'
 import { checkoutService } from '../services/checkoutService'
-import { cartService } from '../services/cartService'
 import StripePaymentElement from './StripePaymentElement'
 import { useToast } from '../context/ToastContext'
+import Spinner from './ui/Spinner'
+import Icon from './ui/Icon'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '')
 
@@ -78,37 +79,39 @@ export default function StripeCheckout({ shipping, onSuccess, onError, onSyncCar
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <svg className="w-6 h-6 animate-spin text-[#C6A972]" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-        </svg>
-        <span className="ml-3 text-sm text-[var(--text-secondary)]">Initializing payment...</span>
+      <div className="flex items-center justify-center gap-3 py-10">
+        <Spinner />
+        <span className="text-sm text-sub">Initializing secure payment...</span>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 text-sm text-red-600 dark:text-red-400">
-        {error}
+      <div className="flex items-start gap-3 rounded-card border border-danger/30 bg-danger/8 p-4 text-sm text-danger">
+        <Icon name="AlertCircle" size="sm" className="mt-0.5 shrink-0" />
+        <p>{error}</p>
       </div>
     )
   }
 
   if (!clientSecret) {
     return (
-      <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 text-sm text-yellow-600 dark:text-yellow-400">
-        Stripe is not configured. Please try another payment method.
+      <div className="flex items-start gap-3 rounded-card border border-gold-500/30 bg-gold-50 p-4 text-sm text-gold-700 dark:bg-gold-500/5 dark:text-gold-400">
+        <Icon name="AlertTriangle" size="sm" className="mt-0.5 shrink-0" />
+        <p>Stripe is not configured. Please try another payment method.</p>
       </div>
     )
   }
 
   return (
     <div>
-      <div className="bg-[var(--bg-secondary)] rounded-lg p-4 mb-4 text-sm text-[var(--text-secondary)]">
-        <p className="font-medium text-[var(--text-primary)] mb-1">Pay with Credit/Debit Card</p>
-        <p>Secure payment via Stripe. Cards, Apple Pay, and Google Pay accepted.</p>
+      <div className="mb-4 flex items-start gap-3 rounded-card border border-line bg-subtle p-4 text-sm text-sub">
+        <Icon name="CreditCard" size="sm" className="mt-0.5 shrink-0 text-gold-600 dark:text-gold-400" />
+        <div>
+          <p className="font-medium text-ink">Pay with Credit/Debit Card</p>
+          <p className="mt-0.5">Secure payment via Stripe. Cards, Apple Pay, and Google Pay accepted.</p>
+        </div>
       </div>
       <Elements stripe={stripePromise} options={{ clientSecret }}>
         <StripePaymentElement

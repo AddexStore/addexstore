@@ -1,6 +1,45 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useSearchParams, useNavigate, Link } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { stripeService } from '../services/stripeService'
+import Button from '../components/ui/Button'
+import Icon from '../components/ui/Icon'
+import Spinner from '../components/ui/Spinner'
+
+function StatusShell({ icon, tone, title, message, extra, actions }) {
+  const toneWrap = {
+    success: 'bg-success/12 text-success',
+    danger: 'bg-danger/12 text-danger',
+    processing: 'bg-gold-100 text-gold-700 dark:bg-gold-500/10 dark:text-gold-400',
+    unknown: 'bg-subtle text-sub',
+  }[tone]
+
+  return (
+    <div className="min-h-screen bg-page px-4 py-16">
+      <div className="mx-auto w-full max-w-md rounded-card border border-line bg-surface p-8 text-center shadow-card sm:p-10">
+        {tone === 'processing' ? (
+          <div className={`mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full ${toneWrap}`}>
+            <Icon name="Loader2" size={32} className="animate-spin" />
+          </div>
+        ) : (
+          <div className={`mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full ${toneWrap}`}>
+            <Icon name={icon} size={32} />
+          </div>
+        )}
+
+        <div className="mb-6 flex justify-center">
+          <span className={`h-px w-16 ${tone === 'success' ? 'bg-gold-500' : 'bg-line'}`} />
+        </div>
+
+        <h1 className="heading-display text-2xl text-ink">{title}</h1>
+        <p className="mt-2 text-sm leading-relaxed text-sub">{message}</p>
+
+        {extra && <div className="mt-4 text-sm text-ink">{extra}</div>}
+
+        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">{actions}</div>
+      </div>
+    </div>
+  )
+}
 
 export default function PaymentStatus() {
   const [searchParams] = useSearchParams()
@@ -61,105 +100,61 @@ export default function PaymentStatus() {
 
   if (status === 'checking' || status === 'processing') {
     return (
-      <div className="min-h-screen bg-[var(--bg-page)] flex items-center justify-center px-4">
-        <div className="text-center max-w-md">
-          <div className="w-20 h-20 rounded-full bg-[var(--bg-card)] flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 animate-spin text-[#C6A972]" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Payment Processing</h2>
-          <p className="text-[var(--text-secondary)] text-sm mb-2">
-            Your payment is being processed. Please wait...
-          </p>
-          <p className="text-[var(--text-muted)] text-xs">
-            This may take a few moments. We&apos;ll update your order once confirmed.
-          </p>
-        </div>
-      </div>
+      <StatusShell
+        tone="processing"
+        title="Payment Processing"
+        message="Your payment is being processed. Please wait a few moments — we'll update your order once confirmed."
+        actions={null}
+      />
     )
   }
 
   if (status === 'succeeded') {
     return (
-      <div className="min-h-screen bg-[var(--bg-page)] flex items-center justify-center px-4">
-        <div className="text-center max-w-md">
-          <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Payment Successful!</h2>
-          <p className="text-[var(--text-secondary)] text-sm mb-6">
-            Your payment has been received. Your order is being processed.
+      <StatusShell
+        tone="success"
+        icon="Check"
+        title="Payment Successful"
+        message="Your payment has been received and your order is being prepared."
+        extra={paymentInfo?.orderNumber && (
+          <p>
+            Order Number: <span className="font-semibold text-gold-600 dark:text-gold-400">{paymentInfo.orderNumber}</span>
           </p>
-          {paymentInfo?.orderNumber && (
-            <p className="text-sm text-[var(--text-secondary)] mb-6">
-              Order Number: <span className="font-medium text-[var(--text-primary)]">{paymentInfo.orderNumber}</span>
-            </p>
-          )}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link to="/orders"
-              className="px-6 py-3 bg-[#C6A972] text-white text-sm font-semibold rounded-full hover:bg-[#B8965F] transition">
-              View Orders
-            </Link>
-            <Link to="/products"
-              className="px-6 py-3 text-sm font-medium text-[var(--text-secondary)] rounded-full border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition">
-              Continue Shopping
-            </Link>
-          </div>
-        </div>
-      </div>
+        )}
+        actions={
+          <>
+            <Button to="/orders" icon="ClipboardList">View Orders</Button>
+            <Button to="/products" variant="outline" icon="ShoppingBag">Continue Shopping</Button>
+          </>
+        }
+      />
     )
   }
 
   if (status === 'failed') {
     return (
-      <div className="min-h-screen bg-[var(--bg-page)] flex items-center justify-center px-4">
-        <div className="text-center max-w-md">
-          <div className="w-20 h-20 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Payment Failed</h2>
-          <p className="text-[var(--text-secondary)] text-sm mb-6">
-            Your payment could not be processed. Please try again or use a different payment method.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button onClick={() => navigate('/checkout')}
-              className="px-6 py-3 bg-[#C6A972] text-white text-sm font-semibold rounded-full hover:bg-[#B8965F] transition">
-              Try Again
-            </button>
-            <Link to="/cart"
-              className="px-6 py-3 text-sm font-medium text-[var(--text-secondary)] rounded-full border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition">
-              Back to Cart
-            </Link>
-          </div>
-        </div>
-      </div>
+      <StatusShell
+        tone="danger"
+        icon="XCircle"
+        title="Payment Failed"
+        message="Your payment could not be processed. Please try again or use a different payment method."
+        actions={
+          <>
+            <Button onClick={() => navigate('/checkout')} icon="RefreshCw">Try Again</Button>
+            <Button to="/cart" variant="outline" icon="ShoppingCart">Back to Cart</Button>
+          </>
+        }
+      />
     )
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-page)] flex items-center justify-center px-4">
-      <div className="text-center max-w-md">
-        <div className="w-20 h-20 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center mx-auto mb-6">
-          <svg className="w-10 h-10 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Payment Status Unknown</h2>
-        <p className="text-[var(--text-secondary)] text-sm mb-2">{error || 'Unable to determine payment status.'}</p>
-        <p className="text-[var(--text-muted)] text-xs mb-6">
-          Please check your orders page for updates.
-        </p>
-        <Link to="/orders"
-          className="px-6 py-3 bg-[#C6A972] text-white text-sm font-semibold rounded-full hover:bg-[#B8965F] transition">
-          View Orders
-        </Link>
-      </div>
-    </div>
+    <StatusShell
+      tone="unknown"
+      icon="AlertTriangle"
+      title="Payment Status Unknown"
+      message={error || 'Unable to determine payment status. Please check your orders page for updates.'}
+      actions={<Button to="/orders" icon="ClipboardList">View Orders</Button>}
+    />
   )
 }

@@ -1,37 +1,30 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { formatPrice } from '../utils/helpers'
 import { getAssetUrl } from '../services/api'
 import ImageWithFallback from '../components/ImageWithFallback'
 import QuantitySelector from '../components/QuantitySelector'
 import EmptyState from '../components/EmptyState'
-import BackButton from '../components/BackButton'
+import Button from '../components/ui/Button'
+import Icon from '../components/ui/Icon'
 
 const SHIPPING_THRESHOLD = 100
 
 export default function Cart() {
   const { cartItems, removeFromCart, updateQuantity, getCartTotal } = useCart()
-  const navigate = useNavigate()
 
   const subtotal = getCartTotal()
   const shipping = subtotal >= SHIPPING_THRESHOLD || subtotal === 0 ? 0 : 15
   const tax = subtotal * 0.08
   const total = subtotal + shipping + tax
-
-  const handleCheckout = () => {
-    navigate('/checkout')
-  }
+  const freeShippingRemaining = SHIPPING_THRESHOLD - subtotal
+  const progress = Math.min(100, (subtotal / SHIPPING_THRESHOLD) * 100)
 
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen bg-[var(--bg-page)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-          <div className="flex items-center gap-3 mb-8">
-            <BackButton />
-            <h1 className="font-playfair-display text-2xl sm:text-3xl font-bold text-[var(--text-primary)]">
-              Shopping Cart
-            </h1>
-          </div>
+      <div className="min-h-screen bg-page">
+        <div className="container-lux py-8 sm:py-12">
+          <h1 className="heading-display mb-8 text-2xl sm:text-3xl">Shopping Cart</h1>
           <EmptyState
             title="Your cart is empty"
             message="Looks like you haven't added anything yet. Browse our collection and find something you love."
@@ -44,82 +37,90 @@ export default function Cart() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-page)] pb-28 lg:pb-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <div className="flex items-center gap-3 mb-8">
-          <BackButton />
-          <h1 className="font-playfair-display text-2xl sm:text-3xl font-bold text-[var(--text-primary)]">
-            Shopping Cart ({cartItems.length})
+    <div className="min-h-screen bg-page pb-28 lg:pb-12">
+      <div className="container-lux py-8 sm:py-12">
+        <div className="mb-8 flex flex-wrap items-baseline justify-between gap-2">
+          <h1 className="heading-display text-2xl sm:text-3xl">
+            Shopping Cart
           </h1>
+          <span className="text-sm text-sub">
+            {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'}
+          </span>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
+        {freeShippingRemaining > 0 && (
+          <div className="mb-8 rounded-card border border-gold-500/30 bg-gold-50 p-4 dark:bg-gold-500/5">
+            <p className="mb-2 text-xs text-gold-800 dark:text-gold-300">
+              You're {formatPrice(freeShippingRemaining)} away from complimentary shipping.
+            </p>
+            <div className="h-1.5 overflow-hidden rounded-full bg-gold-500/15">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-gold-400 to-gold-600 transition-all duration-500"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-col gap-8 lg:flex-row">
           <div className="flex-1 space-y-4">
             {cartItems.map((item) => {
               const itemSubtotal = item.price * item.quantity
               return (
                 <div
                   key={item._cartKey || `${item.id}-${item.size}-${item.color}`}
-                  className="bg-[var(--bg-card)] rounded-xl shadow-lg shadow-black/5 p-4 flex gap-4"
+                  className="flex gap-4 rounded-card border border-line bg-surface p-4 shadow-card sm:gap-5 sm:p-5"
                 >
                   <Link
                     to={`/product/${item.id}`}
-                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden bg-[var(--bg-secondary)] flex-shrink-0"
+                    className="h-24 w-24 shrink-0 overflow-hidden rounded-field bg-inset sm:h-28 sm:w-28"
                   >
                     <ImageWithFallback
                       src={getAssetUrl(item.image)}
                       alt={item.name}
-                      className="w-full h-full object-cover"
+                      className="h-full w-full object-cover"
                     />
                   </Link>
 
-                  <div className="flex-1 min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         {item.brand && (
-                          <p className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] font-medium">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-faint">
                             {item.brand}
                           </p>
                         )}
                         <Link
                           to={`/product/${item.id}`}
-                          className="text-sm font-medium text-[var(--text-primary)] hover:text-[#C6A972] transition line-clamp-1"
+                          className="mt-0.5 line-clamp-1 text-sm font-medium text-ink transition-colors hover:text-gold-600"
                         >
                           {item.name}
                         </Link>
-                        <div className="flex flex-wrap items-center gap-2 mt-1">
-                          {item.size && (
-                            <span className="text-xs text-[var(--text-secondary)]">Size: {item.size}</span>
-                          )}
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-sub">
+                          {item.size && <span>Size: {item.size}</span>}
                           {item.color && item.color !== 'Default' && (
-                            <span className="text-xs text-[var(--text-secondary)]">Color: {item.color}</span>
+                            <span>Color: {item.color}</span>
                           )}
                         </div>
                       </div>
 
                       <button
-                        onClick={() =>
-                          removeFromCart(item.id, item.size, item.color)
-                        }
-                        className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[#C53030] hover:bg-[#C53030]/10 transition flex-shrink-0 active:scale-[0.95]"
-                        aria-label="Remove item"
+                        onClick={() => removeFromCart(item.id, item.size, item.color)}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sub transition-colors hover:bg-danger/10 hover:text-danger active:scale-95"
+                        aria-label={`Remove ${item.name}`}
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
+                        <Icon name="Trash2" size="sm" />
                       </button>
                     </div>
 
-                    <div className="flex items-center justify-between mt-3 sm:mt-4">
+                    <div className="mt-4 flex items-center justify-between">
                       <QuantitySelector
                         value={item.quantity}
-                        onChange={(qty) =>
-                          updateQuantity(item.id, qty, item.size, item.color)
-                        }
+                        onChange={(qty) => updateQuantity(item.id, qty, item.size, item.color)}
                         min={1}
                         max={item.stock || 99}
                       />
-                      <span className="text-sm font-semibold text-[var(--text-primary)] whitespace-nowrap ml-3">
+                      <span className="whitespace-nowrap pl-3 text-sm font-semibold text-ink">
                         {formatPrice(itemSubtotal)}
                       </span>
                     </div>
@@ -129,81 +130,81 @@ export default function Cart() {
             })}
           </div>
 
-          <div className="hidden lg:block w-80">
-            <div className="bg-[var(--bg-card)] rounded-xl shadow-lg shadow-black/5 p-6 sticky top-24">
-              <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-4">
+          <aside className="w-full lg:w-80">
+            <div className="sticky top-28 rounded-card border border-line bg-surface p-6 shadow-card">
+              <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.14em] text-ink">
                 Order Summary
               </h3>
 
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between text-[var(--text-secondary)]">
-                  <span>Subtotal</span>
-                  <span>{formatPrice(subtotal)}</span>
+              <dl className="space-y-3 text-sm">
+                <div className="flex justify-between text-sub">
+                  <dt>Subtotal</dt>
+                  <dd>{formatPrice(subtotal)}</dd>
                 </div>
-                <div className="flex justify-between text-[var(--text-secondary)]">
-                  <span>Shipping</span>
-                  <span>
+                <div className="flex justify-between text-sub">
+                  <dt>Shipping</dt>
+                  <dd>
                     {shipping === 0 ? (
-                      <span className="text-[#2F855A] font-medium">Free</span>
+                      <span className="font-medium text-success">Free</span>
                     ) : (
                       formatPrice(shipping)
                     )}
-                  </span>
+                  </dd>
                 </div>
-                {subtotal > 0 && subtotal < SHIPPING_THRESHOLD && (
-                  <p className="text-[11px] text-[var(--text-secondary)]">
-                    Add {formatPrice(SHIPPING_THRESHOLD - subtotal)} more for free shipping
-                  </p>
-                )}
-                <div className="flex justify-between text-[var(--text-secondary)]">
-                  <span>Tax (8%)</span>
-                  <span>{formatPrice(tax)}</span>
+                <div className="flex justify-between text-sub">
+                  <dt>Tax (8%)</dt>
+                  <dd>{formatPrice(tax)}</dd>
                 </div>
-                <div className="border-t border-[var(--border-color)] pt-3 flex justify-between font-semibold text-[var(--text-primary)]">
-                  <span>Total</span>
-                  <span>{formatPrice(total)}</span>
+                <div className="flex justify-between border-t border-line pt-3 text-base font-semibold text-ink">
+                  <dt>Total</dt>
+                  <dd>{formatPrice(total)}</dd>
                 </div>
-              </div>
+              </dl>
 
-              <button
-                onClick={handleCheckout}
-                className="mt-6 w-full py-3 bg-[#C6A972] text-white text-sm font-medium rounded-full hover:bg-[#B8965F] transition active:scale-[0.98] shadow-lg shadow-black/5"
+              <Button
+                variant="primary"
+                fullWidth
+                size="lg"
+                className="mt-6"
+                to="/checkout"
               >
                 Proceed to Checkout
-              </button>
+              </Button>
 
-              <Link
+              <Button
+                variant="ghost"
+                fullWidth
+                icon="ArrowLeft"
                 to="/products"
-                className="mt-3 w-full inline-flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium text-[var(--text-secondary)] rounded-full border border-[var(--border-color)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition"
+                className="mt-2"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
-                </svg>
                 Continue Shopping
-              </Link>
+              </Button>
             </div>
-          </div>
+          </aside>
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-[var(--bg-secondary)] border-t border-[var(--border-color)] px-4 py-3">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-[var(--text-secondary)]">Total</span>
-          <span className="text-lg font-bold text-[var(--text-primary)]">{formatPrice(total)}</span>
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-line bg-surface px-4 py-3 shadow-card lg:hidden">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-sm text-sub">Total</span>
+          <span className="text-lg font-bold text-ink">{formatPrice(total)}</span>
         </div>
         <div className="flex gap-3">
-          <Link
+          <Button
+            variant="outline"
+            fullWidth
             to="/products"
-            className="flex-1 py-3 text-sm font-medium text-[var(--text-secondary)] rounded-full border border-[var(--border-color)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition text-center active:scale-[0.98]"
           >
             Continue Shopping
-          </Link>
-          <button
-            onClick={handleCheckout}
-            className="flex-1 py-3 bg-[#C6A972] text-white text-sm font-semibold rounded-full hover:bg-[#B8965F] transition active:scale-[0.98] min-h-[48px]"
+          </Button>
+          <Button
+            variant="primary"
+            fullWidth
+            to="/checkout"
           >
             Checkout
-          </button>
+          </Button>
         </div>
       </div>
     </div>

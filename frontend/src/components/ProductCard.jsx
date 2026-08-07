@@ -4,10 +4,12 @@ import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
 import ImageWithFallback from './ImageWithFallback'
 import StarRating from './StarRating'
+import Icon from './ui/Icon'
+import Badge from './ui/Badge'
 import { formatPrice } from '../utils/helpers'
 import { getAssetUrl } from '../services/api'
 
-const ProductCard = memo(function ProductCard({ product }) {
+const ProductCard = memo(function ProductCard({ product, compact = false }) {
   const { addToCart } = useCart()
   const { toggleWishlist: addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
 
@@ -38,92 +40,76 @@ const ProductCard = memo(function ProductCard({ product }) {
   const handleWishlistToggle = (e) => {
     e.preventDefault()
     e.stopPropagation()
-    if (inWishlist) {
-      removeFromWishlist(productId)
-    } else {
-      addToWishlist(product)
-    }
+    if (inWishlist) removeFromWishlist(productId)
+    else addToWishlist(product)
   }
 
   const handleAddToCart = (e) => {
     e.preventDefault()
     e.stopPropagation()
-    if (!outOfStock) {
-      addToCart(product, 1)
-    }
+    if (!outOfStock) addToCart(product, 1)
   }
 
   return (
     <Link
       to={`/product/${productId}`}
-      className="group flex flex-col bg-[var(--bg-card)] rounded-xl shadow-lg shadow-black/5 active:scale-[0.98] transition-all duration-300 overflow-hidden"
+      className="group flex flex-col overflow-hidden rounded-card border border-line bg-surface shadow-sm transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-card-hover hover:border-gold-300 active:scale-[0.99]"
     >
-        <div className="relative aspect-square overflow-hidden bg-[var(--bg-secondary)]">
-        <div className="w-full h-full transition-transform duration-500 lg:group-hover:scale-105">
-          <ImageWithFallback
-            src={productImage}
-            alt={name || 'Product'}
-            className="w-full h-full object-cover"
-          />
+      <div className="relative aspect-square overflow-hidden bg-subtle">
+        <div className="h-full w-full transition-transform duration-700 ease-out lg:group-hover:scale-[1.06]">
+          <ImageWithFallback src={productImage} alt={name || 'Product'} className="h-full w-full" />
         </div>
 
         <button
           onClick={handleWishlistToggle}
-          className="absolute top-3 right-3 w-11 h-11 rounded-full bg-[var(--bg-card)]/90 backdrop-blur-sm shadow-sm flex items-center justify-center active:scale-[0.98] transition z-10"
+          className={`absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur-sm transition-all duration-200 active:scale-90 ${
+            inWishlist
+              ? 'border-gold-400 bg-gold-500 text-white shadow-gold-soft'
+              : 'border-white/40 bg-white/80 text-charcoal-600 hover:bg-white'
+          }`}
           aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
         >
-          <svg
-            className="w-[18px] h-[18px] transition"
-            fill={inWishlist ? '#C6A972' : 'none'}
-            stroke={inWishlist ? '#C6A972' : '#666666'}
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-          </svg>
+          <Icon name="Heart" size={16} strokeWidth={inWishlist ? 2 : 1.75} fill={inWishlist ? 'currentColor' : 'none'} />
         </button>
 
-        {category && (
-          <span className="absolute top-3 left-3 px-2 py-0.5 bg-[var(--bg-card)]/90 backdrop-blur-sm rounded-full text-[9px] font-medium text-[var(--text-secondary)] uppercase tracking-wider shadow-sm">
-            {typeof category === 'string' ? category : category?.name || ''}
-          </span>
-        )}
-
-        {discountPercent && discountPercent > 0 && (
-          <span className="absolute bottom-3 left-3 px-2 py-0.5 bg-[#C53030] text-[var(--text-primary)] text-[9px] font-bold rounded-full">
-            -{discountPercent}%
-          </span>
-        )}
+        <div className="pointer-events-none absolute left-3 top-3 z-10 flex flex-col items-start gap-1.5">
+          {discountPercent && discountPercent > 0 && (
+            <Badge tone="danger" size="sm">-{discountPercent}%</Badge>
+          )}
+          {category && (
+            <Badge tone="neutral" size="sm" className="bg-white/80 backdrop-blur-sm">
+              {typeof category === 'string' ? category : category?.name || ''}
+            </Badge>
+          )}
+        </div>
 
         {outOfStock && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-            <span className="bg-[var(--bg-card)] px-4 py-1.5 rounded-full text-xs font-medium text-[var(--text-primary)]">
+          <div className="absolute inset-0 z-[5] flex items-center justify-center bg-ink/45 backdrop-blur-[1px]">
+            <span className="rounded-full bg-surface px-4 py-1.5 text-xs font-medium text-ink shadow-sm">
               Out of Stock
             </span>
           </div>
         )}
       </div>
 
-      <div className="flex flex-col flex-1 justify-between p-3 sm:p-4">
+      <div className="flex flex-1 flex-col justify-between gap-2 p-4">
         <div>
           {brand && (
-            <p className="text-[10px] uppercase tracking-wider text-[var(--text-secondary)] mb-1 font-medium">{brand}</p>
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-gold-600">{brand}</p>
           )}
-          <h3 className="text-[13px] font-medium text-[var(--text-primary)] line-clamp-2 leading-snug">
+          <h3 className={`font-medium leading-snug text-ink line-clamp-2 ${compact ? 'text-sm' : 'text-[15px]'}`}>
             {name || 'Product Name'}
           </h3>
-
           <div className="mt-1.5">
-            <StarRating rating={rating || 0} totalReviews={numReviews || 0} />
+            <StarRating rating={rating || 0} totalReviews={numReviews || 0} size="xs" />
           </div>
+        </div>
 
-          <div className="mt-2 flex items-center gap-2">
-            <span className="text-[15px] font-semibold text-[var(--text-primary)]">
-              {formatPrice(price)}
-            </span>
+        <div className="flex items-end justify-between gap-2">
+          <div className="flex items-baseline gap-2">
+            <span className="text-base font-semibold text-ink">{formatPrice(price)}</span>
             {originalPrice && originalPrice > price && (
-              <span className="text-xs text-[var(--text-secondary)] line-through">
-                {formatPrice(originalPrice)}
-              </span>
+              <span className="text-xs text-faint line-through">{formatPrice(originalPrice)}</span>
             )}
           </div>
         </div>
@@ -131,12 +117,13 @@ const ProductCard = memo(function ProductCard({ product }) {
         <button
           onClick={handleAddToCart}
           disabled={outOfStock}
-          className={`mt-3 w-full min-h-[44px] rounded-xl text-sm font-medium transition ${
+          className={`mt-1 inline-flex h-10 w-full items-center justify-center gap-2 rounded-full text-sm font-medium transition-all duration-200 ${
             outOfStock
-              ? 'bg-[var(--bg-secondary)] text-[#666] cursor-not-allowed'
-              : 'bg-[#b5b5b5] text-white active:scale-[0.98]'
+              ? 'cursor-not-allowed bg-subtle text-faint'
+              : 'bg-charcoal-800 text-ivory-50 hover:bg-gold-500 hover:text-white hover:shadow-gold-soft active:scale-[0.98]'
           }`}
         >
+          <Icon name="ShoppingBag" size={15} />
           {outOfStock ? 'Out of Stock' : 'Add to Cart'}
         </button>
       </div>

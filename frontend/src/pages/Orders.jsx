@@ -7,7 +7,8 @@ import { getAssetUrl } from '../services/api'
 import { ORDER_STATUS } from '../constants'
 import ImageWithFallback from '../components/ImageWithFallback'
 import EmptyState from '../components/EmptyState'
-import BackButton from '../components/BackButton'
+import StatusBadge from '../components/ui/StatusBadge'
+import Icon from '../components/ui/Icon'
 
 const STATUS_STEPS = [
   ORDER_STATUS.PENDING,
@@ -15,16 +16,6 @@ const STATUS_STEPS = [
   ORDER_STATUS.SHIPPED,
   ORDER_STATUS.DELIVERED,
 ]
-
-const STATUS_STYLES = {
-  [ORDER_STATUS.PENDING]: 'bg-yellow-100 text-yellow-700',
-  [ORDER_STATUS.PENDING_PAYMENT]: 'bg-amber-100 text-amber-700',
-  [ORDER_STATUS.PROCESSING]: 'bg-blue-100 text-blue-700',
-  [ORDER_STATUS.SHIPPED]: 'bg-purple-100 text-purple-700',
-  [ORDER_STATUS.DELIVERED]: 'bg-green-100 text-green-700',
-  [ORDER_STATUS.CANCELLED]: 'bg-red-100 text-red-700',
-  [ORDER_STATUS.REFUNDED]: 'bg-gray-200 text-gray-700',
-}
 
 const TABS = [
   'All',
@@ -73,7 +64,7 @@ export default function Orders() {
 
   if (!user) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center px-4">
+      <div className="flex min-h-[60vh] items-center justify-center px-4">
         <EmptyState
           title="Sign In Required"
           message="Please sign in to view your orders."
@@ -85,31 +76,29 @@ export default function Orders() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-page)] pb-16">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div className="min-h-screen bg-page pb-16">
+      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <div className="mb-6 sm:mb-8">
-          <div className="flex items-center gap-3">
-            <BackButton />
-            <h1 className="text-2xl sm:text-3xl font-playfair-display font-bold text-[var(--text-primary)]">My Orders</h1>
-          </div>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">View and track all your orders.</p>
+          <p className="eyebrow mb-2 text-gold-600">Account</p>
+          <h1 className="heading-display text-2xl sm:text-3xl">My Orders</h1>
+          <p className="mt-1 text-sm text-sub">View and track all your orders.</p>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
+        <div className="hide-scrollbar -mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
           {TABS.map((tab) => {
             const count = tab === 'All' ? userOrders.length : userOrders.filter((o) => o.status === tab).length
             return (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition flex-shrink-0 min-h-[44px] ${
+                className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-all min-h-[44px] ${
                   activeTab === tab
-                    ? 'bg-[#C6A972] text-white'
-                    : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                    ? 'bg-gold-500 text-white shadow-gold-soft'
+                    : 'border border-line bg-surface text-sub hover:border-gold-500/50 hover:text-ink'
                 }`}
               >
                 {tab}
-                <span className={`text-xs ${activeTab === tab ? 'text-black/70' : 'text-[var(--text-secondary)]'}`}>
+                <span className={`text-xs ${activeTab === tab ? 'text-white/80' : 'text-faint'}`}>
                   ({count})
                 </span>
               </button>
@@ -119,11 +108,7 @@ export default function Orders() {
 
         {filteredOrders.length === 0 ? (
           <EmptyState
-            icon={
-              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-              </svg>
-            }
+            icon="ShoppingBag"
             title="No Orders Found"
             message={activeTab === 'All' ? "You haven't placed any orders yet." : `No ${activeTab.toLowerCase()} orders.`}
             actionLabel={activeTab === 'All' ? 'Start Shopping' : undefined}
@@ -136,22 +121,21 @@ export default function Orders() {
               const isExpanded = expandedOrder === order.id
 
               return (
-                <div key={order.id} className="bg-[var(--bg-card)] rounded-2xl shadow-lg shadow-black/5 border border-[var(--border-color)] overflow-hidden">
+                <div key={order.id} className="overflow-hidden rounded-card border border-line bg-surface shadow-card">
                   <button
                     onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
-                    className="w-full text-left min-h-[44px]"
+                    className="w-full text-left"
+                    aria-expanded={isExpanded}
                   >
                     <div className="p-5 sm:p-6">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                      <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                         <div>
-                          <p className="text-sm font-medium text-[var(--text-primary)]">{order.id}</p>
-                          <p className="text-xs text-[var(--text-secondary)] mt-0.5">{formatDate(order.createdAt)}</p>
+                          <p className="text-sm font-medium text-ink">{order.id}</p>
+                          <p className="mt-0.5 text-xs text-sub">{formatDate(order.createdAt)}</p>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[order.status] || 'bg-[var(--bg-card)] text-[var(--text-secondary)]'}`}>
-                            {order.status}
-                          </span>
-                          <span className="text-sm font-semibold text-[var(--text-primary)]">{formatPrice(order.totalAmount, getCurrencySymbol(order.currency))}</span>
+                          <StatusBadge status={order.status} />
+                          <span className="text-sm font-semibold text-ink">{formatPrice(order.totalAmount, getCurrencySymbol(order.currency))}</span>
                         </div>
                       </div>
 
@@ -159,24 +143,25 @@ export default function Orders() {
                         <div className="flex items-center gap-2">
                           <div className="flex -space-x-2">
                             {order.items.slice(0, 3).map((item, i) => (
-                              <div key={i} className="w-8 h-8 rounded-full border-2 border-[var(--border-color)] overflow-hidden bg-[var(--bg-secondary)]">
-                                <ImageWithFallback src={getAssetUrl(item.image)} alt={item.name} className="w-full h-full object-cover" />
+                              <div key={i} className="h-8 w-8 overflow-hidden rounded-full border-2 border-surface bg-inset">
+                                <ImageWithFallback src={getAssetUrl(item.image)} alt={item.name} className="h-full w-full" />
                               </div>
                             ))}
                             {order.items.length > 3 && (
-                              <div className="w-8 h-8 rounded-full border-2 border-[var(--border-color)] bg-[var(--bg-secondary)] flex items-center justify-center text-[10px] font-medium text-[var(--text-secondary)]">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-surface bg-subtle text-[10px] font-medium text-sub">
                                 +{order.items.length - 3}
                               </div>
                             )}
                           </div>
-                          <span className="text-sm text-[var(--text-secondary)]">{order.items.length} item{order.items.length > 1 ? 's' : ''}</span>
+                          <span className="text-sm text-sub">
+                            {order.items.length} item{order.items.length > 1 ? 's' : ''}
+                          </span>
                         </div>
-                        <svg
-                          className={`w-5 h-5 text-[var(--text-secondary)] transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                          fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
+                        <Icon
+                          name="ChevronDown"
+                          size="sm"
+                          className={`text-sub transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
+                        />
                       </div>
                     </div>
                   </button>
@@ -186,129 +171,127 @@ export default function Orders() {
                       isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
                     } overflow-hidden`}
                   >
-                    <div className="border-t border-[var(--border-color)] px-5 sm:px-6 py-5 space-y-6">
+                    <div className="space-y-6 border-t border-line px-5 py-5 sm:px-6">
                       {STATUS_STEPS.includes(order.status) && (
                         <div>
-                          <h4 className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-4">Order Progress</h4>
+                          <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider text-ink">
+                            Order Progress
+                          </h4>
                           <div className="relative">
-                            <div className="flex items-center justify-between">
+                            <div className="absolute left-4 right-4 top-4 h-0.5 bg-line">
+                              <div
+                                className="h-full bg-gold-500 transition-all duration-500"
+                                style={{ width: `${Math.max(0, stepIndex) * (100 / (STATUS_STEPS.length - 1))}%` }}
+                              />
+                            </div>
+                            <div className="relative flex items-center justify-between">
                               {STATUS_STEPS.map((step, i) => {
                                 const isCompleted = stepIndex >= i
                                 const isCurrent = stepIndex === i
                                 return (
-                                  <div key={step} className="flex flex-col items-center relative z-10">
+                                  <div key={step} className="flex flex-col items-center">
                                     <div
-                                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                                      className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all ${
                                         isCompleted
-                                          ? 'bg-[#C6A972] text-white'
-                                          : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)]'
-                                      } ${isCurrent ? 'ring-2 ring-[#C6A972]/30 scale-110' : ''}`}
+                                          ? 'bg-gold-500 text-white shadow-gold-soft'
+                                          : 'bg-subtle text-sub'
+                                      } ${isCurrent ? 'scale-110 ring-2 ring-gold-500/30' : ''}`}
                                     >
                                       {isCompleted ? (
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                                        </svg>
+                                        <Icon name="Check" size="sm" />
                                       ) : (
                                         i + 1
                                       )}
                                     </div>
-                                    <span className={`text-[10px] mt-1.5 whitespace-nowrap ${isCompleted ? 'text-[var(--text-primary)] font-medium' : 'text-[var(--text-secondary)]'}`}>
+                                    <span className={`mt-1.5 whitespace-nowrap text-[10px] ${isCompleted ? 'font-medium text-ink' : 'text-sub'}`}>
                                       {step}
                                     </span>
                                   </div>
                                 )
                               })}
                             </div>
-                            <div className="absolute top-4 left-4 right-4 h-0.5 bg-[var(--border-color)] -z-0">
-                              <div
-                                className="h-full bg-[#C6A972] transition-all duration-500"
-                                style={{ width: `${Math.max(0, stepIndex) * (100 / (STATUS_STEPS.length - 1))}%` }}
-                              />
-                            </div>
                           </div>
                         </div>
                       )}
 
                       {order.status === ORDER_STATUS.PENDING_PAYMENT && (
-                        <div className="flex items-center gap-2 px-4 py-3 bg-amber-100/70 rounded-xl">
-                          <svg className="w-4 h-4 text-amber-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span className="text-sm text-amber-800">This order is awaiting payment confirmation.</span>
+                        <div className="flex items-center gap-2 rounded-field bg-info/10 px-4 py-3">
+                          <Icon name="AlertCircle" size="sm" className="shrink-0 text-info" />
+                          <span className="text-sm text-info">This order is awaiting payment confirmation.</span>
                         </div>
                       )}
 
                       {order.status === ORDER_STATUS.CANCELLED && (
-                        <div className="flex items-center gap-2 px-4 py-3 bg-[#C53030]/10 rounded-xl">
-                          <svg className="w-4 h-4 text-[#C53030] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                          </svg>
-                          <span className="text-sm text-[#C53030]">This order has been cancelled.</span>
+                        <div className="flex items-center gap-2 rounded-field bg-danger/10 px-4 py-3">
+                          <Icon name="AlertTriangle" size="sm" className="shrink-0 text-danger" />
+                          <span className="text-sm text-danger">This order has been cancelled.</span>
                         </div>
                       )}
 
                       {order.status === ORDER_STATUS.REFUNDED && (
-                        <div className="flex items-center gap-2 px-4 py-3 bg-gray-200/70 rounded-xl">
-                          <svg className="w-4 h-4 text-gray-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                          </svg>
-                          <span className="text-sm text-gray-700">This order has been refunded.</span>
+                        <div className="flex items-center gap-2 rounded-field bg-subtle px-4 py-3">
+                          <Icon name="RotateCcw" size="sm" className="shrink-0 text-sub" />
+                          <span className="text-sm text-sub">This order has been refunded.</span>
                         </div>
                       )}
 
                       <div>
-                        <h4 className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-4">Items</h4>
+                        <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider text-ink">Items</h4>
                         <div className="space-y-3">
                           {order.items.map((item, i) => (
                             <div key={i} className="flex items-center gap-4">
-                              <div className="w-16 h-16 rounded-xl overflow-hidden bg-[var(--bg-secondary)] flex-shrink-0">
-                                <ImageWithFallback src={getAssetUrl(item.image)} alt={item.name} className="w-full h-full object-cover" />
+                              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-field bg-inset">
+                                <ImageWithFallback src={getAssetUrl(item.image)} alt={item.name} className="h-full w-full" />
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-[var(--text-primary)] truncate">{item.name}</p>
-                                <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)] mt-0.5 flex-wrap">
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium text-ink">{item.name}</p>
+                                <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-sub">
                                   {item.color && <span>{item.color}</span>}
                                   {item.size && <span>Size: {item.size}</span>}
                                   <span>Qty: {item.quantity}</span>
                                 </div>
                               </div>
-                              <span className="text-sm font-medium text-[var(--text-primary)] whitespace-nowrap">{formatPrice(item.price, getCurrencySymbol(order.currency))}</span>
+                              <span className="whitespace-nowrap text-sm font-medium text-ink">
+                                {formatPrice(item.price, getCurrencySymbol(order.currency))}
+                              </span>
                             </div>
                           ))}
                         </div>
                       </div>
 
-                      <div className="border-t border-[var(--border-color)] pt-4 space-y-1">
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs text-[var(--text-secondary)]">Subtotal</span>
-                          <span className="text-sm text-[var(--text-primary)]">{formatPrice(order.subtotal, getCurrencySymbol(order.currency))}</span>
+                      <div className="space-y-1 border-t border-line pt-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-sub">Subtotal</span>
+                          <span className="text-sm text-ink">{formatPrice(order.subtotal, getCurrencySymbol(order.currency))}</span>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs text-[var(--text-secondary)]">Tax</span>
-                          <span className="text-sm text-[var(--text-primary)]">{formatPrice(order.tax, getCurrencySymbol(order.currency))}</span>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-sub">Tax</span>
+                          <span className="text-sm text-ink">{formatPrice(order.tax, getCurrencySymbol(order.currency))}</span>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs text-[var(--text-secondary)]">Shipping</span>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-sub">Shipping</span>
                           {Number(order.shippingCost) > 0 ? (
-                            <span className="text-sm text-[var(--text-primary)]">{formatPrice(order.shippingCost, getCurrencySymbol(order.currency))}</span>
+                            <span className="text-sm text-ink">{formatPrice(order.shippingCost, getCurrencySymbol(order.currency))}</span>
                           ) : (
-                            <span className="text-sm text-[#2F855A] font-medium">Free</span>
+                            <span className="text-sm font-medium text-success">Free</span>
                           )}
                         </div>
-                        <div className="flex justify-between items-center pt-2 border-t border-[var(--border-color)] mt-2">
-                          <span className="text-sm font-semibold text-[var(--text-primary)]">Total</span>
-                          <span className="text-base font-bold text-[var(--text-primary)]">{formatPrice(order.totalAmount, getCurrencySymbol(order.currency))}</span>
+                        <div className="mt-2 flex items-center justify-between border-t border-line pt-2">
+                          <span className="text-sm font-semibold text-ink">Total</span>
+                          <span className="text-base font-bold text-ink">{formatPrice(order.totalAmount, getCurrencySymbol(order.currency))}</span>
                         </div>
                       </div>
 
-                      <div className="border-t border-[var(--border-color)] pt-4">
-                        <h4 className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-2">Shipping Address</h4>
-                        <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                      <div className="border-t border-line pt-4">
+                        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink">
+                          Shipping Address
+                        </h4>
+                        <p className="text-sm leading-relaxed text-sub">
                           {order.shippingAddress.street}, {order.shippingAddress.city},{' '}
                           {order.shippingAddress.state} {order.shippingAddress.zip},{' '}
                           {order.shippingAddress.country}
                         </p>
-                        <p className="text-xs text-[var(--text-secondary)] mt-2">Payment: {order.paymentMethod}</p>
+                        <p className="mt-2 text-xs text-sub">Payment: {order.paymentMethod}</p>
                       </div>
                     </div>
                   </div>

@@ -3,7 +3,15 @@ import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { formatDate } from '../utils/helpers'
-import BackButton from '../components/BackButton'
+import Button from '../components/ui/Button'
+import Icon from '../components/ui/Icon'
+import { Field, Input } from '../components/ui/Input'
+
+const QUICK_LINKS = [
+  { label: 'My Orders', path: '/orders', icon: 'ShoppingBag' },
+  { label: 'My Wishlist', path: '/wishlist', icon: 'Heart' },
+  { label: 'Settings', path: '/settings', icon: 'Settings' },
+]
 
 export default function Profile() {
   const { user, isAuthenticated, updateProfile } = useAuth()
@@ -53,156 +61,92 @@ export default function Profile() {
     }
   }
 
-  const quickLinks = [
-    { label: 'My Orders', path: '/orders', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
-    { label: 'My Wishlist', path: '/wishlist', icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z' },
-    { label: 'Settings', path: '/settings', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
-  ]
-
   return (
-    <div className="min-h-screen bg-[var(--bg-page)] pb-16">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
-        <div className="flex items-center gap-3 mb-8">
-          <BackButton />
-          <h1 className="font-playfair-display text-2xl sm:text-3xl font-bold text-[var(--text-primary)]">
-            My Profile
-          </h1>
+    <div className="min-h-screen bg-page pb-16">
+      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-12 lg:px-8">
+        <div className="mb-8">
+          <p className="eyebrow mb-2 text-gold-600">Account</p>
+          <h1 className="heading-display text-2xl sm:text-3xl">My Profile</h1>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
           <div className="flex-1 space-y-6">
-            <div className="bg-[var(--bg-card)] rounded-xl shadow-lg shadow-black/5 p-6 sm:p-8">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-                  <div className="w-20 h-20 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-[#C6A972] to-[#B8965F] flex items-center justify-center text-black text-2xl sm:text-xl font-bold font-playfair-display flex-shrink-0">
+            <div className="rounded-card border border-line bg-surface p-6 shadow-card sm:p-8">
+              <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-gold-400 to-gold-600 text-2xl font-bold text-white shadow-gold-soft sm:h-16 sm:w-16 sm:text-xl">
                     {user.name?.charAt(0)?.toUpperCase() || 'U'}
                   </div>
                   <div className="text-center sm:text-left">
-                    <h2 className="text-xl sm:text-lg font-semibold text-[var(--text-primary)]">
+                    <h2 className="text-lg font-semibold text-ink sm:text-xl">
                       {user.name || 'User'}
                     </h2>
-                    <p className="text-sm text-[var(--text-secondary)]">
-                      Member since{' '}
-                      {user.joinDate
-                        ? formatDate(user.joinDate)
-                        : 'Today'}
+                    <p className="text-sm text-sub">
+                      Member since {user.joinDate ? formatDate(user.joinDate) : 'Today'}
                     </p>
                   </div>
                 </div>
-                <button
+                <Button
+                  variant={isEditing ? 'outline' : 'goldOutline'}
+                  size="sm"
+                  icon={isEditing ? 'X' : 'Pencil'}
                   onClick={() => setIsEditing(!isEditing)}
-                  className={`min-h-[44px] px-5 py-2 text-xs font-medium rounded-full border transition self-center sm:self-start ${
-                    isEditing
-                      ? 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
-                      : 'border-[#C6A972] text-[#C6A972] hover:bg-[#C6A972]/10'
-                  }`}
+                  className="self-center sm:self-start"
                 >
                   {isEditing ? 'Cancel' : 'Edit Profile'}
-                </button>
+                </Button>
               </div>
 
               {isEditing ? (
                 <form onSubmit={handleSubmit} className="space-y-5">
-                  <div>
-                    <label className="block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">
-                      Full Name
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={form.name}
-                      onChange={handleChange}
-                      required
-                      className="w-full min-h-[48px] px-4 py-3 text-sm border border-[var(--border-color)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={form.email}
-                      onChange={handleChange}
-                      required
-                      className="w-full min-h-[48px] px-4 py-3 text-sm border border-[var(--border-color)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider mb-1.5">
-                      Phone
-                    </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={form.phone}
-                      onChange={handleChange}
-                      className="w-full min-h-[48px] px-4 py-3 text-sm border border-[var(--border-color)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6A972] focus:border-transparent transition bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
-                    />
-                  </div>
+                  <Field label="Full Name" required>
+                    <Input type="text" name="name" value={form.name} onChange={handleChange} required />
+                  </Field>
+                  <Field label="Email" required>
+                    <Input type="email" name="email" value={form.email} onChange={handleChange} required />
+                  </Field>
+                  <Field label="Phone">
+                    <Input type="tel" name="phone" value={form.phone} onChange={handleChange} />
+                  </Field>
                   <div className="pt-2">
-                    <button
-                      type="submit"
-                      disabled={saving}
-                      className="w-full sm:w-auto min-h-[48px] px-8 py-3 bg-[#C6A972] text-white text-sm font-medium rounded-full hover:bg-[#B8965F] transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-black/5"
-                    >
+                    <Button type="submit" variant="primary" loading={saving}>
                       {saving ? 'Saving...' : 'Save Changes'}
-                    </button>
+                    </Button>
                   </div>
                 </form>
               ) : (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div>
-                      <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Email
-                      </p>
-                      <p className="text-sm text-[var(--text-primary)] mt-1">
-                        {user.email || 'â€”'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Phone
-                      </p>
-                      <p className="text-sm text-[var(--text-primary)] mt-1">
-                        {user.phone || 'â€”'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Role
-                      </p>
-                      <p className="text-sm text-[var(--text-primary)] mt-1 capitalize">
-                        {user.role || 'customer'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
-                        Member Since
-                      </p>
-                      <p className="text-sm text-[var(--text-primary)] mt-1">
-                        {user.joinDate
-                          ? formatDate(user.joinDate)
-                          : 'Today'}
-                      </p>
-                    </div>
+                <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wider text-faint">Email</dt>
+                    <dd className="mt-1 text-sm text-ink">{user.email || '—'}</dd>
                   </div>
-                </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wider text-faint">Phone</dt>
+                    <dd className="mt-1 text-sm text-ink">{user.phone || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wider text-faint">Role</dt>
+                    <dd className="mt-1 text-sm capitalize text-ink">{user.role || 'customer'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wider text-faint">Member Since</dt>
+                    <dd className="mt-1 text-sm text-ink">
+                      {user.joinDate ? formatDate(user.joinDate) : 'Today'}
+                    </dd>
+                  </div>
+                </dl>
               )}
             </div>
 
             {user.address && (
-              <div className="bg-[var(--bg-card)] rounded-xl shadow-lg shadow-black/5 p-6 sm:p-8">
-                <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-4">
+              <div className="rounded-card border border-line bg-surface p-6 shadow-card sm:p-8">
+                <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.14em] text-ink">
                   Saved Address
                 </h3>
-                <div className="text-sm text-[var(--text-secondary)] space-y-1 leading-relaxed">
+                <div className="space-y-1 text-sm leading-relaxed text-sub">
                   <p>{user.address.street}</p>
                   <p>
-                    {user.address.city}, {user.address.state}{' '}
-                    {user.address.zip}
+                    {user.address.city}, {user.address.state} {user.address.zip}
                   </p>
                   <p>{user.address.country}</p>
                 </div>
@@ -210,52 +154,28 @@ export default function Profile() {
             )}
           </div>
 
-          <div className="lg:w-80 space-y-3">
-            <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider mb-3">
+          <aside className="w-full space-y-3 lg:w-80">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-ink">
               Quick Links
             </h3>
-            <div className="grid grid-cols-2 sm:flex sm:flex-col gap-3">
-              {quickLinks.map((link) => (
+            <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-col">
+              {QUICK_LINKS.map((link) => (
                 <Link
                   key={link.label}
                   to={link.path}
-                  className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 p-4 bg-[var(--bg-card)] rounded-xl shadow-lg shadow-black/5 hover:shadow-lg transition group text-center sm:text-left"
+                  className="group flex flex-col items-center gap-2 rounded-card border border-line bg-surface p-4 text-center shadow-card transition-all hover:border-gold-500/40 hover:shadow-card-hover sm:flex-row sm:text-left"
                 >
-                  <div className="w-10 h-10 rounded-full bg-[var(--bg-secondary)] flex items-center justify-center group-hover:bg-[#C6A972]/10 transition flex-shrink-0">
-                    <svg
-                      className="w-5 h-5 text-[var(--text-secondary)] group-hover:text-[#C6A972] transition"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d={link.icon}
-                      />
-                    </svg>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-subtle text-sub transition-colors group-hover:bg-gold-100 group-hover:text-gold-600">
+                    <Icon name={link.icon} size="sm" />
                   </div>
-                  <span className="text-xs sm:text-sm font-medium text-[var(--text-primary)] group-hover:text-[#C6A972] transition">
+                  <span className="text-xs font-medium text-ink transition-colors group-hover:text-gold-600 sm:text-sm">
                     {link.label}
                   </span>
-                  <svg
-                    className="w-4 h-4 hidden sm:block ml-auto text-[var(--text-secondary)] group-hover:text-[#C6A972] transition"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
+                  <Icon name="ChevronRight" size="sm" className="ml-auto hidden text-faint transition-colors group-hover:text-gold-600 sm:block" />
                 </Link>
               ))}
             </div>
-          </div>
+          </aside>
         </div>
       </div>
     </div>

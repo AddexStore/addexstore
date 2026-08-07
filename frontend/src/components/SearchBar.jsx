@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import Icon from './ui/Icon'
 
-export default function SearchBar({ placeholder = 'Search AddexStores...', onSearch }) {
+export default function SearchBar({ placeholder = 'Search AddexStores...', onSearch, inputRef, className = '' }) {
   const [query, setQuery] = useState('')
   const navigate = useNavigate()
 
@@ -19,41 +20,35 @@ export default function SearchBar({ placeholder = 'Search AddexStores...', onSea
 
   const handleClear = () => {
     setQuery('')
+    if (inputRef?.current) inputRef.current.focus()
   }
 
   return (
-    <form onSubmit={handleSubmit} className="relative w-full">
-      <div className="relative">
-        <svg
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)] pointer-events-none"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+    <form onSubmit={handleSubmit} className={`relative w-full ${className}`} role="search">
+      <Icon
+        name="Search"
+        size="sm"
+        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-faint"
+      />
+      <input
+        ref={inputRef}
+        type="search"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder={placeholder}
+        aria-label={placeholder}
+        className="h-11 w-full rounded-full border border-line bg-surface pl-11 pr-10 text-sm text-ink placeholder-faint transition-all duration-200 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/25 focus:outline-none"
+      />
+      {query && (
+        <button
+          type="button"
+          onClick={handleClear}
+          className="absolute right-2 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full text-faint transition-colors hover:bg-subtle hover:text-ink"
+          aria-label="Clear search"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={placeholder}
-          className="w-full h-10 pl-10 pr-10 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-full text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[#C6A972] focus:ring-1 focus:ring-[#C6A972]/30 transition"
-        />
-
-        {query && (
-          <button
-            type="button"
-            onClick={handleClear}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-secondary)] transition"
-            aria-label="Clear search"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        )}
-      </div>
+          <Icon name="X" size="xs" />
+        </button>
+      )}
     </form>
   )
 }

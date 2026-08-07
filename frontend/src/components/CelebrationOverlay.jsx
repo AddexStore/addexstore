@@ -1,4 +1,8 @@
 import { useCelebration } from '../context/CelebrationContext'
+import { colors } from '../constants/theme'
+import Icon from './ui/Icon'
+
+const CONFETTI_COLORS = [colors.chart.gold, '#FFFFFF', colors.ivory[300]]
 
 function Particle({ index }) {
   const angle = (index / 12) * 360
@@ -8,18 +12,15 @@ function Particle({ index }) {
 
   return (
     <div
-      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-      style={{
-        animation: `celebrate-particle 1s ease-out ${delay}s forwards`,
-        opacity: 0,
-      }}
+      className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+      style={{ animation: `celebrate-particle 1s ease-out ${delay}s forwards`, opacity: 0 }}
     >
       <div
         className="rounded-full"
         style={{
           width: size,
           height: size,
-          background: index % 3 === 0 ? '#C6A972' : index % 3 === 1 ? '#FFFFFF' : '#E7E2DA',
+          background: CONFETTI_COLORS[index % 3],
           transform: `rotate(${angle}deg) translateX(${distance}px)`,
         }}
       />
@@ -39,7 +40,7 @@ export default function CelebrationOverlay() {
       style={{ animation: 'celebration-fade 1.8s ease-out forwards' }}
     >
       <div
-        className="absolute inset-0 bg-[var(--bg-card)]/30 backdrop-blur-sm"
+        className="absolute inset-0 bg-ink/30 backdrop-blur-sm"
         style={{ animation: 'celebration-fade 1.8s ease-out forwards' }}
       />
       <div className="relative pointer-events-none">
@@ -47,15 +48,13 @@ export default function CelebrationOverlay() {
           <Particle key={i} index={i} />
         ))}
         <div
-          className="relative w-20 h-20 rounded-full bg-[#C6A972] flex items-center justify-center shadow-xl shadow-[#C6A972]/30"
+          className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gold-500 text-white shadow-gold"
           style={{ animation: 'celebrate-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' }}
         >
-          <svg className="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-          </svg>
+          <Icon name="Check" size={36} strokeWidth={2.5} />
         </div>
         <p
-          className="text-center text-sm font-medium text-[var(--text-primary)] mt-4"
+          className="mt-4 text-center text-sm font-semibold text-ink"
           style={{ animation: 'celebrate-text 0.5s 0.3s ease-out forwards', opacity: 0 }}
         >
           {celebration.message}

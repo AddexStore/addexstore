@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import Icon from './ui/Icon'
 
 export default function BackButton({ to, className = '' }) {
   const navigate = useNavigate()
@@ -6,12 +7,10 @@ export default function BackButton({ to, className = '' }) {
   return (
     <button
       onClick={() => (to ? navigate(to) : navigate(-1))}
-      className={`inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors min-h-[44px] ${className}`}
+      className={`inline-flex items-center gap-1.5 text-xs font-medium text-sub transition-colors hover:text-ink min-h-[44px] ${className}`}
+      aria-label="Go back"
     >
-      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M19 12H5" />
-        <path d="M12 19l-7-7 7-7" />
-      </svg>
+      <Icon name="ArrowLeft" size="sm" />
       Back
     </button>
   )

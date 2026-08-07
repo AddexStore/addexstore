@@ -10,22 +10,18 @@ export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--bg-card)] text-[var(--text-primary)] font-['Inter']">
+    <div className="flex min-h-screen flex-col bg-page font-sans text-ink">
       <ScrollToTop />
       <AdminNavbar onToggleSidebar={() => setSidebarOpen((prev) => !prev)} />
       <div className="flex flex-1">
-        <AdminSidebar
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-        />
+        <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         {sidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
+          <div className="fixed inset-0 z-30 bg-ink/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
         )}
-        <main className="flex-1 p-6 lg:ml-64 min-h-[calc(100vh-64px)] overflow-y-auto bg-[var(--bg-page)]">
-          <Outlet />
+        <main className="min-h-[calc(100vh-64px)] flex-1 overflow-y-auto bg-page p-4 sm:p-6 lg:ml-72">
+          <div className="mx-auto w-full max-w-[100rem]">
+            <Outlet />
+          </div>
         </main>
       </div>
       <Toast />

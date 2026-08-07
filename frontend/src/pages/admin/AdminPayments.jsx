@@ -2,15 +2,13 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { adminPaymentService } from '../../services/stripeService'
 import { formatDate, formatPrice, getCurrencySymbol } from '../../utils/helpers'
-
-const STATUS_COLORS = {
-  PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  PROCESSING: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  COMPLETED: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  FAILED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  CANCELLED: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
-  REFUNDED: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-}
+import StatusBadge from '../../components/ui/StatusBadge'
+import { Table, THead, TBody, TR, TH, TD } from '../../components/ui/Table'
+import Pagination from '../../components/ui/Pagination'
+import PageHeader from '../../components/ui/PageHeader'
+import EmptyState from '../../components/EmptyState'
+import Button from '../../components/ui/Button'
+import { Input, Select } from '../../components/ui/Input'
 
 export default function AdminPayments() {
   const [payments, setPayments] = useState({ content: [], totalPages: 0, totalElements: 0, page: 0, last: true })
@@ -55,140 +53,125 @@ export default function AdminPayments() {
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-[var(--text-primary)]">Payments</h1>
-        <span className="text-sm text-[var(--text-secondary)]">{payments.totalElements} total</span>
-      </div>
+    <div className="flex h-full flex-col gap-4 py-4">
+      <PageHeader
+        title="Payments"
+        description="Review and search payment transactions across your store."
+        actions={
+          <span className="text-sm text-sub">{payments.totalElements} total</span>
+        }
+      />
 
-      <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] overflow-hidden">
-        <div className="p-4 border-b border-[var(--border-color)]">
-          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
-            <input
-              type="text"
-              placeholder="Search by order number, email, or payment ID..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="flex-1 px-4 py-2.5 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[#C6A972]"
-            />
-            <select
-              value={statusFilter}
-              onChange={(e) => handleStatusChange(e.target.value)}
-              className="px-4 py-2.5 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#C6A972]"
-            >
-              <option value="">All Statuses</option>
-              <option value="PENDING">Pending</option>
-              <option value="PROCESSING">Processing</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="FAILED">Failed</option>
-              <option value="CANCELLED">Cancelled</option>
-              <option value="REFUNDED">Refunded</option>
-            </select>
-            <button type="submit"
-              className="px-6 py-2.5 bg-[#C6A972] text-white text-sm font-medium rounded-lg hover:bg-[#B8965F] transition">
+      <div className="min-h-0 flex-1 overflow-hidden rounded-card border border-line bg-surface shadow-sm">
+        <div className="border-b border-line p-4">
+          <form onSubmit={handleSearch} className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex-1">
+              <Input
+                type="text"
+                placeholder="Search by order number, email, or payment ID..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+              />
+            </div>
+            <div className="sm:w-52">
+              <Select
+                value={statusFilter}
+                onChange={(e) => handleStatusChange(e.target.value)}
+              >
+                <option value="">All Statuses</option>
+                <option value="PENDING">Pending</option>
+                <option value="PROCESSING">Processing</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="FAILED">Failed</option>
+                <option value="CANCELLED">Cancelled</option>
+                <option value="REFUNDED">Refunded</option>
+              </Select>
+            </div>
+            <Button type="submit" icon="Search">
               Search
-            </button>
+            </Button>
           </form>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-[var(--bg-secondary)] text-[var(--text-secondary)] text-xs uppercase tracking-wider">
-                <th className="text-left px-4 py-3 font-medium">ID</th>
-                <th className="text-left px-4 py-3 font-medium">Order</th>
-                <th className="text-left px-4 py-3 font-medium">Customer</th>
-                <th className="text-right px-4 py-3 font-medium">Amount</th>
-                <th className="text-center px-4 py-3 font-medium">Currency</th>
-                <th className="text-center px-4 py-3 font-medium">Method</th>
-                <th className="text-center px-4 py-3 font-medium">Status</th>
-                <th className="text-left px-4 py-3 font-medium">Date</th>
-                <th className="text-center px-4 py-3 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--border-color)]">
-              {loading ? (
-                <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-[var(--text-secondary)]">
-                    <svg className="w-6 h-6 animate-spin mx-auto text-[#C6A972]" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                  </td>
-                </tr>
-              ) : error ? (
-                <tr>
-                  <td colSpan={9} className="px-4 py-12">
-                    <div className="flex flex-col items-center gap-3">
-                      <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
-                      <button onClick={() => fetchPayments()}
-                        className="px-4 py-2 text-sm font-medium text-[var(--text-secondary)] rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition">
-                        Retry
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ) : payments.content?.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-[var(--text-secondary)]">No payments found</td>
-                </tr>
-              ) : (
-                payments.content?.map((payment) => (
-                  <tr key={payment.id} className="hover:bg-[var(--bg-hover)] transition">
-                    <td className="px-4 py-3 text-[var(--text-primary)] font-mono text-xs">#{payment.id}</td>
-                    <td className="px-4 py-3">
-                      {payment.orderNumber ? (
-                        <Link to={`/admin/orders`} className="text-[#C6A972] hover:underline font-mono text-xs">
-                          {payment.orderNumber}
-                        </Link>
-                      ) : (
-                        <span className="text-[var(--text-muted)]">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--text-primary)] text-xs max-w-[150px] truncate">{payment.customerEmail || '-'}</td>
-                    <td className="px-4 py-3 text-right text-[var(--text-primary)] font-medium">
-                      {formatPrice(payment.amount, getCurrencySymbol(payment.currency))}
-                    </td>
-                    <td className="px-4 py-3 text-center text-[var(--text-secondary)] text-xs">{payment.currency}</td>
-                    <td className="px-4 py-3 text-center text-[var(--text-secondary)] text-xs">{payment.paymentMethod}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[payment.status] || 'bg-gray-100 text-gray-800'}`}>
-                        {payment.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-[var(--text-secondary)] text-xs whitespace-nowrap">{formatDate(payment.createdAt)}</td>
-                    <td className="px-4 py-3 text-center">
-                      <Link to={`/admin/payments/${payment.id}`}
-                        className="text-[#C6A972] hover:underline text-xs font-medium">
-                        View
+        {loading ? (
+          <div className="flex h-64 items-center justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-gold-500 border-t-transparent" />
+          </div>
+        ) : error ? (
+          <div className="flex h-64 flex-col items-center justify-center gap-3 px-4">
+            <p className="text-sm text-danger">{error}</p>
+            <Button variant="outline" size="sm" icon="RefreshCw" onClick={() => fetchPayments()}>
+              Retry
+            </Button>
+          </div>
+        ) : payments.content?.length === 0 ? (
+          <div className="flex h-64 items-center justify-center">
+            <EmptyState
+              compact
+              icon="CreditCard"
+              title="No payments found"
+              message="Try adjusting your filters or search query."
+            />
+          </div>
+        ) : (
+          <Table>
+            <THead>
+              <TR className="border-0">
+                <TH>ID</TH>
+                <TH>Order</TH>
+                <TH>Customer</TH>
+                <TH className="text-right">Amount</TH>
+                <TH className="text-center">Currency</TH>
+                <TH className="text-center">Method</TH>
+                <TH className="text-center">Status</TH>
+                <TH>Date</TH>
+                <TH className="text-center">Actions</TH>
+              </TR>
+            </THead>
+            <TBody>
+              {payments.content?.map((payment) => (
+                <TR key={payment.id} className="hover:bg-subtle">
+                  <TD className="font-mono text-xs text-ink">#{payment.id}</TD>
+                  <TD>
+                    {payment.orderNumber ? (
+                      <Link to={`/admin/orders`} className="font-mono text-xs text-gold-600 hover:underline">
+                        {payment.orderNumber}
                       </Link>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                    ) : (
+                      <span className="text-faint">-</span>
+                    )}
+                  </TD>
+                  <TD className="max-w-[150px] truncate text-xs text-ink">{payment.customerEmail || '-'}</TD>
+                  <TD className="text-right font-medium text-ink">
+                    {formatPrice(payment.amount, getCurrencySymbol(payment.currency))}
+                  </TD>
+                  <TD className="text-center text-xs text-sub">{payment.currency}</TD>
+                  <TD className="text-center text-xs text-sub">{payment.paymentMethod}</TD>
+                  <TD className="text-center">
+                    <StatusBadge status={payment.status} />
+                  </TD>
+                  <TD className="whitespace-nowrap text-xs text-sub">{formatDate(payment.createdAt)}</TD>
+                  <TD className="text-center">
+                    <Link to={`/admin/payments/${payment.id}`} className="text-xs font-medium text-gold-600 hover:underline">
+                      View
+                    </Link>
+                  </TD>
+                </TR>
+              ))}
+            </TBody>
+          </Table>
+        )}
 
-        {payments.totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--border-color)]">
-            <button
-              onClick={() => setPage(Math.max(0, page - 1))}
-              disabled={page === 0}
-              className="px-4 py-2 text-sm font-medium text-[var(--text-secondary)] rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition"
-            >
-              Previous
-            </button>
-            <span className="text-sm text-[var(--text-secondary)]">
-              Page {payments.page + 1} of {payments.totalPages}
+        {!loading && !error && payments.totalPages > 1 && (
+          <div className="flex flex-shrink-0 flex-col items-center justify-between gap-3 border-t border-line px-4 py-3 sm:flex-row">
+            <span className="text-[11px] text-sub">
+              {payments.totalElements} payment{payments.totalElements === 1 ? '' : 's'} · Page {page + 1} of {Math.max(1, payments.totalPages)}
             </span>
-            <button
-              onClick={() => setPage(page + 1)}
-              disabled={payments.last}
-              className="px-4 py-2 text-sm font-medium text-[var(--text-secondary)] rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition"
-            >
-              Next
-            </button>
+            <Pagination
+              page={page + 1}
+              totalPages={Math.max(1, payments.totalPages)}
+              onPageChange={(p) => setPage(p - 1)}
+            />
           </div>
         )}
       </div>
