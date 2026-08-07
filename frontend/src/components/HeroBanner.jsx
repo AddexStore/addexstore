@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Link } from 'react-router-dom'
 import { getAssetUrl } from '../services/api'
 import Button from './ui/Button'
 import Icon from './ui/Icon'
@@ -13,7 +12,7 @@ const fallbackSlides = [
     subtitle: 'Discover premium styles only at AddexStores',
     cta: 'Shop Now',
     ctaLink: '/new-arrivals',
-    bgColor: '#12110E',
+    bgColor: '#181410',
     image: '/assets/placeholders/banner.svg',
   },
   {
@@ -21,7 +20,7 @@ const fallbackSlides = [
     subtitle: 'Elevate your lifestyle',
     cta: 'Explore',
     ctaLink: '/products',
-    bgColor: '#2E2B25',
+    bgColor: '#221D16',
     image: '/assets/placeholders/banner.svg',
   },
   {
@@ -29,7 +28,7 @@ const fallbackSlides = [
     subtitle: 'Handpicked for you',
     cta: 'View All',
     ctaLink: '/trending',
-    bgColor: '#1D1B17',
+    bgColor: '#2E2821',
     image: '/assets/placeholders/banner.svg',
   },
 ]
@@ -115,10 +114,11 @@ export default function HeroBanner({ slides: propSlides }) {
 
   const slide = slides[current]
   const hasImage = slide.image && !slide.image.includes('placeholder')
+  const padCount = (n) => String(n + 1).padStart(2, '0')
 
   return (
     <section
-      className="relative h-[80svh] min-h-[520px] w-full overflow-hidden bg-charcoal-900"
+      className="relative h-[86svh] min-h-[560px] w-full overflow-hidden bg-charcoal-900"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onMouseEnter={() => setPaused(true)}
@@ -133,51 +133,61 @@ export default function HeroBanner({ slides: propSlides }) {
           <div
             key={index}
             aria-hidden={!active}
-            className={`absolute inset-0 transition-opacity duration-700 ease-out ${
+            className={`absolute inset-0 transition-opacity duration-[1100ms] ease-out ${
               active ? 'opacity-100 z-10' : 'opacity-0 z-0'
             }`}
           >
-            <div className="absolute inset-0" style={{ backgroundColor: s.bgColor || '#12110E' }}>
+            <div className="absolute inset-0" style={{ backgroundColor: s.bgColor || '#181410' }}>
               {activeSlideImage ? (
                 <img
                   src={getAssetUrl(s.image)}
                   alt={s.title}
-                  className={`h-full w-full object-cover transition-transform duration-[7000ms] ease-out ${
-                    active ? 'scale-110' : 'scale-100'
+                  className={`h-full w-full object-cover transition-transform duration-[9000ms] ease-out ${
+                    active ? 'scale-[1.08]' : 'scale-100'
                   }`}
                   loading={index === 0 ? 'eager' : 'lazy'}
                 />
               ) : (
                 <div className="absolute inset-0">
-                  <div className="absolute inset-0 bg-gradient-to-br from-gold-700/40 via-charcoal-800/40 to-charcoal-900" />
-                  <div className="absolute inset-0 opacity-[0.06] [background-image:radial-gradient(circle_at_center,white_1px,transparent_1px)] [background-size:28px_28px]" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-gold-700/35 via-charcoal-800/45 to-charcoal-900" />
+                  <div className="absolute inset-0 opacity-[0.07] [background-image:radial-gradient(circle_at_center,white_1px,transparent_1px)] [background-size:26px_26px]" />
                 </div>
               )}
             </div>
 
-            <div className="absolute inset-0 bg-gradient-to-r from-charcoal-900/85 via-charcoal-900/45 to-charcoal-900/10" />
-            <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-charcoal-900/70 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-charcoal-900/90 via-charcoal-900/50 to-charcoal-900/15" />
+            <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-charcoal-900/80 to-transparent" />
 
-            <div className="relative z-10 flex h-full items-center">
+            <div className="relative z-10 flex h-full items-end pb-16 sm:pb-20">
               <div className="container-lux">
                 <div
-                  className={`max-w-xl transition-all duration-700 ease-out ${
+                  className={`max-w-2xl transition-all duration-[900ms] ease-out ${
                     active ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
                   }`}
                 >
-                  <p className="eyebrow mb-4 text-gold-300">AddexStores · Curated Luxury</p>
-                  <h1 className="heading-display text-4xl leading-[1.08] text-white sm:text-5xl lg:text-6xl">
+                  <div className={`mb-5 flex items-center gap-3 transition-all delay-100 ${active ? 'opacity-100' : 'opacity-0'}`}>
+                    <span className="h-px w-10 bg-gold-400" />
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gold-300">
+                      AddexStores · Curated Luxury
+                    </p>
+                  </div>
+                  <h1 className="heading-display text-[2.75rem] leading-[1.05] text-white sm:text-6xl lg:text-7xl">
                     {s.title}
                   </h1>
-                  <p className="mt-4 max-w-md text-sm leading-relaxed text-white/80 sm:text-base">
+                  <p className="mt-5 max-w-md text-sm leading-relaxed text-white/75 sm:text-base">
                     {s.subtitle}
                   </p>
-                  <div className="mt-8 flex flex-wrap items-center gap-3">
+                  <div className="mt-9 flex flex-wrap items-center gap-3">
                     <Button to={s.ctaLink || '/'} size="lg" variant="primary">
                       {s.cta || 'Shop Now'}
                       <Icon name="ArrowRight" size={16} />
                     </Button>
-                    <Button to="/products" size="lg" variant="ghost" className="border border-white/25 text-white hover:bg-white/10 hover:text-white">
+                    <Button
+                      to="/products"
+                      size="lg"
+                      variant="ghost"
+                      className="border border-white/25 text-white hover:bg-white/10 hover:text-white"
+                    >
                       Browse Collection
                     </Button>
                   </div>
@@ -190,39 +200,46 @@ export default function HeroBanner({ slides: propSlides }) {
 
       {slides.length > 1 && (
         <>
-          <button
-            onClick={goPrev}
-            className="absolute left-4 top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-md transition-all hover:bg-white/20 sm:flex"
-            aria-label="Previous slide"
-          >
-            <Icon name="ChevronLeft" />
-          </button>
-          <button
-            onClick={goNext}
-            className="absolute right-4 top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-md transition-all hover:bg-white/20 sm:flex"
-            aria-label="Next slide"
-          >
-            <Icon name="ChevronRight" />
-          </button>
+          <div className="absolute right-4 top-4 z-20 flex items-center gap-2 sm:right-6 sm:top-6">
+            <button
+              onClick={goPrev}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 text-white/80 backdrop-blur-md transition-all duration-200 hover:border-gold-400 hover:text-white hover:bg-white/10 active:scale-90"
+              aria-label="Previous slide"
+            >
+              <Icon name="ChevronLeft" size={18} />
+            </button>
+            <button
+              onClick={goNext}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 text-white/80 backdrop-blur-md transition-all duration-200 hover:border-gold-400 hover:text-white hover:bg-white/10 active:scale-90"
+              aria-label="Next slide"
+            >
+              <Icon name="ChevronRight" size={18} />
+            </button>
+          </div>
 
-          <div className="absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2.5 sm:bottom-10">
-            {slides.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => goTo(index)}
-                className={`relative h-1 overflow-hidden rounded-full transition-all duration-300 ${
-                  index === current ? 'w-10 bg-white/30' : 'w-4 bg-white/25 hover:bg-white/40'
-                }`}
-                aria-label={`Go to slide ${index + 1}`}
-              >
-                {index === current && (
-                  <span
-                    className="absolute inset-0 rounded-full bg-white"
-                    style={{ animation: `heroProgress ${AUTOPLAY_MS}ms linear forwards` }}
-                  />
-                )}
-              </button>
-            ))}
+          <div className="absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 items-center gap-4 sm:bottom-12">
+            <span className="hidden font-mono text-[10px] tracking-[0.2em] text-white/50 sm:block">
+              {padCount(current)} / {padCount(slides.length - 1)}
+            </span>
+            <div className="flex items-center gap-2.5">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goTo(index)}
+                  className={`relative h-[3px] overflow-hidden rounded-full transition-all duration-300 ${
+                    index === current ? 'w-12 bg-white/30' : 'w-6 bg-white/25 hover:bg-white/45'
+                  }`}
+                  aria-label={`Go to slide ${index + 1}`}
+                >
+                  {index === current && (
+                    <span
+                      className="absolute inset-0 rounded-full bg-gold-400"
+                      style={{ animation: `heroProgress ${AUTOPLAY_MS}ms linear forwards` }}
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
 
           <style>{`
