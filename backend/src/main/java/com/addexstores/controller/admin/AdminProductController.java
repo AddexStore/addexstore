@@ -39,7 +39,7 @@ public class AdminProductController {
     @PutMapping("/{id}")
     @Operation(summary = "Update product")
     public ApiResponse<ProductResponse> updateProduct(@PathVariable Long id,
-                                                       @Valid @RequestBody ProductRequest request) {
+                                                       @RequestBody ProductRequest request) {
         return ApiResponse.success(productService.updateProduct(id, request));
     }
 

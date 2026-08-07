@@ -43,15 +43,15 @@ public class ProductRequest {
     private Integer discountPercentage;
 
     @Min(value = 0, message = "Stock cannot be negative")
-    private int stock;
+    private Integer stock;
 
-    private boolean featured;
+    private Boolean featured;
 
-    private boolean trending;
+    private Boolean trending;
 
-    private boolean newArrival;
+    private Boolean newArrival;
 
-    private boolean onSale;
+    private Boolean onSale;
 
     private LocalDateTime saleEndDate;
 

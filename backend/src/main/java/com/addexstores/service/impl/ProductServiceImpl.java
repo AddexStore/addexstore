@@ -137,7 +137,7 @@ public class ProductServiceImpl implements ProductService {
         validateImageUrls(request.getImages());
         validateVariants(request.getVariants());
 
-        if (request.getStock() < 0) {
+        if (request.getStock() != null && request.getStock() < 0) {
             throw new BadRequestException("Stock cannot be negative");
         }
         if (request.getPrice() == null || request.getPrice().signum() <= 0) {
@@ -168,11 +168,11 @@ public class ProductServiceImpl implements ProductService {
                 .price(request.getPrice())
                 .originalPrice(request.getOriginalPrice())
                 .discountPercentage(request.getDiscountPercentage())
-                .stock(request.getStock())
-                .featured(request.isFeatured())
-                .trending(request.isTrending())
-                .isNewArrival(request.isNewArrival())
-                .isOnSale(request.isOnSale())
+                .stock(request.getStock() != null ? request.getStock() : 0)
+                .featured(Boolean.TRUE.equals(request.getFeatured()))
+                .trending(Boolean.TRUE.equals(request.getTrending()))
+                .isNewArrival(Boolean.TRUE.equals(request.getNewArrival()))
+                .isOnSale(Boolean.TRUE.equals(request.getOnSale()))
                 .saleEndDate(request.getSaleEndDate())
                 .category(category)
                 .subCategory(subCategory)
@@ -234,7 +234,7 @@ public class ProductServiceImpl implements ProductService {
         validateImageUrls(request.getImages());
         validateVariants(request.getVariants());
 
-        if (request.getStock() < 0) {
+        if (request.getStock() != null && request.getStock() < 0) {
             throw new BadRequestException("Stock cannot be negative");
         }
         if (request.getPrice() != null && request.getPrice().signum() <= 0) {
@@ -269,12 +269,24 @@ public class ProductServiceImpl implements ProductService {
         if (request.getDiscountPercentage() != null) {
             product.setDiscountPercentage(request.getDiscountPercentage());
         }
-        product.setStock(request.getStock());
-        product.setFeatured(request.isFeatured());
-        product.setTrending(request.isTrending());
-        product.setNewArrival(request.isNewArrival());
-        product.setOnSale(request.isOnSale());
-        product.setSaleEndDate(request.getSaleEndDate());
+        if (request.getStock() != null) {
+            product.setStock(request.getStock());
+        }
+        if (request.getFeatured() != null) {
+            product.setFeatured(request.getFeatured());
+        }
+        if (request.getTrending() != null) {
+            product.setTrending(request.getTrending());
+        }
+        if (request.getNewArrival() != null) {
+            product.setNewArrival(request.getNewArrival());
+        }
+        if (request.getOnSale() != null) {
+            product.setOnSale(request.getOnSale());
+        }
+        if (request.getSaleEndDate() != null) {
+            product.setSaleEndDate(request.getSaleEndDate());
+        }
         if (request.getActive() != null) {
             product.setActive(request.getActive());
         }
