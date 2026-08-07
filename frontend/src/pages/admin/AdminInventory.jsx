@@ -24,7 +24,7 @@ export default function AdminInventory() {
         let totalPages = 1
         while (page < totalPages) {
           const res = await productService.getProducts({ page, size: 100 })
-          const data = res?.data || {}
+          const data = res || {}
           all = all.concat(Array.isArray(data.content) ? data.content : [])
           totalPages = data.totalPages ?? page + 1
           page += 1
