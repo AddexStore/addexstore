@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { getAssetUrl } from '../services/api'
-
-const STORAGE_KEY = 'sifr_banners'
+import { bannerService } from '../services/bannerService'
 
 const fallbackSlides = [
   {
@@ -31,6 +30,17 @@ const fallbackSlides = [
   },
 ]
 
+function toSlide(b) {
+  return {
+    title: b.title,
+    subtitle: b.subtitle || '',
+    cta: b.cta || 'Shop Now',
+    ctaLink: b.linkUrl || '/',
+    bgColor: b.backgroundColor || '#F5F2ED',
+    image: b.imageUrl || '',
+  }
+}
+
 export default function HeroBanner({ slides: propSlides }) {
   const [current, setCurrent] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
@@ -42,26 +52,25 @@ export default function HeroBanner({ slides: propSlides }) {
       setSlides(propSlides)
       return
     }
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        const active = parsed.filter((b) => b.active)
-        if (active.length > 0) {
-          setSlides(active.map((b) => ({
-            title: b.title,
-            subtitle: b.subtitle,
-            cta: b.cta,
-            ctaLink: b.ctaLink,
-            bgColor: b.bgColor,
-            image: b.image,
-          })))
-          return
-        }
-      }
-    } catch {}
-    setSlides(fallbackSlides)
+    let active = true
+    bannerService
+      .getActiveBanners()
+      .then((res) => {
+        if (!active) return
+        const items = (res.data || []).filter((b) => b.active)
+        setSlides(items.length > 0 ? items.map(toSlide) : fallbackSlides)
+      })
+      .catch(() => {
+        if (active) setSlides(fallbackSlides)
+      })
+    return () => {
+      active = false
+    }
   }, [propSlides])
+
+  useEffect(() => {
+    setCurrent(0)
+  }, [slides.length])
 
   const goTo = useCallback((index) => {
     if (isTransitioning) return

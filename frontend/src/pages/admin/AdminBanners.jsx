@@ -1,116 +1,126 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import BackButton from '../../components/BackButton'
 import { getAssetUrl } from '../../services/api'
+import { bannerService } from '../../services/bannerService'
+import { useToast } from '../../context/ToastContext'
 
-const STORAGE_KEY = 'sifr_banners'
-
-const defaultBanners = [
-  {
-    id: 1,
-    title: 'New Arrivals',
-    subtitle: 'Discover premium styles only at AddexStores',
-    cta: 'Shop Now',
-    ctaLink: '/new-arrivals',
-    bgColor: '#F5F2ED',
-    image: '/assets/placeholders/banner.svg',
-    active: true,
-    order: 0,
-  },
-  {
-    id: 2,
-    title: 'Luxury Collection',
-    subtitle: 'Elevate your lifestyle',
-    cta: 'Explore',
-    ctaLink: '/products',
-    bgColor: '#F5F2ED',
-    image: '/assets/placeholders/banner.svg',
-    active: true,
-    order: 1,
-  },
-  {
-    id: 3,
-    title: 'Trending Products',
-    subtitle: 'Handpicked for you',
-    cta: 'View All',
-    ctaLink: '/trending',
-    bgColor: '#F5F2ED',
-    image: '/assets/placeholders/banner.svg',
-    active: true,
-    order: 2,
-  },
-]
-
-let nextId = 4
-
-function loadBanners() {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      const parsed = JSON.parse(stored)
-      const maxId = parsed.reduce((max, b) => Math.max(max, b.id || 0), 0)
-      if (maxId >= nextId) nextId = maxId + 1
-      return parsed
-    }
-  } catch {}
-  return JSON.parse(JSON.stringify(defaultBanners))
+const emptyForm = {
+  title: '',
+  subtitle: '',
+  cta: 'Shop Now',
+  ctaLink: '/products',
+  bgColor: '#F5F2ED',
+  image: '',
+  active: true,
 }
 
-function saveBanners(banners) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(banners))
+function bannerToForm(b) {
+  return {
+    id: b.id,
+    title: b.title || '',
+    subtitle: b.subtitle || '',
+    cta: b.cta || 'Shop Now',
+    ctaLink: b.linkUrl || '/products',
+    bgColor: b.backgroundColor || '#F5F2ED',
+    image: b.imageUrl || '',
+    active: b.active,
+    sortOrder: b.sortOrder ?? 0,
+  }
 }
 
-function getUniqueId() {
-  return nextId++
+function formToPayload(form) {
+  return {
+    title: form.title,
+    subtitle: form.subtitle,
+    cta: form.cta,
+    imageUrl: form.image,
+    linkUrl: form.ctaLink,
+    backgroundColor: form.bgColor,
+    active: form.active,
+    sortOrder: form.sortOrder,
+  }
+}
+
+function isSameForm(a, b) {
+  return (
+    a.title === b.title &&
+    a.subtitle === b.subtitle &&
+    a.cta === b.cta &&
+    a.ctaLink === b.ctaLink &&
+    a.bgColor === b.bgColor &&
+    a.image === b.image &&
+    a.active === b.active
+  )
 }
 
 export default function AdminBanners() {
+  const { showToast } = useToast()
   const [banners, setBanners] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
-  const [preview, setPreview] = useState(null)
-  const [form, setForm] = useState({
-    title: '',
-    subtitle: '',
-    cta: 'Shop Now',
-    ctaLink: '/products',
-    bgColor: '#F5F2ED',
-    image: '',
-    active: true,
-  })
+  const [editInitial, setEditInitial] = useState(null)
+  const [form, setForm] = useState(emptyForm)
+  const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+
+  const fetchBanners = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const res = await bannerService.getAdminBanners()
+      setBanners((res.data || []).map(bannerToForm))
+    } catch (e) {
+      setError(e.message || 'Failed to load banners')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    setBanners(loadBanners())
-  }, [])
+    fetchBanners()
+  }, [fetchBanners])
 
   const activeBanners = banners.filter((b) => b.active)
   const inactiveBanners = banners.filter((b) => !b.active)
 
-  function reorder(banners) {
-    return banners.map((b, i) => ({ ...b, order: i }))
+  const isDirty = editing && editInitial ? !isSameForm(form, editInitial) : true
+  const validTitle = form.title.trim().length > 0
+  const validImage = form.image.length > 0
+  const canSubmit = isDirty && validTitle && validImage
+
+  function resetForm() {
+    setEditing(null)
+    setEditInitial(null)
+    setShowForm(false)
+    setForm(emptyForm)
   }
 
-  function handleSave() {
-    if (!form.title.trim()) return
-    const image = preview || form.image || '/assets/placeholders/banner.svg'
-    if (editing) {
-      const updated = banners.map((b) =>
-        b.id === editing.id
-          ? { ...form, id: b.id, order: b.order, image }
-          : b
-      )
-      setBanners(reorder(updated))
-      saveBanners(reorder(updated))
-    } else {
-      const newBanner = { ...form, id: getUniqueId(), image, order: banners.length }
-      const updated = [...banners, newBanner]
-      setBanners(reorder(updated))
-      saveBanners(reorder(updated))
+  async function handleSave() {
+    if (saving || !canSubmit) return
+    setSaving(true)
+    try {
+      const payload = formToPayload(form)
+      if (editing) {
+        await bannerService.updateBanner(editing.id, payload)
+        showToast('Banner updated successfully', 'success')
+      } else {
+        await bannerService.createBanner(payload)
+        showToast('Banner created successfully', 'success')
+      }
+      await fetchBanners()
+      resetForm()
+    } catch (e) {
+      showToast(e.message || 'Failed to save banner', 'error')
+    } finally {
+      setSaving(false)
     }
-    resetForm()
   }
 
   function handleEdit(banner) {
     setEditing(banner)
+    setEditInitial({ ...banner })
     setForm({
       title: banner.title,
       subtitle: banner.subtitle,
@@ -120,61 +130,70 @@ export default function AdminBanners() {
       image: banner.image,
       active: banner.active,
     })
-    setPreview(null)
     setShowForm(true)
   }
 
-  function handleDelete(id) {
-    const updated = banners.filter((b) => b.id !== id)
-    setBanners(reorder(updated))
-    saveBanners(reorder(updated))
+  async function handleDelete(id) {
+    if (!window.confirm('Delete this banner?')) return
+    try {
+      await bannerService.deleteBanner(id)
+      showToast('Banner deleted', 'success')
+      await fetchBanners()
+    } catch (e) {
+      showToast(e.message || 'Failed to delete banner', 'error')
+    }
   }
 
-  function handleToggleActive(id) {
-    const updated = banners.map((b) =>
-      b.id === id ? { ...b, active: !b.active } : b
-    )
-    setBanners(updated)
-    saveBanners(updated)
+  async function handleToggleActive(banner) {
+    try {
+      await bannerService.updateBanner(banner.id, formToPayload({ ...banner, active: !banner.active }))
+      showToast(`Banner ${banner.active ? 'deactivated' : 'activated'}`, 'success')
+      await fetchBanners()
+    } catch (e) {
+      showToast(e.message || 'Failed to update banner', 'error')
+    }
+  }
+
+  async function persistOrder(ordered) {
+    try {
+      await bannerService.reorderBanners(ordered.map((b) => b.id))
+      await fetchBanners()
+    } catch (e) {
+      showToast(e.message || 'Failed to reorder banners', 'error')
+      await fetchBanners()
+    }
   }
 
   function handleMoveUp(index) {
     if (index === 0) return
     const updated = [...banners]
     ;[updated[index - 1], updated[index]] = [updated[index], updated[index - 1]]
-    setBanners(reorder(updated))
-    saveBanners(reorder(updated))
+    setBanners(updated.map((b, i) => ({ ...b, sortOrder: i })))
+    persistOrder(updated)
   }
 
   function handleMoveDown(index) {
     if (index === banners.length - 1) return
     const updated = [...banners]
     ;[updated[index], updated[index + 1]] = [updated[index + 1], updated[index]]
-    setBanners(reorder(updated))
-    saveBanners(reorder(updated))
+    setBanners(updated.map((b, i) => ({ ...b, sortOrder: i })))
+    persistOrder(updated)
   }
 
-  function handleImageUpload(e) {
+  async function handleImageUpload(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = (ev) => setPreview(ev.target.result)
-    reader.readAsDataURL(file)
-  }
-
-  function resetForm() {
-    setEditing(null)
-    setShowForm(false)
-    setPreview(null)
-    setForm({
-      title: '',
-      subtitle: '',
-      cta: 'Shop Now',
-      ctaLink: '/products',
-    bgColor: '#F5F2ED',
-    image: '',
-    active: true,
-    })
+    setUploading(true)
+    try {
+      const url = await bannerService.uploadImage(file)
+      setForm((prev) => ({ ...prev, image: url }))
+      showToast('Image uploaded', 'success')
+    } catch (err) {
+      showToast(err.message || 'Failed to upload image', 'error')
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
   }
 
   return (
@@ -258,16 +277,18 @@ export default function AdminBanners() {
           </div>
 
           <div>
-            <label className="block text-[10px] text-[var(--text-secondary)] font-medium uppercase tracking-wider mb-1">Image</label>
+            <label className="block text-[10px] text-[var(--text-secondary)] font-medium uppercase tracking-wider mb-1">Image *</label>
             <input
               type="file"
               accept="image/*"
               onChange={handleImageUpload}
-              className="w-full text-xs text-[var(--text-secondary)] file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:bg-[var(--bg-hover)] file:text-[var(--text-primary)] hover:file:bg-[#E5E7EB] file:transition file:cursor-pointer cursor-pointer"
+              disabled={uploading}
+              className="w-full text-xs text-[var(--text-secondary)] file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:bg-[var(--bg-hover)] file:text-[var(--text-primary)] hover:file:bg-[#E5E7EB] file:transition file:cursor-pointer cursor-pointer disabled:opacity-50"
             />
-            {(preview || form.image) && (
+            {uploading && <p className="text-[10px] text-[#C6A972] mt-1">Uploading image...</p>}
+            {form.image && (
               <img
-                src={preview || getAssetUrl(form.image)}
+                src={getAssetUrl(form.image)}
                 alt="Preview"
                 className="mt-2 h-20 w-auto rounded object-cover"
                 onError={(e) => { e.target.style.display = 'none' }}
@@ -284,20 +305,37 @@ export default function AdminBanners() {
             </button>
             <button
               onClick={handleSave}
-              className="px-4 py-2 bg-[#C6A972] text-white text-xs font-medium rounded-md hover:bg-[#B8965F] transition"
+              disabled={saving || !canSubmit}
+              className={`px-4 py-2 text-xs font-medium rounded-md transition ${saving || !canSubmit ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)] cursor-not-allowed' : 'bg-[#C6A972] text-white hover:bg-[#B8965F]'}`}
             >
-              {editing ? 'Update' : 'Create'}
+              {saving ? 'Saving...' : editing ? 'Update' : 'Create'}
             </button>
           </div>
         </div>
       )}
 
       <div className="flex-1 min-h-0 overflow-auto space-y-2">
-        {banners.length === 0 && (
+        {loading && (
+          <p className="text-[var(--text-secondary)] text-xs text-center py-8">Loading banners...</p>
+        )}
+
+        {!loading && error && (
+          <div className="text-center py-8 space-y-3">
+            <p className="text-[var(--text-secondary)] text-xs">{error}</p>
+            <button
+              onClick={fetchBanners}
+              className="px-4 py-2 bg-[#C6A972] text-white text-xs font-medium rounded-md hover:bg-[#B8965F] transition"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && banners.length === 0 && (
           <p className="text-[var(--text-secondary)] text-xs text-center py-8">No banners yet. Create your first banner.</p>
         )}
 
-        {activeBanners.length > 0 && (
+        {!loading && !error && activeBanners.length > 0 && (
           <>
             <p className="text-[10px] text-[var(--text-secondary)] font-medium uppercase tracking-wider">Active</p>
             {activeBanners.map((banner, index) => (
@@ -308,7 +346,7 @@ export default function AdminBanners() {
                 total={banners.length}
                 onEdit={() => handleEdit(banner)}
                 onDelete={() => handleDelete(banner.id)}
-                onToggleActive={() => handleToggleActive(banner.id)}
+                onToggleActive={() => handleToggleActive(banner)}
                 onMoveUp={() => handleMoveUp(index)}
                 onMoveDown={() => handleMoveDown(index)}
               />
@@ -316,7 +354,7 @@ export default function AdminBanners() {
           </>
         )}
 
-        {inactiveBanners.length > 0 && (
+        {!loading && !error && inactiveBanners.length > 0 && (
           <>
             <p className="text-[10px] text-[var(--text-secondary)] font-medium uppercase tracking-wider mt-3">Inactive</p>
             {inactiveBanners.map((banner) => (
@@ -327,7 +365,7 @@ export default function AdminBanners() {
                 total={banners.length}
                 onEdit={() => handleEdit(banner)}
                 onDelete={() => handleDelete(banner.id)}
-                onToggleActive={() => handleToggleActive(banner.id)}
+                onToggleActive={() => handleToggleActive(banner)}
                 onMoveUp={() => handleMoveUp(banners.indexOf(banner))}
                 onMoveDown={() => handleMoveDown(banners.indexOf(banner))}
               />

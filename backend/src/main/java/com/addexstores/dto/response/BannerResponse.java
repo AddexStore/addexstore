@@ -16,8 +16,10 @@ public class BannerResponse {
     private Long id;
     private String title;
     private String subtitle;
+    private String cta;
     private String imageUrl;
     private String linkUrl;
+    private String backgroundColor;
     private int sortOrder;
     private boolean active;
     private LocalDateTime createdAt;

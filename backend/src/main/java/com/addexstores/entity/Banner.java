@@ -25,11 +25,16 @@ public class Banner {
 
     private String subtitle;
 
+    private String cta;
+
     @Column(name = "image", nullable = false)
     private String imageUrl;
 
     @Column(name = "cta_link")
     private String linkUrl;
+
+    @Column(name = "bg_color")
+    private String backgroundColor;
 
     @Column(nullable = false)
     @Builder.Default

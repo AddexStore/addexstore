@@ -10,6 +10,8 @@ public class BannerRequest {
 
     private String subtitle;
 
+    private String cta;
+
     @NotBlank
     private String imageUrl;
 
@@ -19,7 +21,7 @@ public class BannerRequest {
 
     private String textColor;
 
-    private int sortOrder;
+    private Integer sortOrder;
 
-    private boolean active;
+    private Boolean active;
 }
