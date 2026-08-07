@@ -19,7 +19,7 @@ const ITEMS_PER_PAGE = 12
 
 const COLOR_MAP = {
   Black: '#000', White: '#fff', Navy: '#1e3a5f', Red: '#dc2626',
-  Gold: '#C2A366', Beige: '#f5f5dc', Brown: '#8b4513', Gray: '#6b7280',
+  Gold: '#C6A972', Beige: '#f5f5dc', Brown: '#8b4513', Gray: '#6b7280',
   Pink: '#e8a0b4', Blue: '#3b82f6', Green: '#22c55e', Purple: '#7c3aed',
 }
 

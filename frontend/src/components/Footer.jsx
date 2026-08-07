@@ -59,10 +59,7 @@ export default function Footer() {
         <div className="container-lux">
           <div className="flex flex-col gap-6 py-10 sm:py-12 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-sm">
-              <div className="mb-2 flex items-center gap-3">
-                <span className="h-px w-8 bg-gold-400" />
-                <p className="eyebrow">The {SITE_NAME} Journal</p>
-              </div>
+              <p className="eyebrow mb-2">The {SITE_NAME} Journal</p>
               <h3 className="heading-display text-2xl text-ink">Join the {SITE_NAME} World</h3>
               <p className="mt-1.5 text-sm text-sub">
                 Subscribe for exclusive access to new drops and private offers.
@@ -142,15 +139,6 @@ export default function Footer() {
             </div>
           ))}
         </div>
-      </div>
-
-      <div className="relative overflow-hidden border-t border-line">
-        <p
-          aria-hidden="true"
-          className="heading-display select-none whitespace-nowrap text-center text-[16vw] leading-none tracking-[0.02em] text-charcoal-100/70 dark:text-charcoal-800/60 lg:text-[12rem]"
-        >
-          {SITE_NAME}
-        </p>
       </div>
 
       <div className="border-t border-line">

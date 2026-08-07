@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
@@ -54,7 +54,6 @@ export default function Navbar() {
   const { wishlistItems } = useWishlist()
   const { getUserUnreadCount } = useNotifications()
   const navigate = useNavigate()
-  const location = useLocation()
 
   const [scrolled, setScrolled] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
@@ -87,9 +86,8 @@ export default function Navbar() {
 
   return (
     <nav className={`sticky top-0 z-50 border-b border-line/80 bg-surface/90 backdrop-blur-xl transition-all duration-300 ${scrolled ? 'shadow-sm' : ''}`}>
-      <div className="relative overflow-hidden bg-charcoal-900 text-center">
-        <p className="px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.18em] text-gold-300">
-          <Icon name="Sparkles" size={12} className="mr-1.5 inline -mt-0.5 text-gold-400" />
+      <div className="bg-charcoal-900 text-center">
+        <p className="px-4 py-2 text-[11px] font-medium uppercase tracking-[0.16em] text-gold-300">
           Complimentary shipping on orders over $100 · Worldwide delivery
         </p>
       </div>
@@ -103,25 +101,15 @@ export default function Navbar() {
           </Link>
 
           <div className="hidden items-center gap-7 lg:flex">
-            {NAV_LINKS.map((link) => {
-              const isActive = location.pathname === link.path
-              return (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`relative text-sm font-medium transition-colors hover:text-ink ${
-                    isActive ? 'text-ink' : 'text-sub'
-                  }`}
-                >
-                  {link.name}
-                  <span
-                    className={`absolute -bottom-1.5 left-0 h-[2px] bg-gold-500 transition-all duration-300 ${
-                      isActive ? 'w-full' : 'w-0'
-                    }`}
-                  />
-                </Link>
-              )
-            })}
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className="text-sm font-medium text-sub transition-colors hover:text-ink hover:underline hover:underline-offset-8 hover:decoration-gold-500 hover:decoration-2"
+              >
+                {link.name}
+              </Link>
+            ))}
             {isAdmin && (
               <Link to="/admin" className="text-sm font-medium text-gold-600 transition-colors hover:text-gold-700">
                 Admin
