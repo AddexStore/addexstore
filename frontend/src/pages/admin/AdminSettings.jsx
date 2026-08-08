@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useBlocker } from 'react-router-dom'
 import { useToast } from '../../context/ToastContext'
 import { useSettings } from '../../context/SettingsContext'
 import { settingsService } from '../../services/settingsService'
@@ -141,8 +140,6 @@ export default function AdminSettings() {
     window.addEventListener('beforeunload', handler)
     return () => window.removeEventListener('beforeunload', handler)
   }, [dirty])
-
-  const blocker = useBlocker(dirty)
 
   const update = (key, value) => {
     setSettings((prev) => ({ ...prev, [key]: value }))
@@ -557,31 +554,6 @@ export default function AdminSettings() {
                 className="px-4 py-1.5 rounded-lg text-xs font-semibold text-white bg-[#C6A972] hover:bg-[#B8965F]"
               >
                 Change Currency
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {blocker && blocker.state === 'blocked' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-[var(--bg-card)] border border-[#2A2A2A] rounded-xl p-5 max-w-md w-full">
-            <h3 className="text-sm font-semibold text-white mb-2">Unsaved changes</h3>
-            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-              You have unsaved changes. If you leave now, they will be lost.
-            </p>
-            <div className="flex justify-end gap-2 mt-5">
-              <button
-                onClick={() => blocker.reset()}
-                className="px-4 py-1.5 rounded-lg text-xs font-semibold text-white bg-[#C6A972] hover:bg-[#B8965F]"
-              >
-                Stay
-              </button>
-              <button
-                onClick={() => blocker.proceed()}
-                className="px-4 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] bg-[var(--bg-card)] border border-[#2A2A2A] hover:text-white"
-              >
-                Discard
               </button>
             </div>
           </div>
