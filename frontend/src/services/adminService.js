@@ -16,4 +16,7 @@ export const adminService = {
   updateUserStatus: (id, blocked) => api.patch(`/admin/users/${id}/status`, { blocked }).then(r => r.data),
   updateUserRole: (id, role) => api.patch(`/admin/users/${id}/role`, { role }).then(r => r.data),
   deleteUser: (id) => api.delete(`/admin/users/${id}`),
+  getPaymentGateways: () => api.get('/admin/payment-gateways').then(r => r.data),
+  updatePaymentGateway: (id, data) => api.put(`/admin/payment-gateways/${id}`, data).then(r => r.data),
+  togglePaymentGateway: (id) => api.patch(`/admin/payment-gateways/${id}/toggle`).then(r => r.data),
 };

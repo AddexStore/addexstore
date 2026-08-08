@@ -5,7 +5,6 @@ import { checkoutService } from '../services/checkoutService'
 import { cartService } from '../services/cartService'
 import StripePaymentElement from './StripePaymentElement'
 import { useToast } from '../context/ToastContext'
-import { getStoreCurrency } from '../utils/currency'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '')
 
@@ -32,7 +31,6 @@ export default function StripeCheckout({ shipping, onSuccess, onError, onSyncCar
           state: shipping.state,
           zipCode: shipping.zip,
           country: shipping.country,
-          currency: getStoreCurrency(),
           paymentMethod: 'STRIPE',
         })
         const data = res.data || res

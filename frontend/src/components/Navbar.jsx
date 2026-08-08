@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
 import { useNotifications } from '../context/NotificationContext'
+import { useSettings } from '../context/SettingsContext'
 import SearchBar from './SearchBar'
 import ThemeToggle from './ThemeToggle'
 
@@ -11,6 +12,7 @@ export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth()
   const { cartItems } = useCart()
   const { wishlistItems } = useWishlist()
+  const { siteName } = useSettings()
   const navigate = useNavigate()
 
   const [scrolled, setScrolled] = useState(false)
@@ -56,7 +58,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-14 lg:h-20">
           <Link to="/" className="flex-shrink-0 mr-4 lg:mr-10">
             <span className="font-playfair-display text-lg sm:text-xl lg:text-2xl font-bold whitespace-nowrap" style={{ color: '#C6A972' }}>
-              Addex Store
+              {siteName}
             </span>
           </Link>
 

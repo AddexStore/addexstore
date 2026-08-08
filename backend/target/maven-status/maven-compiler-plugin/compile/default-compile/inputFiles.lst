@@ -90,6 +90,7 @@ D:\addexStores\backend\src\main\java\com\addexstores\entity\SubCategory.java
 D:\addexStores\backend\src\main\java\com\addexstores\enums\NotificationType.java
 D:\addexStores\backend\src\main\java\com\addexstores\entity\ProductVariant.java
 D:\addexStores\backend\src\main\java\com\addexstores\util\ApiResponseBuilder.java
+D:\addexStores\backend\src\main\java\com\addexstores\dto\request\ProductPatchRequest.java
 D:\addexStores\backend\src\main\java\com\addexstores\dto\response\ReviewResponse.java
 D:\addexStores\backend\src\main\java\com\addexstores\controller\admin\AdminProductController.java
 D:\addexStores\backend\src\main\java\com\addexstores\repository\UserRepository.java
@@ -184,6 +185,7 @@ D:\addexStores\backend\src\main\java\com\addexstores\dto\response\CheckoutQuoteR
 D:\addexStores\backend\src\main\java\com\addexstores\dto\request\UpdateUserRoleRequest.java
 D:\addexStores\backend\src\main\java\com\addexstores\controller\WishlistController.java
 D:\addexStores\backend\src\main\java\com\addexstores\controller\NotificationController.java
+D:\addexStores\backend\src\main\java\com\addexstores\controller\SettingsController.java
 D:\addexStores\backend\src\main\java\com\addexstores\dto\request\LoginRequest.java
 D:\addexStores\backend\src\main\java\com\addexstores\security\CurrentUser.java
 D:\addexStores\backend\src\main\java\com\addexstores\controller\StripeWebhookController.java
@@ -201,6 +203,8 @@ D:\addexStores\backend\src\main\java\com\addexstores\dto\response\NotificationRe
 D:\addexStores\backend\src\main\java\com\addexstores\mapper\UserMapper.java
 D:\addexStores\backend\src\main\java\com\addexstores\config\CacheConfig.java
 D:\addexStores\backend\src\main\java\com\addexstores\dto\response\BannerResponse.java
+D:\addexStores\backend\src\main\java\com\addexstores\dto\response\PaymentMethodInfo.java
+D:\addexStores\backend\src\main\java\com\addexstores\dto\response\PublicSettingsResponse.java
 D:\addexStores\backend\src\main\java\com\addexstores\service\ReviewService.java
 D:\addexStores\backend\src\main\java\com\addexstores\service\CategoryService.java
 D:\addexStores\backend\src\main\java\com\addexstores\mapper\CategoryMapper.java

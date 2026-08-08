@@ -54,7 +54,6 @@ export default function RazorpayCheckout({ shipping, onSuccess, onError, onSyncC
           state: shipping.state,
           zipCode: shipping.zip,
           country: shipping.country,
-          currency: getStoreCurrency(),
           paymentMethod: 'RAZORPAY',
         })
         const data = res.data || res

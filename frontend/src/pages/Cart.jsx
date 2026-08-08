@@ -1,22 +1,57 @@
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { formatPrice } from '../utils/helpers'
 import { getAssetUrl } from '../services/api'
+import { checkoutService } from '../services/checkoutService'
 import ImageWithFallback from '../components/ImageWithFallback'
 import QuantitySelector from '../components/QuantitySelector'
 import EmptyState from '../components/EmptyState'
 import BackButton from '../components/BackButton'
 
-const SHIPPING_THRESHOLD = 100
+const ESTIMATE_COUNTRY = 'US'
 
 export default function Cart() {
   const { cartItems, removeFromCart, updateQuantity, getCartTotal } = useCart()
   const navigate = useNavigate()
+  const [quote, setQuote] = useState(null)
+  const [quoteLoading, setQuoteLoading] = useState(false)
 
   const subtotal = getCartTotal()
-  const shipping = subtotal >= SHIPPING_THRESHOLD || subtotal === 0 ? 0 : 15
-  const tax = subtotal * 0.08
-  const total = subtotal + shipping + tax
+
+  useEffect(() => {
+    if (cartItems.length === 0) {
+      setQuote(null)
+      return
+    }
+    let cancelled = false
+    setQuoteLoading(true)
+    checkoutService.getQuote({
+      country: ESTIMATE_COUNTRY,
+      items: cartItems.map((item) => ({
+        productId: item.id,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+    })
+      .then((res) => {
+        if (!cancelled) setQuote(res.data || res)
+      })
+      .catch(() => {
+        if (!cancelled) setQuote(null)
+      })
+      .finally(() => {
+        if (!cancelled) setQuoteLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [cartItems])
+
+  const shipping = quote ? Number(quote.shippingCost) : null
+  const tax = quote ? Number(quote.tax) : null
+  const total = quote ? Number(quote.total) : null
+  const freeShipping = Boolean(quote?.freeShipping)
 
   const handleCheckout = () => {
     navigate('/checkout')
@@ -138,30 +173,50 @@ export default function Cart() {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between text-[var(--text-secondary)]">
                   <span>Subtotal</span>
-                  <span>{formatPrice(subtotal)}</span>
+                  <span>{formatPrice(quote ? Number(quote.subtotal) : subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-[var(--text-secondary)]">
                   <span>Shipping</span>
                   <span>
-                    {shipping === 0 ? (
+                    {quoteLoading ? (
+                      <span className="inline-block w-16 h-3 bg-[var(--bg-hover)] rounded animate-pulse" />
+                    ) : freeShipping ? (
                       <span className="text-[#2F855A] font-medium">Free</span>
-                    ) : (
+                    ) : shipping != null ? (
                       formatPrice(shipping)
+                    ) : (
+                      <span className="text-[var(--text-muted)]">Calculated at checkout</span>
                     )}
                   </span>
                 </div>
-                {subtotal > 0 && subtotal < SHIPPING_THRESHOLD && (
-                  <p className="text-[11px] text-[var(--text-secondary)]">
-                    Add {formatPrice(SHIPPING_THRESHOLD - subtotal)} more for free shipping
+                <div className="flex justify-between text-[var(--text-secondary)]">
+                  <span>Tax</span>
+                  <span>
+                    {quoteLoading ? (
+                      <span className="inline-block w-16 h-3 bg-[var(--bg-hover)] rounded animate-pulse" />
+                    ) : tax != null ? (
+                      formatPrice(tax)
+                    ) : (
+                      <span className="text-[var(--text-muted)]">Calculated at checkout</span>
+                    )}
+                  </span>
+                </div>
+                {freeShipping && (
+                  <p className="text-[11px] text-[#2F855A] font-medium">
+                    Free shipping unlocked for this order
                   </p>
                 )}
-                <div className="flex justify-between text-[var(--text-secondary)]">
-                  <span>Tax (8%)</span>
-                  <span>{formatPrice(tax)}</span>
-                </div>
                 <div className="border-t border-[var(--border-color)] pt-3 flex justify-between font-semibold text-[var(--text-primary)]">
                   <span>Total</span>
-                  <span>{formatPrice(total)}</span>
+                  <span>
+                    {quoteLoading ? (
+                      <span className="inline-block w-20 h-3 bg-[var(--bg-hover)] rounded animate-pulse" />
+                    ) : total != null ? (
+                      formatPrice(total)
+                    ) : (
+                      <span className="text-[var(--text-muted)]">Calculated at checkout</span>
+                    )}
+                  </span>
                 </div>
               </div>
 
@@ -189,7 +244,9 @@ export default function Cart() {
       <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-[var(--bg-secondary)] border-t border-[var(--border-color)] px-4 py-3">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm text-[var(--text-secondary)]">Total</span>
-          <span className="text-lg font-bold text-[var(--text-primary)]">{formatPrice(total)}</span>
+          <span className="text-lg font-bold text-[var(--text-primary)]">
+            {total != null ? formatPrice(total) : 'Calculated at checkout'}
+          </span>
         </div>
         <div className="flex gap-3">
           <Link

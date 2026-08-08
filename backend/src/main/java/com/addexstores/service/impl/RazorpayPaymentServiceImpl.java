@@ -101,18 +101,13 @@ public class RazorpayPaymentServiceImpl implements PaymentGateway {
                 .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        String targetCurrency = request.getCurrency() != null && !request.getCurrency().isBlank()
-                ? request.getCurrency().trim().toUpperCase()
-                : currencyService.getBaseCurrency();
-        if (!SUPPORTED_CURRENCIES.contains(targetCurrency)) {
-            throw new BadRequestException("Unsupported currency: " + targetCurrency + ". Supported: " + SUPPORTED_CURRENCIES);
-        }
+        String targetCurrency = currencyService.getBaseCurrency();
 
         BigDecimal subtotalInUsd = subtotal;
         BigDecimal taxUsd = taxService.calculateTax(subtotalInUsd, request.getCountry(), request.getState());
         BigDecimal shippingUsd = shippingService.calculateShipping(subtotalInUsd, request.getCountry());
         BigDecimal totalUsd = subtotalInUsd.add(taxUsd).add(shippingUsd);
-        BigDecimal chargeAmount = currencyService.convertBaseCurrency(totalUsd, targetCurrency);
+        BigDecimal chargeAmount = totalUsd;
 
         String orderNumber = "ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 

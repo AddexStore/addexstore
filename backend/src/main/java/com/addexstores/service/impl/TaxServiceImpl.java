@@ -1,7 +1,9 @@
 package com.addexstores.service.impl;
 
+import com.addexstores.entity.Settings;
 import com.addexstores.entity.TaxRule;
 import com.addexstores.repository.TaxRuleRepository;
+import com.addexstores.service.SettingsService;
 import com.addexstores.service.TaxService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +18,7 @@ import java.math.RoundingMode;
 public class TaxServiceImpl implements TaxService {
 
     private final TaxRuleRepository taxRuleRepository;
+    private final SettingsService settingsService;
 
     @Override
     public TaxRule getTaxRule(String country, String state) {
@@ -37,12 +40,14 @@ public class TaxServiceImpl implements TaxService {
             return general;
         }
 
+        Settings settings = settingsService.getSettingsEntity();
+        BigDecimal defaultRate = settings.getTaxRate() != null ? settings.getTaxRate() : BigDecimal.ZERO;
         TaxRule fallback = TaxRule.builder()
                 .country(country)
-                .rate(BigDecimal.ZERO)
-                .name("No Tax")
+                .rate(defaultRate)
+                .name("Store Default Tax")
                 .build();
-        log.warn("No tax rule found for country={}, state={}, using 0%", country, state);
+        log.warn("No tax rule found for country={}, state={}, using store default rate {}", country, state, defaultRate);
         return fallback;
     }
 

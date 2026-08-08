@@ -1,6 +1,12 @@
 import BackButton from '../components/BackButton'
+import { useSettings } from '../context/SettingsContext'
 
 export default function Contact() {
+  const { siteName, supportEmail, supportPhone, storeAddress } = useSettings()
+  const email = supportEmail || 'support@addexstores.com'
+  const phone = supportPhone || '+91 1800-123-4567'
+  const address = storeAddress || `${siteName} Luxury House, 42 Fashion Street,\nMumbai, Maharashtra 400001, India`
+
   return (
     <div className="min-h-screen bg-[var(--bg-page)]">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -28,7 +34,7 @@ export default function Contact() {
               </div>
               <div>
                 <p className="text-[var(--text-primary)] text-xs font-medium">Email</p>
-                <p className="text-[var(--text-secondary)] text-xs mt-0.5">support@addexstores.com</p>
+                <p className="text-[var(--text-secondary)] text-xs mt-0.5">{email}</p>
               </div>
             </div>
 
@@ -40,7 +46,7 @@ export default function Contact() {
               </div>
               <div>
                 <p className="text-[var(--text-primary)] text-xs font-medium">Phone</p>
-                <p className="text-[var(--text-secondary)] text-xs mt-0.5">+91 1800-123-4567</p>
+                <p className="text-[var(--text-secondary)] text-xs mt-0.5">{phone}</p>
               </div>
             </div>
 
@@ -53,7 +59,7 @@ export default function Contact() {
               </div>
               <div>
                 <p className="text-[var(--text-primary)] text-xs font-medium">Address</p>
-                <p className="text-[var(--text-secondary)] text-xs mt-0.5">AddexStores Luxury House, 42 Fashion Street,<br />Mumbai, Maharashtra 400001, India</p>
+                <p className="text-[var(--text-secondary)] text-xs mt-0.5 whitespace-pre-line">{address}</p>
               </div>
             </div>
           </div>

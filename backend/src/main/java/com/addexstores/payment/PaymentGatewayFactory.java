@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -82,5 +83,24 @@ public class PaymentGatewayFactory {
             }
         }
         return PaymentMethod.STRIPE;
+    }
+
+    public List<PaymentMethod> getAvailablePaymentMethods() {
+        List<PaymentGatewayConfig> configs = configRepository.findByEnabledTrueOrderBySortOrderAsc();
+        List<PaymentMethod> methods = new ArrayList<>();
+        for (PaymentGatewayConfig config : configs) {
+            try {
+                PaymentMethod method = PaymentMethod.valueOf(config.getGateway());
+                if (gatewayMap.containsKey(method) && !methods.contains(method)) {
+                    methods.add(method);
+                }
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid payment method in config: {}", config.getGateway());
+            }
+        }
+        if (methods.isEmpty() && !gatewayMap.isEmpty()) {
+            methods.addAll(gatewayMap.keySet());
+        }
+        return methods;
     }
 }

@@ -35,10 +35,8 @@ public class CheckoutPricingServiceImpl implements CheckoutPricingService {
     @Override
     @Transactional(readOnly = true)
     public CheckoutQuoteResponse calculateQuote(CheckoutQuoteRequest request, Long userId) {
-        String currencyCode = request.getCurrency() != null && !request.getCurrency().isBlank()
-                ? request.getCurrency().trim().toUpperCase()
-                : currencyService.getBaseCurrency();
-        CurrencyRate currencyRate = currencyService.getCurrencyRate(currencyCode);
+        String baseCurrency = currencyService.getBaseCurrency();
+        CurrencyRate currencyRate = currencyService.getCurrencyRate(baseCurrency);
 
         BigDecimal subtotal;
         List<CheckoutQuoteResponse.QuoteItemDetail> itemDetails;
@@ -55,35 +53,25 @@ public class CheckoutPricingServiceImpl implements CheckoutPricingService {
                 .map(CheckoutQuoteResponse.QuoteItemDetail::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal taxUsd = taxService.calculateTax(subtotal, request.getCountry(), request.getState());
-        BigDecimal shippingUsd = shippingService.calculateShipping(subtotal, request.getCountry());
-        BigDecimal totalUsd = subtotal.add(taxUsd).add(shippingUsd);
+        BigDecimal tax = taxService.calculateTax(subtotal, request.getCountry(), request.getState());
+        BigDecimal shippingCost = shippingService.calculateShipping(subtotal, request.getCountry());
+        BigDecimal total = subtotal.add(tax).add(shippingCost);
 
         BigDecimal taxRate = taxService.getTaxRule(request.getCountry(), request.getState()).getRate();
         if (taxRate.compareTo(BigDecimal.ONE) > 0) {
             taxRate = taxRate.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
         }
         String taxName = taxService.getTaxRule(request.getCountry(), request.getState()).getName();
-        BigDecimal tax = currencyService.convertBaseCurrency(taxUsd, currencyCode);
 
         ShippingRule shippingRule = shippingService.getShippingRule(request.getCountry());
-        boolean freeShipping = shippingUsd.compareTo(BigDecimal.ZERO) == 0;
+        boolean freeShipping = shippingCost.compareTo(BigDecimal.ZERO) == 0;
         String shippingName = freeShipping ? "Free Shipping" : shippingRule.getName();
-        BigDecimal shippingCost = currencyService.convertBaseCurrency(shippingUsd, currencyCode);
-
-        BigDecimal subtotalInTarget = currencyService.convertBaseCurrency(subtotal, currencyCode);
-        BigDecimal total = currencyService.convertBaseCurrency(totalUsd, currencyCode);
-
-        boolean isBaseCurrency = currencyCode.equalsIgnoreCase(currencyService.getBaseCurrency());
-        BigDecimal conversionRate = isBaseCurrency
-                ? BigDecimal.ONE
-                : currencyService.convertBaseCurrency(BigDecimal.ONE, currencyCode);
 
         return CheckoutQuoteResponse.builder()
-                .currency(currencyCode)
+                .currency(baseCurrency)
                 .currencySymbol(currencyRate.getSymbol())
-                .conversionRate(conversionRate)
-                .subtotal(subtotalInTarget)
+                .conversionRate(BigDecimal.ONE)
+                .subtotal(subtotal)
                 .subtotalInUsd(subtotal)
                 .taxRate(taxRate)
                 .taxName(taxName)
@@ -92,7 +80,7 @@ public class CheckoutPricingServiceImpl implements CheckoutPricingService {
                 .shippingName(shippingName)
                 .freeShipping(freeShipping)
                 .total(total)
-                .totalInUsd(totalUsd)
+                .totalInUsd(total)
                 .items(itemDetails)
                 .build();
     }

@@ -75,9 +75,7 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal tax = taxService.calculateTax(subtotal, request.getCountry(), request.getState());
         BigDecimal shippingCost = shippingService.calculateShipping(subtotal, request.getCountry());
         BigDecimal totalAmount = subtotal.add(tax).add(shippingCost);
-        String currency = request.getCurrency() != null && !request.getCurrency().isBlank()
-                ? request.getCurrency().trim().toUpperCase()
-                : currencyService.getBaseCurrency();
+        String currency = currencyService.getBaseCurrency();
 
         String orderNumber = "ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 

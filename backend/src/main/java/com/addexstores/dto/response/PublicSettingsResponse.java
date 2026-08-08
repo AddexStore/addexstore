@@ -17,6 +17,9 @@ public class PublicSettingsResponse {
     private String siteDescription;
     private String logo;
     private String favicon;
+    private String email;
+    private String phone;
+    private String address;
     private String currency;
     private String currencySymbol;
     private BigDecimal taxRate;

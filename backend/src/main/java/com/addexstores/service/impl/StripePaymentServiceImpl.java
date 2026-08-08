@@ -90,17 +90,12 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
                 .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        String targetCurrency = request.getCurrency() != null && !request.getCurrency().isBlank()
-                ? request.getCurrency().trim().toUpperCase()
-                : currencyService.getBaseCurrency();
-        if (!SUPPORTED_CURRENCIES.contains(targetCurrency)) {
-            throw new BadRequestException("Unsupported currency: " + targetCurrency + ". Supported: " + SUPPORTED_CURRENCIES);
-        }
+        String targetCurrency = currencyService.getBaseCurrency();
 
         BigDecimal tax = taxService.calculateTax(subtotal, request.getCountry(), request.getState());
         BigDecimal shippingCost = shippingService.calculateShipping(subtotal, request.getCountry());
         BigDecimal totalAmount = subtotal.add(tax).add(shippingCost);
-        BigDecimal chargeAmount = currencyService.convertBaseCurrency(totalAmount, targetCurrency);
+        BigDecimal chargeAmount = totalAmount;
 
         String orderNumber = "ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
@@ -232,9 +227,7 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
             throw new UnauthorizedException("Order does not belong to this user");
         }
 
-        String currencyUpper = (currency == null || currency.isBlank())
-                ? currencyService.getBaseCurrency()
-                : currency.trim().toUpperCase();
+        String currencyUpper = currencyService.getBaseCurrency();
         if (!SUPPORTED_CURRENCIES.contains(currencyUpper)) {
             throw new BadRequestException("Unsupported currency: " + currency + ". Supported: " + SUPPORTED_CURRENCIES);
         }
@@ -249,7 +242,7 @@ public class StripePaymentServiceImpl implements StripePaymentService, PaymentGa
         }
 
         BigDecimal appAmount = order.getTotalAmount();
-        BigDecimal chargeAmount = currencyService.convertBaseCurrency(appAmount, currencyUpper);
+        BigDecimal chargeAmount = appAmount;
         String stripeCurrency = currencyUpper.toLowerCase();
 
         long stripeAmount = convertToSmallestUnit(chargeAmount, currencyUpper);

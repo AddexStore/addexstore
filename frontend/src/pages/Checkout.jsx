@@ -7,23 +7,25 @@ import { api } from '../services/api'
 import { cartService } from '../services/cartService'
 import { checkoutService } from '../services/checkoutService'
 import { formatPrice } from '../utils/helpers'
-import { getStoreCurrency, getStoreSymbol } from '../utils/currency'
+import { getStoreSymbol } from '../utils/currency'
 import StripeCheckout from '../components/StripeCheckout'
 import RazorpayCheckout from '../components/RazorpayCheckout'
 
 const STEPS = ['Shipping', 'Payment']
 
-const PAYMENT_METHODS = [
-  { id: 'STRIPE', label: 'Credit/Debit Card', description: 'Pay with card, Apple Pay, or Google Pay', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
-  { id: 'RAZORPAY', label: 'UPI / Cards / Net Banking', description: 'Pay with UPI, Cards, Net Banking, or Wallets', icon: 'M12 11c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3zm6 0c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z' },
-]
+const METHOD_ICONS = {
+  STRIPE: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z',
+  RAZORPAY: 'M12 11c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3zm6 0c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z',
+}
 
 export default function Checkout() {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
   const { cartItems, getCartTotal, clearCart } = useCart()
   const { showToast } = useToast()
-  const [paymentMethod, setPaymentMethod] = useState('STRIPE')
+  const [paymentMethods, setPaymentMethods] = useState([])
+  const [paymentMethodsLoading, setPaymentMethodsLoading] = useState(true)
+  const [paymentMethod, setPaymentMethod] = useState('')
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -50,9 +52,9 @@ export default function Checkout() {
   const cs = quote?.currencySymbol || getStoreSymbol()
 
   const subtotal = quote ? Number(quote.subtotal) : getCartTotal()
-  const shippingCost = quote ? Number(quote.shippingCost) : (getCartTotal() >= 100 ? 0 : 15)
-  const tax = quote ? Number(quote.tax) : getCartTotal() * 0.08
-  const total = quote ? Number(quote.total) : subtotal + shippingCost + tax
+  const shippingCost = quote ? Number(quote.shippingCost) : null
+  const tax = quote ? Number(quote.tax) : null
+  const total = quote ? Number(quote.total) : null
 
   const updateShipping = (field, value) =>
     setShipping((prev) => ({ ...prev, [field]: value }))
@@ -72,7 +74,6 @@ export default function Checkout() {
       const res = await checkoutService.getQuote({
         country: shipping.country,
         state: shipping.state,
-        currency: getStoreCurrency(),
         items,
       })
       setQuote(res.data || res)
@@ -86,6 +87,30 @@ export default function Checkout() {
   useEffect(() => {
     fetchQuote()
   }, [fetchQuote])
+
+  useEffect(() => {
+    let cancelled = false
+    setPaymentMethodsLoading(true)
+    checkoutService.getPaymentMethods()
+      .then((res) => {
+        if (cancelled) return
+        const methods = res.data || res || []
+        const list = Array.isArray(methods) ? methods : []
+        setPaymentMethods(list)
+        if (list.length > 0) {
+          setPaymentMethod((prev) => prev || list[0].code)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setPaymentMethods([])
+      })
+      .finally(() => {
+        if (!cancelled) setPaymentMethodsLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const syncCartWithBackend = async () => {
     await cartService.syncCart(cartItems.map(item => ({
@@ -216,7 +241,7 @@ export default function Checkout() {
                     <select value={shipping.country} onChange={(e) => updateShipping('country', e.target.value)}
                       className="w-full px-4 py-2.5 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#C6A972]">
                       <option value="US">United States</option>
-                      <option value="UK">United Kingdom</option>
+                      <option value="GB">United Kingdom</option>
                       <option value="CA">Canada</option>
                       <option value="AE">UAE</option>
                       <option value="FR">France</option>
@@ -231,34 +256,49 @@ export default function Checkout() {
               <div className="bg-[var(--bg-card)] rounded-xl shadow-lg shadow-black/5 p-6 border border-[var(--border-color)]">
                 <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-6">Payment Method</h2>
                 <div className="space-y-3 mb-6">
-                  {PAYMENT_METHODS.map((method) => (
-                    <div
-                      key={method.id}
-                      onClick={() => setPaymentMethod(method.id)}
-                      className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition ${
-                        paymentMethod === method.id
-                          ? 'border-[#C6A972] bg-[#C6A972]/5'
-                          : 'border-[var(--border-color)] bg-transparent hover:border-[var(--text-secondary)]'
-                      }`}
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5 text-[#C6A972]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={method.icon} />
-                          </svg>
-                          <span className="text-sm font-semibold text-[var(--text-primary)]">{method.label}</span>
-                        </div>
-                        <p className="text-xs text-[var(--text-secondary)] mt-1 ml-7">{method.description}</p>
-                      </div>
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                        paymentMethod === method.id ? 'border-[#C6A972]' : 'border-[var(--border-color)]'
-                      }`}>
-                        {paymentMethod === method.id && (
-                          <div className="w-2.5 h-2.5 rounded-full bg-[#C6A972]" />
-                        )}
-                      </div>
+                  {paymentMethodsLoading ? (
+                    <div className="flex items-center justify-center py-6">
+                      <svg className="w-5 h-5 animate-spin text-[#C6A972]" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
                     </div>
-                  ))}
+                  ) : paymentMethods.length === 0 ? (
+                    <p className="text-sm text-[var(--text-secondary)]">
+                      No payment methods are currently available. Please contact support.
+                    </p>
+                  ) : (
+                    paymentMethods.map((method) => (
+                      <div
+                        key={method.code}
+                        onClick={() => setPaymentMethod(method.code)}
+                        className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition ${
+                          paymentMethod === method.code
+                            ? 'border-[#C6A972] bg-[#C6A972]/5'
+                            : 'border-[var(--border-color)] bg-transparent hover:border-[var(--text-secondary)]'
+                        }`}
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <svg className="w-5 h-5 text-[#C6A972]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={METHOD_ICONS[method.code] || 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'} />
+                            </svg>
+                            <span className="text-sm font-semibold text-[var(--text-primary)]">{method.label || method.code}</span>
+                          </div>
+                          {method.description && (
+                            <p className="text-xs text-[var(--text-secondary)] mt-1 ml-7">{method.description}</p>
+                          )}
+                        </div>
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                          paymentMethod === method.code ? 'border-[#C6A972]' : 'border-[var(--border-color)]'
+                        }`}>
+                          {paymentMethod === method.code && (
+                            <div className="w-2.5 h-2.5 rounded-full bg-[#C6A972]" />
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
 
                 {paymentMethod === 'STRIPE' && (
@@ -294,15 +334,23 @@ export default function Checkout() {
                 </div>
                 <div className="flex justify-between text-[var(--text-secondary)]">
                   <span>Shipping</span>
-                  <span>{shippingCost === 0 ? <span className="text-[#2F855A] font-medium">Free</span> : formatPrice(shippingCost, cs)}</span>
+                  <span>
+                    {shippingCost === 0 ? (
+                      <span className="text-[#2F855A] font-medium">Free</span>
+                    ) : shippingCost != null ? (
+                      formatPrice(shippingCost, cs)
+                    ) : (
+                      <span className="text-[var(--text-muted)]">Calculated</span>
+                    )}
+                  </span>
                 </div>
                 <div className="flex justify-between text-[var(--text-secondary)]">
                   <span>Tax</span>
-                  <span>{formatPrice(tax, cs)}</span>
+                  <span>{tax != null ? formatPrice(tax, cs) : <span className="text-[var(--text-muted)]">Calculated</span>}</span>
                 </div>
                 <div className="border-t border-[var(--border-color)] pt-3 flex justify-between font-semibold text-[var(--text-primary)]">
                   <span>Total</span>
-                  <span>{formatPrice(total, cs)}</span>
+                  <span>{total != null ? formatPrice(total, cs) : <span className="text-[var(--text-muted)]">Calculated</span>}</span>
                 </div>
               </div>
             </div>

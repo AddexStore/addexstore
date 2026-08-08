@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
+import { useSettings } from '../context/SettingsContext'
 
 export default function Footer() {
+  const { siteName, siteDescription, storeAddress } = useSettings()
   const [email, setEmail] = useState('')
   const [subscribed, setSubscribed] = useState(false)
 
@@ -21,7 +23,7 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div>
-              <h3 className="text-lg font-semibold text-[var(--text-primary)]">Join the AddexStores World</h3>
+              <h3 className="text-lg font-semibold text-[var(--text-primary)]">Join the {siteName} World</h3>
               <p className="text-sm text-[var(--text-primary)]/60 mt-1">Subscribe for exclusive access to new drops and offers.</p>
             </div>
             <form onSubmit={handleSubscribe} className="flex w-full sm:w-auto">
@@ -47,16 +49,17 @@ export default function Footer() {
       {/* Main footer content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-          {/* About AddexStores */}
+          {/* About */}
           <div>
-            <h4 className="font-playfair-display text-lg font-bold text-[var(--text-primary)] mb-4">AddexStores</h4>
+            <h4 className="font-playfair-display text-lg font-bold text-[var(--text-primary)] mb-4">{siteName}</h4>
             <p className="text-sm leading-relaxed text-[var(--text-primary)]/60">
-              AddexStores is a premium luxury ecommerce destination offering handpicked collections that define elegance and sophistication. Experience unparalleled quality and timeless style.
+              {siteDescription || `${siteName} is a premium shopping destination offering handpicked collections that define elegance and sophistication. Experience unparalleled quality and timeless style.`}
             </p>
-            <p className="text-sm text-[var(--text-primary)]/40 mt-4">
-              123 Luxury Avenue, Suite 400<br />
-              New York, NY 10001
-            </p>
+            {storeAddress && (
+              <p className="text-sm text-[var(--text-primary)]/40 mt-4 whitespace-pre-line">
+                {storeAddress}
+              </p>
+            )}
           </div>
 
           {/* Quick Links */}
@@ -115,7 +118,7 @@ export default function Footer() {
       <div className="border-t border-[var(--border-color)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-[var(--text-primary)]/40">
-            &copy; {new Date().getFullYear()} AddexStores. All rights reserved.
+            &copy; {new Date().getFullYear()} {siteName}. All rights reserved.
           </p>
           <div className="flex items-center space-x-3">
             <span className="text-xs text-[var(--text-primary)]/40">We accept</span>

@@ -38,6 +38,11 @@ export function SettingsProvider({ children }) {
         refresh,
         currency: settings?.currency || getStoreCurrency(),
         currencySymbol: settings?.currencySymbol || getStoreSymbol(),
+        siteName: settings?.siteName || 'AddexStores',
+        siteDescription: settings?.siteDescription || '',
+        supportEmail: settings?.email || '',
+        supportPhone: settings?.phone || '',
+        storeAddress: settings?.address || '',
       }}
     >
       {children}
